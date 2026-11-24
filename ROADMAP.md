@@ -71,6 +71,11 @@ Each item is its own project with its own risks:
 
 - **Custom maps / Tricky courses**: install and manage the engine's plugin
   packages; needs a Tricky disc and a plugin builder.
+- **SSX Tricky audio dub**: replace the music and the announcer ("Super!",
+  trick call-outs) with the Tricky versions, built from the user's own Tricky
+  disc. Needs an engine-side audio-replacement hook or a plugin that maps
+  tracks and announcer events; the launcher only installs/selects the pack.
+  No audio files in the repo or in releases.
 - **Board editor**: likely an engine-side feature; the launcher only manages
   packs and previews.
 - **Global highscores**: service + client, opt-in, no game data.
