@@ -15,10 +15,48 @@ for c in 0 4 8; do cat /sys/devices/system/cpu/cpu$c/cpufreq/scaling_cur_freq; d
 pkill -x yes
 ```
 
-If all cores read ~400000, this is the known ThinkPad/EC power-state hang on
-this machine (seen with OpenTricky before), not an engine bug.
+If all cores read ~400000, this is the power-supply limit, not an engine bug.
 
-Fix: **reboot**. After the reboot the same test shows ~3.8 GHz.
+Check the charger:
+
+```sh
+cat /sys/class/power_supply/ucsi-source-psy-USBC000:002/voltage_now
+cat /sys/class/power_supply/ucsi-source-psy-USBC000:002/current_now
+```
+
+`5000000` (5 V) and `3000000` (3 A) means the laptop only pulls 15 W, even
+if the charger is a 65 W model. Check what the charger offers:
+
+```sh
+cat /sys/class/typec/port0-partner/usb_power_delivery/source-capabilities/*fixed*/voltage
+```
+
+If that lists `20000mV` (and `maximum_current` 3250mA), the charger is fine
+and the **negotiation** is stuck: try, in this order:
+
+1. Unplug, wait 10 s, replug.
+2. The other USB-C port.
+3. Another USB-C cable (5 A / e-marked); a 3 A cable without an e-marker
+   makes many chargers stay at 5 V.
+4. EC reset: shut down, unplug the charger, hold the power button 30 s, plug
+   the charger, boot.
+5. Temporarily set the charge threshold to 100 % and replug
+   (`/sys/class/power_supply/BAT0/charge_control_end_threshold`).
+6. BIOS: USB-C / power delivery options, then BIOS/EC update.
+
+If a known-good 65 W charger and cable still negotiate 5 V, the PD controller
+or EC needs service. A reboot only helps for a few minutes on the small
+supply.
+
+**EC reset that worked on this machine:** shut down, unplug the charger, hold
+the power button for 30 seconds, plug the charger, boot. Afterwards the CPU
+boosted to 3.8 GHz and the battery charged again (~30 W), although the UCSI
+readings still showed 5 V / 3 A - treat those as unreliable when they
+contradict the battery's charge rate. The 30-second hold, not a normal
+reboot, is what clears it.
+
+Earlier this was mistaken for an `intel_pstate`/EC hang; that is the same
+symptom on this machine, but the measurable cause is the negotiated 15 W.
 
 A short S3 cycle only helps the separate EC fan-table bug (`speed=65535`,
 handled by `/usr/local/bin/fan-reset.sh`); it does not clear this lock.

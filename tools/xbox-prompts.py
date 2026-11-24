@@ -28,7 +28,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 # The controls sheet in the US disc's texture set: 256x256, four 20x20 glyphs
 # at y=123..142, x=12/34/56/78 (followed by two arrow glyphs).
-ATLAS = "f897162c0f661c8b.png"
+# The game ships the same controls sheet under more than one texture id: the
+# front end uses the first, the in-game pause/HUD path the second.
+ATLASES = ["f897162c0f661c8b.png", "75df99fccd7d9d0b.png"]
 GLYPHS = [
     (12, 123, 31, 142, "Y", "#f2c744"),  # was Triangle
     (34, 123, 53, 142, "X", "#3b82f6"),  # was Square
@@ -83,19 +85,36 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dump", required=True, help="texture dump directory")
     ap.add_argument("--out", required=True, help="texture replacement directory")
-    ap.add_argument("--atlas", default=ATLAS, help=f"atlas file name (default {ATLAS})")
+    ap.add_argument(
+        "--atlas",
+        action="append",
+        dest="atlases",
+        help="atlas file name (repeatable; default: both known ids)",
+    )
     args = ap.parse_args()
 
-    src = Path(args.dump).expanduser() / args.atlas
-    if not src.is_file():
-        print(f"missing {src}\nRun the game once with SSX3_TEX_DUMP=<dir> and open a menu.", file=sys.stderr)
-        return 2
-
+    dump = Path(args.dump).expanduser()
     out = Path(args.out).expanduser()
     out.mkdir(parents=True, exist_ok=True)
-    dst = out / args.atlas
-    patch(src).save(dst)
-    print(f"wrote {dst}")
+
+    written = 0
+    for name in args.atlases or ATLASES:
+        src = dump / name
+        if not src.is_file():
+            print(f"skip {name} (not in the dump)", file=sys.stderr)
+            continue
+        dst = out / name
+        patch(src).save(dst)
+        print(f"wrote {dst}")
+        written += 1
+
+    if written == 0:
+        print(
+            f"none of the atlases are in {dump}\n"
+            "Run the game once with SSX3_TEX_DUMP=<dir> and open a menu or pause.",
+            file=sys.stderr,
+        )
+        return 2
     print(f"start the game with SSX3_TEX_REPLACE={out}")
     return 0
 
