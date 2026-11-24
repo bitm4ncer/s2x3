@@ -81,6 +81,9 @@ pub struct Detection {
 pub struct LaunchConfig {
     /// Settings for this run only, on top of the saved file.
     pub overrides: BTreeMap<String, String>,
+    /// Raw environment for this run (advanced/diagnostic keys that are not
+    /// part of the launcher's schema). Not validated.
+    pub extra_env: BTreeMap<String, String>,
     pub extra_args: Vec<String>,
 }
 

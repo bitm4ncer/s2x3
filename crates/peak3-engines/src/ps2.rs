@@ -110,6 +110,13 @@ static SCHEMA: &[SettingsField] = &[
         kind: FieldKind::Bool,
         default: "0",
     },
+    SettingsField {
+        key: "SSX3_FULLSCREEN",
+        label: "Fullscreen",
+        help: "Start borderless fullscreen (F11 toggles while playing).",
+        kind: FieldKind::Bool,
+        default: "0",
+    },
 ];
 
 fn known(key: &str) -> bool {
@@ -276,6 +283,9 @@ impl EngineAdapter for Ps2Rust {
             cmd.env(k, v);
         }
         for (k, v) in &config.overrides {
+            cmd.env(k, v);
+        }
+        for (k, v) in &config.extra_env {
             cmd.env(k, v);
         }
         cmd.args(&config.extra_args);

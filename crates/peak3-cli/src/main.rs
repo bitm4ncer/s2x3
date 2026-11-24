@@ -54,6 +54,9 @@ enum Command {
         /// KEY=VALUE for this run only, repeatable.
         #[arg(long = "set", value_name = "KEY=VALUE")]
         set: Vec<String>,
+        /// Raw KEY=VALUE environment for advanced keys outside the schema.
+        #[arg(long = "env", value_name = "KEY=VALUE")]
+        env: Vec<String>,
         /// Passed to the engine unchanged (after `--`).
         #[arg(last = true)]
         args: Vec<String>,
@@ -103,7 +106,7 @@ fn run() -> Result<()> {
         Command::Detect => detect(&config)?,
         Command::Doctor => doctor(&config)?,
         Command::Settings { set, unset } => settings(&config, &set, &unset)?,
-        Command::Launch { set, args } => launch(&config, &set, args)?,
+        Command::Launch { set, env, args } => launch(&config, &set, &env, args)?,
     }
     Ok(())
 }
@@ -224,12 +227,18 @@ fn settings(config: &peak3_core::Config, set: &[String], unset: &[String]) -> Re
     Ok(())
 }
 
-fn launch(config: &peak3_core::Config, set: &[String], args: Vec<String>) -> Result<()> {
+fn launch(
+    config: &peak3_core::Config,
+    set: &[String],
+    env: &[String],
+    args: Vec<String>,
+) -> Result<()> {
     let engine = adapter(config)?;
     let overrides = parse_pairs(set)?;
     validate(engine.as_ref(), &overrides)?;
     let mut child = engine.launch(&peak3_core::LaunchConfig {
         overrides,
+        extra_env: parse_pairs(env)?,
         extra_args: args,
     })?;
     println!("running pid {}", child.id());
