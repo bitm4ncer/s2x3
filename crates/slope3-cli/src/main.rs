@@ -49,6 +49,8 @@ enum Command {
         #[arg(long = "unset", value_name = "KEY")]
         unset: Vec<String>,
     },
+    /// Build the engine from its sources (setup + cargo build).
+    Install,
     /// Start the engine.
     Launch {
         /// KEY=VALUE for this run only, repeatable.
@@ -103,6 +105,7 @@ fn run() -> Result<()> {
                 eprintln!("(not ready yet: {e})");
             }
         }
+        Command::Install => install(&config)?,
         Command::Detect => detect(&config)?,
         Command::Doctor => doctor(&config)?,
         Command::Settings { set, unset } => settings(&config, &set, &unset)?,
@@ -113,6 +116,19 @@ fn run() -> Result<()> {
 
 fn adapter(config: &slope3_core::Config) -> Result<Box<dyn slope3_core::EngineAdapter>> {
     by_id(config)
+}
+
+fn install(config: &slope3_core::Config) -> Result<()> {
+    let engine = adapter(config)?;
+    let mut child = engine.install()?;
+    println!("building engine, pid {} (log: {})", child.id(),
+        config.paths.saves.join("install.log").display());
+    let status = child.wait()?;
+    println!("build exited: {status}");
+    if !status.success() {
+        bail!("engine build failed; see {}", config.paths.saves.join("install.log").display());
+    }
+    Ok(())
 }
 
 fn detect(config: &slope3_core::Config) -> Result<()> {

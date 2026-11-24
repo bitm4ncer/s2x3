@@ -70,6 +70,7 @@ const mockState = {
 
 function mockInvoke(cmd, args) {
   if (cmd === "launch") return Promise.resolve(4242);
+  if (cmd === "install") return Promise.resolve(777);
   if (cmd === "log_tail") return Promise.resolve("[ssx3] 8082 hand-written functions installed\n[window] display 60 Hz, game 60 Hz");
   if (cmd === "save_settings") {
     mockState.values = args.values;
@@ -275,6 +276,11 @@ function bind() {
     const text = await call("log_tail", { lines: 80 });
     $("log").textContent = text || "no log yet";
     $("log").scrollTop = $("log").scrollHeight;
+  });
+
+  $("build-engine").addEventListener("click", async () => {
+    const pid = await call("install");
+    toast(`Build started (pid ${pid}); this can take a while`);
   });
 
   document.addEventListener("keydown", (e) => {

@@ -105,6 +105,12 @@ pub trait EngineAdapter {
 
     /// Start the engine. The caller owns the child (stdio, wait, logs).
     fn launch(&self, config: &LaunchConfig) -> Result<Child>;
+
+    /// Build/install the engine from its sources (optional). Returns a child
+    /// whose output the caller may capture.
+    fn install(&self) -> Result<Child> {
+        anyhow::bail!("this engine has no installer")
+    }
 }
 
 /// On-disk launcher config: where the engine, the disc and the saves are.

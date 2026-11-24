@@ -261,6 +261,31 @@ impl EngineAdapter for Ps2Rust {
         std::fs::write(&path, text).with_context(|| format!("write {}", path.display()))
     }
 
+    fn install(&self) -> Result<Child> {
+        let root = &self.config.engine.root;
+        if !root.join("tools/setup.py").is_file() {
+            anyhow::bail!(
+                "{} is not an ssx3-decomp checkout (tools/setup.py missing)",
+                root.display()
+            );
+        }
+        std::fs::create_dir_all(&self.config.paths.saves)
+            .with_context(|| format!("create {}", self.config.paths.saves.display()))?;
+        let log_path = self.config.paths.saves.join("install.log");
+        let out = std::fs::File::create(&log_path)
+            .with_context(|| format!("create {}", log_path.display()))?;
+        let err = out.try_clone().context("clone install log")?;
+        let mut cmd = Command::new("bash");
+        cmd.arg("-lc")
+            .arg("python3 tools/setup.py && cargo build --profile game -p ssx3")
+            .current_dir(root)
+            .env("SSX3_ISO", &self.config.paths.iso)
+            .stdout(out)
+            .stderr(err);
+        cmd.spawn()
+            .with_context(|| format!("start the engine build in {}", root.display()))
+    }
+
     fn launch(&self, config: &LaunchConfig) -> Result<Child> {
         let binary = self.binary();
         if !binary.exists() {

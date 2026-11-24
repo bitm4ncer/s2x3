@@ -219,6 +219,17 @@ fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
 }
 
 #[tauri::command]
+fn install() -> Result<u32, String> {
+    let (_config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    let mut child = engine.install().map_err(|e| format!("{e:#}"))?;
+    let pid = child.id();
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(pid)
+}
+
+#[tauri::command]
 fn log_tail(lines: usize) -> Result<String, String> {
     let (config, _) = load().map_err(|e| format!("{e:#}"))?;
     let path = config.paths.saves.join("launcher.log");
@@ -243,6 +254,7 @@ pub fn run() {
             state,
             save_settings,
             set_paths,
+            install,
             launch,
             log_tail
         ])
