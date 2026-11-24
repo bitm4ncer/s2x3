@@ -1,9 +1,9 @@
 [package]
-name = "peak3-engines"
+name = "slope3-engines"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-peak3-core = { path = "../peak3-core" }
+slope3-core = { path = "../slope3-core" }

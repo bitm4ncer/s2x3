@@ -1,4 +1,4 @@
-//! `peak3` - the headless launcher core.
+//! `slope3` - the headless launcher core.
 //!
 //! Everything the future UI needs is here first: config, detection,
 //! settings and launch. The UI is a thin layer on top of these calls.
@@ -8,13 +8,13 @@ use std::path::PathBuf;
 
 use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
-use peak3_core::{config_path, FieldKind, Status};
-use peak3_engines::by_id;
+use slope3_core::{config_path, FieldKind, Status};
+use slope3_engines::by_id;
 
 #[derive(Parser)]
-#[command(name = "peak3", version, about = "Launcher for SSX 3 ports")]
+#[command(name = "slope3", version, about = "Launcher for SSX 3 ports")]
 struct Cli {
-    /// Use another config file (also PEAK3_CONFIG).
+    /// Use another config file (also SLOPE3_CONFIG).
     #[arg(long, global = true)]
     config: Option<PathBuf>,
 
@@ -65,7 +65,7 @@ enum Command {
 
 fn main() {
     if let Err(e) = run() {
-        eprintln!("peak3: {e:#}");
+        eprintln!("slope3: {e:#}");
         std::process::exit(1);
     }
 }
@@ -73,9 +73,9 @@ fn main() {
 fn run() -> Result<()> {
     let cli = Cli::parse();
     if let Some(path) = &cli.config {
-        std::env::set_var(peak3_core::CONFIG_ENV, path);
+        std::env::set_var(slope3_core::CONFIG_ENV, path);
     }
-    let mut config = peak3_core::Config::load()?;
+    let mut config = slope3_core::Config::load()?;
     config = config.resolved();
 
     match cli.command {
@@ -111,11 +111,11 @@ fn run() -> Result<()> {
     Ok(())
 }
 
-fn adapter(config: &peak3_core::Config) -> Result<Box<dyn peak3_core::EngineAdapter>> {
+fn adapter(config: &slope3_core::Config) -> Result<Box<dyn slope3_core::EngineAdapter>> {
     by_id(config)
 }
 
-fn detect(config: &peak3_core::Config) -> Result<()> {
+fn detect(config: &slope3_core::Config) -> Result<()> {
     let engine = adapter(config)?;
     let d = engine.detect();
     println!("engine: {} ({})", engine.name(), engine.id());
@@ -137,8 +137,8 @@ fn detect(config: &peak3_core::Config) -> Result<()> {
     Ok(())
 }
 
-fn doctor(config: &peak3_core::Config) -> Result<()> {
-    println!("peak3 {}", env!("CARGO_PKG_VERSION"));
+fn doctor(config: &slope3_core::Config) -> Result<()> {
+    println!("slope3 {}", env!("CARGO_PKG_VERSION"));
     println!("config: {}", config_path().display());
     println!("os: {} {}", std::env::consts::OS, std::env::consts::ARCH);
     let engine = adapter(config)?;
@@ -171,7 +171,7 @@ fn parse_pairs(pairs: &[String]) -> Result<BTreeMap<String, String>> {
 }
 
 fn validate(
-    engine: &dyn peak3_core::EngineAdapter,
+    engine: &dyn slope3_core::EngineAdapter,
     values: &BTreeMap<String, String>,
 ) -> Result<()> {
     for (key, value) in values {
@@ -195,7 +195,7 @@ fn validate(
     Ok(())
 }
 
-fn settings(config: &peak3_core::Config, set: &[String], unset: &[String]) -> Result<()> {
+fn settings(config: &slope3_core::Config, set: &[String], unset: &[String]) -> Result<()> {
     let engine = adapter(config)?;
     let pairs = parse_pairs(set)?;
     validate(engine.as_ref(), &pairs)?;
@@ -228,7 +228,7 @@ fn settings(config: &peak3_core::Config, set: &[String], unset: &[String]) -> Re
 }
 
 fn launch(
-    config: &peak3_core::Config,
+    config: &slope3_core::Config,
     set: &[String],
     env: &[String],
     args: Vec<String>,
@@ -236,10 +236,11 @@ fn launch(
     let engine = adapter(config)?;
     let overrides = parse_pairs(set)?;
     validate(engine.as_ref(), &overrides)?;
-    let mut child = engine.launch(&peak3_core::LaunchConfig {
+    let mut child = engine.launch(&slope3_core::LaunchConfig {
         overrides,
         extra_env: parse_pairs(env)?,
         extra_args: args,
+        log: None,
     })?;
     println!("running pid {}", child.id());
     let status = child.wait()?;

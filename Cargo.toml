@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["crates/peak3-core", "crates/peak3-engines", "crates/peak3-cli"]
+members = ["crates/slope3-core", "crates/slope3-engines", "crates/slope3-cli"]
+exclude = ["apps/desktop/src-tauri"]
 
 [workspace.package]
 version = "0.1.0"

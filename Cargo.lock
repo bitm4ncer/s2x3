@@ -151,33 +151,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
-name = "peak3-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "peak3-core",
- "peak3-engines",
-]
-
-[[package]]
-name = "peak3-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde",
- "toml",
-]
-
-[[package]]
-name = "peak3-engines"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "peak3-core",
-]
-
-[[package]]
 name = "proc-macro2"
 version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -232,6 +205,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "slope3-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "slope3-core",
+ "slope3-engines",
+]
+
+[[package]]
+name = "slope3-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "toml",
+]
+
+[[package]]
+name = "slope3-engines"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "slope3-core",
 ]
 
 [[package]]

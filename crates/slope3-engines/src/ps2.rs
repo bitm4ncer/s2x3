@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 
 use anyhow::{Context, Result};
-use peak3_core::{
+use slope3_core::{
     human_size, Capabilities, Detection, EngineAdapter, LaunchConfig, SettingsField, Status,
     FieldKind,
 };
@@ -124,11 +124,11 @@ fn known(key: &str) -> bool {
 }
 
 pub struct Ps2Rust {
-    config: peak3_core::Config,
+    config: slope3_core::Config,
 }
 
 impl Ps2Rust {
-    pub fn new(config: peak3_core::Config) -> Self {
+    pub fn new(config: slope3_core::Config) -> Self {
         Self { config }
     }
 
@@ -249,7 +249,7 @@ impl EngineAdapter for Ps2Rust {
                 .with_context(|| format!("create {}", parent.display()))?;
         }
         let mut text = String::from(
-            "# Written by Peak3. Lines are KEY=VALUE; environment variables win.\n",
+            "# Written by Slope3. Lines are KEY=VALUE; environment variables win.\n",
         );
         for field in SCHEMA {
             if let Some(v) = values.get(field.key) {
@@ -289,6 +289,16 @@ impl EngineAdapter for Ps2Rust {
             cmd.env(k, v);
         }
         cmd.args(&config.extra_args);
+
+        if let Some(path) = &config.log {
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent).ok();
+            }
+            let out = std::fs::File::create(path)
+                .with_context(|| format!("create log {}", path.display()))?;
+            let err = out.try_clone().context("clone log handle")?;
+            cmd.stdout(out).stderr(err);
+        }
 
         cmd.spawn()
             .with_context(|| format!("start {}", binary.display()))

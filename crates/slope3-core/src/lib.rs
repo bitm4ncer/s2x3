@@ -1,4 +1,4 @@
-//! Peak3 core: models and the engine adapter contract.
+//! Slope3 core: models and the engine adapter contract.
 //!
 //! The launcher never links an engine. It writes settings, checks paths and
 //! starts a child process. Everything engine specific lives behind
@@ -12,7 +12,7 @@ use std::process::Child;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-pub const CONFIG_ENV: &str = "PEAK3_CONFIG";
+pub const CONFIG_ENV: &str = "SLOPE3_CONFIG";
 
 /// What an engine can do. The UI shows fields and buttons from this, so a
 /// new engine does not need UI code.
@@ -85,6 +85,8 @@ pub struct LaunchConfig {
     /// part of the launcher's schema). Not validated.
     pub extra_env: BTreeMap<String, String>,
     pub extra_args: Vec<String>,
+    /// Capture the engine's stdout/stderr here instead of inheriting them.
+    pub log: Option<std::path::PathBuf>,
 }
 
 /// One installed engine. Engines are addressed by id (`ps2-rust`,
@@ -138,17 +140,17 @@ pub struct Paths {
     pub saves: PathBuf,
 }
 
-/// `$PEAK3_CONFIG`, else `$XDG_CONFIG_HOME/peak3/config.toml`, else
-/// `~/.config/peak3/config.toml`.
+/// `$SLOPE3_CONFIG`, else `$XDG_CONFIG_HOME/slope3/config.toml`, else
+/// `~/.config/slope3/config.toml`.
 pub fn config_path() -> PathBuf {
     if let Some(p) = std::env::var_os(CONFIG_ENV) {
         return PathBuf::from(p);
     }
     if let Some(dir) = std::env::var_os("XDG_CONFIG_HOME") {
-        return PathBuf::from(dir).join("peak3").join("config.toml");
+        return PathBuf::from(dir).join("slope3").join("config.toml");
     }
     let home = std::env::var_os("HOME").unwrap_or_default();
-    PathBuf::from(home).join(".config").join("peak3").join("config.toml")
+    PathBuf::from(home).join(".config").join("slope3").join("config.toml")
 }
 
 impl Config {

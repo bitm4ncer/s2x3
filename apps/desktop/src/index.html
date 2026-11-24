@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Slope3 - SSX 3 launcher</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true">
+      <div class="glow"></div>
+      <div class="stripes"></div>
+      <svg class="peaks" viewBox="0 0 1440 420" preserveAspectRatio="none">
+        <path d="M0 420 L210 190 L300 250 L470 90 L610 260 L720 170 L860 300 L980 120 L1120 280 L1240 200 L1440 420 Z" />
+        <path class="back" d="M0 420 L140 300 L300 340 L430 220 L560 330 L700 250 L840 350 L980 240 L1120 340 L1290 270 L1440 420 Z" />
+      </svg>
+    </div>
+
+    <header class="top">
+      <div class="brand">
+        <div class="mark">S3</div>
+        <div class="brand-text">
+          <h1>SLOPE3</h1>
+          <p>SSX 3 launcher</p>
+        </div>
+      </div>
+      <div class="chips">
+        <div class="chip" id="chip-engine">
+          <span class="dot"></span>
+          <span class="k">ENGINE</span>
+          <span class="v">checking</span>
+        </div>
+        <div class="chip" id="chip-disc">
+          <span class="dot"></span>
+          <span class="k">DISC</span>
+          <span class="v">checking</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">PLAYSTATION 2 &middot; RUST PORT</p>
+          <h2>Drop in.<br />Ride again.</h2>
+          <p class="sub">Your disc, your settings, one launcher. Nothing is emulated here &mdash; Slope3 starts the native port and stays out of the way.</p>
+        </div>
+        <div class="hero-tags">
+          <span>60&ndash;240 Hz</span>
+          <span>Widescreen</span>
+          <span>HD textures</span>
+          <span>Plugins</span>
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="card settings">
+          <div class="card-head">
+            <h3>Session settings</h3>
+            <span class="muted" id="settings-state">stored in the engine's cfg</span>
+          </div>
+          <div class="fields" id="fields"></div>
+        </section>
+
+        <aside class="card side">
+          <div class="card-head"><h3>Rig</h3></div>
+          <dl class="rig">
+            <div><dt>Engine</dt><dd id="rig-engine">&mdash;</dd></div>
+            <div><dt>Disc</dt><dd id="rig-disc">&mdash;</dd></div>
+            <div><dt>Saves</dt><dd id="rig-saves">&mdash;</dd></div>
+          </dl>
+
+          <details class="paths">
+            <summary>Change paths</summary>
+            <label>Engine folder
+              <input id="path-engine" type="text" spellcheck="false" />
+            </label>
+            <label>Disc image
+              <input id="path-iso" type="text" spellcheck="false" />
+            </label>
+            <label>Saves folder
+              <input id="path-saves" type="text" spellcheck="false" />
+            </label>
+            <button id="save-paths" class="ghost">Apply paths</button>
+          </details>
+
+          <div class="caps" id="caps"></div>
+
+          <details class="logbox">
+            <summary>Engine log</summary>
+            <pre id="log">no log yet</pre>
+            <button id="refresh-log" class="ghost small">Refresh</button>
+          </details>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="dock">
+      <div class="hints" id="hints"></div>
+      <button class="play" id="play">
+        <span class="play-label">PLAY</span>
+        <span class="play-sub" id="play-sub">start the game</span>
+      </button>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+    <script src="main.js"></script>
+  </body>
+</html>
