@@ -2710,7 +2710,7 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "s2x3-core"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "serde",
@@ -2719,7 +2719,7 @@ dependencies = [
 
 [[package]]
 name = "s2x3-desktop"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "rfd",
@@ -2733,7 +2733,7 @@ dependencies = [
 
 [[package]]
 name = "s2x3-engines"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "s2x3-core",

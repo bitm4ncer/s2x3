@@ -20,7 +20,7 @@ function toast(text, bad = false) {
    UI can be styled without starting the engine. The desktop app always uses
    the real commands. */
 const mockState = {
-  version: "0.1.0",
+  version: "0.0.1",
   config_path: "~/.config/s2x3/config.toml",
   engine_id: "ps2-rust",
   engine_name: "SSX 3 (PlayStation 2, Rust port)",
@@ -172,6 +172,7 @@ function hints() {
   const ps = state?.buttons === "ps2";
   const play = ps ? psGlyph("cross") : glyph("A");
   const back = ps ? psGlyph("circle") : glyph("B");
+  $("play-glyph").innerHTML = play;
   $("hints").innerHTML = `
     <span class="hint">${play} Play</span>
     <span class="hint">${dpadGlyph()} Navigate</span>
@@ -380,11 +381,12 @@ function render(next) {
     checkEngineUpdate.done = true;
     setTimeout(checkEngineUpdate, 400);
   }
-  $("play-sub").textContent = ready
-    ? "start the game"
-    : state.binary.state !== "ready"
-      ? "engine not built"
-      : "choose a disc image";
+  const playReason =
+    state.binary.state !== "ready" ? "engine not built" : "choose a disc image";
+  $("play-sub").textContent = ready ? "" : playReason;
+  $("play-sub").hidden = ready;
+  $("play").setAttribute("aria-label", ready ? "Play" : `Play — ${playReason}`);
+  $("play").setAttribute("title", ready ? "Play" : playReason);
 }
 
 function scheduleSave() {

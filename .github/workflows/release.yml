@@ -33,10 +33,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: apps/desktop
-          tagName: v0.1.0
-          releaseName: "s2X3 v0.1.0 — Windows alpha"
+          tagName: v0.0.1
+          releaseName: "s2X3 v0.0.1 — Windows alpha"
           releaseBody: |
-            Windows installer for **s2X3**, the unofficial SSX 3 launcher.
+            Windows installer for **s2X3 v0.0.1**, the unofficial SSX 3 launcher.
 
             - Windows 10/11, 64-bit; WebView2 is bootstrapped by the installer.
             - You need your own USA disc image (`SLUS_207.72`).
