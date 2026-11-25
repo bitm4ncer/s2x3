@@ -1,52 +1,111 @@
-# Slope3
+<p align="center">
+  <img src="docs/assets/icon.png" alt="slope3" width="120">
+</p>
 
-A launcher and installer for SSX 3 ports. Desktop first (PlayStation 2 / Rust
-engine), web companion later. It detects what is installed, keeps the settings
-in one place and starts the engine as a child process - it never contains
-engine code or game data.
+<h1 align="center">slope3</h1>
 
-Read [`ROADMAP.md`](ROADMAP.md) for the phases and [`AGENTS.md`](AGENTS.md) for
-the rules, especially the split between launcher work and upstream engine
-fixes.
+<p align="center">
+  <strong>A clean launcher and installer for the native SSX 3 port on PlayStation 2.</strong><br>
+  Your disc, your settings, one place.
+</p>
 
-## Status
+<p align="center">
+  <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue"></a>
+  <img alt="Platforms: Linux, macOS, Windows" src="https://img.shields.io/badge/platforms-Linux%20%7C%20macOS%20%7C%20Windows-555">
+  <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-f26a1b">
+  <img alt="Engine: ssx3-decomp" src="https://img.shields.io/badge/engine-ssx3--decomp-123a63">
+  <img alt="No game data" src="https://img.shields.io/badge/game%20data-none-2f9e63">
+</p>
 
-Phase 1: the core, the PS2 adapter and the CLI work; the Tauri desktop app is
-in `apps/desktop`.
+---
 
-## Layout
+slope3 is a desktop launcher for [ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp),
+the native Rust port of SSX 3 for PlayStation 2. It detects your installation,
+edits the engine settings through a schema, starts the engine as a child
+process and keeps paths, saves and logs in one place.
 
-```
-crates/slope3-core/      models, config, EngineAdapter
-crates/slope3-engines/   one module per engine (ps2.rs today)
-crates/slope3-cli/       `slope3` - detect, settings, launch (headless)
-apps/desktop/            Tauri app: src/ (UI), src-tauri/ (commands)
-docs/architecture.md     how adapters and the UI fit together
-docs/upstream/           per-bug engine notes for ssx3-decomp
-```
+It is not an emulator, not a recompiler and not a game distribution. It ships
+no engine code and no game data. You bring your own USA disc image.
 
-## Build
+![slope3 launcher](docs/assets/launcher.png)
+
+## Features
+
+- **Disc detection**: finds the USA disc image (`SLUS_207.72`) and verifies it before launch.
+- **Settings that stay**: every engine option is generated from a schema, written to the engine config and merged with changes made in the in game overlay (F10).
+- **One click play**: starts the native port fullscreen, with Xbox button prompts, 16:9 and 60 to 240 Hz support.
+- **Saves**: export and import the PS2 memory card with timestamped backups.
+- **Engine setup**: download and build `ssx3-decomp` from the app, plus an update check when the repository moves forward.
+- **Trick spin controls**: cross pad, left stick or right stick, with air gating so acceleration never triggers a flip by accident.
+- **Logs**: engine output and build output are available inside the app.
+- **No game data**: no ISO, no extracted assets and no generated code in the repository.
+
+## Requirements
+
+- Linux today, Windows and macOS are planned. The engine itself builds on all three.
+- Your own **USA** disc image of SSX 3 for PlayStation 2 (`SLUS_207.72`).
+- Rust and Python 3 to build the engine locally, Vulkan drivers to run it.
+- A Vulkan capable GPU. Intel Iris Xe runs it at 60 fps with the heavy effects off.
+
+## Quick start
+
+Build the CLI and the desktop app:
 
 ```sh
-cargo build                          # core + CLI
-./target/debug/slope3 detect
-./target/debug/slope3 launch
-
-cd apps/desktop && npm install && npm run tauri dev
+git clone https://github.com/bitm4ncer/slope3.git
+cd slope3
+cargo build --release
+./target/release/slope3 detect
 ```
 
-The engine itself must be built once:
+```sh
+cd apps/desktop
+npm install
+npm run tauri dev
+```
+
+The app can download and build the engine for you. To do it by hand:
 
 ```sh
-cd ssx3-decomp
-python3 tools/setup.py               # SSX3_ISO=/path/to/SSX 3 (USA).iso
+git clone https://github.com/andersfischernielsen/ssx3-decomp.git ~/Projects/ssx3/ssx3-decomp
+cd ~/Projects/ssx3/ssx3-decomp
+SSX3_ISO="/path/to/SSX 3 (USA).iso" python3 tools/setup.py
 cargo build --profile game -p ssx3
 ```
 
-## What may be shipped
+Point slope3 at the engine folder and the ISO in **Change paths**, then press
+**play**.
 
-- Source only. No ISO, no `generated/` code, no RAM dumps, no built WASM
-  packages: those contain the game.
-- The engine is MIT; Slope3 is GPL-3.0-or-later. Keep the engine's notices.
-- "SSX" is an EA trademark. Describe compatibility, never imply endorsement,
-  and do not sell it.
+## Status
+
+Alpha, used daily on Linux. The launcher, settings, saves and engine setup
+work. See [ROADMAP.md](ROADMAP.md) for the phases and [AGENTS.md](AGENTS.md)
+for the split between launcher work and upstream engine fixes.
+
+Planned:
+
+- menus and intro video fill for 4:3 front end screens
+- performance presets for integrated GPUs
+- Tricky courses as plugins
+- Tricky audio dub
+- web companion, no game code hosted
+- LAN and online multiplayer later
+
+## Legal
+
+SSX is a trademark of Electronic Arts. slope3 is an unofficial fan project,
+not affiliated with or endorsed by EA. You need your own copy of the game. The
+repository contains no game data, no ISO, no extracted textures and no
+recompiled game code. Xbox button art and the Archie font are local, third
+party assets and are not committed.
+
+## License
+
+[GPL-3.0-or-later](LICENSE). The engine is MIT licensed by its authors. Keep
+the engine notices when you redistribute it.
+
+## Credits
+
+- [ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp) by Anders Fischer Nielsen, MIT.
+- [Tauri](https://tauri.app) for the desktop shell.
+- The SSX 3 community for testing, saves and feedback.
