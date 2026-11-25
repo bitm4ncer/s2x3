@@ -29,6 +29,8 @@ no engine code and no game data. You bring your own USA disc image.
 
 ![slope3 launcher](docs/assets/launcher.png)
 
+[**Website and screenshots →**](https://bitm4ncer.github.io/slope3/)
+
 ## Features
 
 - **Disc detection**: finds the USA disc image (`SLUS_207.72`) and verifies it before launch.

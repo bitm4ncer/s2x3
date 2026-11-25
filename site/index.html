@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>slope3 · SSX 3 launcher</title>
+    <meta
+      name="description"
+      content="A clean launcher and installer for the native SSX 3 port on PlayStation 2. Your disc, your settings, one place."
+    />
+    <link rel="icon" href="assets/icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@1,500;1,600;1,700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true">
+      <div class="photo"></div>
+      <div class="shade"></div>
+      <div class="big-three">3</div>
+    </div>
+
+    <header class="nav">
+      <a class="brand" href="#top">
+        <img src="assets/icon.png" alt="" width="44" height="44" />
+        <span>slope3</span>
+      </a>
+      <nav>
+        <a href="#features">features</a>
+        <a href="#how">install</a>
+        <a href="#status">status</a>
+        <a class="nav-cta" href="https://github.com/bitm4ncer/slope3">github</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="top">
+        <div class="hero-copy">
+          <p class="eyebrow">PlayStation 2 · USA ISO · Rust port</p>
+          <h1>One launcher.<br /><span>One mountain.</span></h1>
+          <p class="lede">
+            slope3 starts the native SSX 3 port with your disc, keeps every
+            engine setting in one place and gets out of the way. No emulator,
+            no game data, no account.
+          </p>
+          <div class="actions">
+            <a class="play" href="https://github.com/bitm4ncer/slope3/releases">
+              <span>download</span>
+              <small>Linux · alpha</small>
+            </a>
+            <a class="ghost" href="https://github.com/bitm4ncer/slope3">view source</a>
+          </div>
+          <ul class="tags">
+            <li>60 to 240 Hz</li>
+            <li>widescreen</li>
+            <li>hd textures</li>
+            <li>save import</li>
+          </ul>
+        </div>
+
+        <figure class="shot">
+          <img src="assets/launcher.webp" alt="slope3 launcher with session settings and rig panel" />
+        </figure>
+      </section>
+
+      <section class="features" id="features">
+        <div class="section-head">
+          <p class="eyebrow">What it does</p>
+          <h2>small shell, big job</h2>
+        </div>
+        <div class="cards">
+          <article class="card">
+            <span class="num">01</span>
+            <h3>disc detection</h3>
+            <p>Finds the USA disc image, checks <code>SLUS_207.72</code> and keeps the path for the next start.</p>
+          </article>
+          <article class="card">
+            <span class="num">02</span>
+            <h3>settings that stay</h3>
+            <p>Every engine option is generated from a schema. Changes from the F10 overlay are merged, never wiped.</p>
+          </article>
+          <article class="card">
+            <span class="num">03</span>
+            <h3>engine setup</h3>
+            <p>Download and build the Rust port from the app, with an update check when the repository moves.</p>
+          </article>
+          <article class="card">
+            <span class="num">04</span>
+            <h3>saves</h3>
+            <p>Export and import the PS2 memory card with timestamped backups before anything is replaced.</p>
+          </article>
+          <article class="card">
+            <span class="num">05</span>
+            <h3>trick spin controls</h3>
+            <p>Cross pad, left stick or right stick, with air gating so acceleration never flips by accident.</p>
+          </article>
+          <article class="card">
+            <span class="num">06</span>
+            <h3>no game data</h3>
+            <p>No ISO, no extracted assets, no recompiled code. You bring your own disc.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="how" id="how">
+        <div class="section-head">
+          <p class="eyebrow">How it works</p>
+          <h2>three steps to the lift</h2>
+        </div>
+        <ol class="steps">
+          <li>
+            <h3>pick your disc</h3>
+            <p>Drop the USA ISO into the window or browse for it. slope3 verifies the game id.</p>
+          </li>
+          <li>
+            <h3>install the engine</h3>
+            <p>One button clones <code>ssx3-decomp</code>, runs setup and builds the game locally.</p>
+          </li>
+          <li>
+            <h3>ride</h3>
+            <p>Press play. Settings, saves and logs stay in the launcher, the game gets a clean child process.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="status" id="status">
+        <div class="status-copy">
+          <p class="eyebrow">Status</p>
+          <h2>alpha, used daily</h2>
+          <p>
+            The launcher, settings, saves and engine setup work on Linux. Windows
+            and macOS follow. Menus and intro fill, performance presets, Tricky
+            courses and audio are on the roadmap.
+          </p>
+          <a class="ghost" href="https://github.com/bitm4ncer/slope3/blob/main/ROADMAP.md">read the roadmap</a>
+        </div>
+        <div class="status-list">
+          <div><span>launcher</span><b class="ok">done</b></div>
+          <div><span>settings</span><b class="ok">done</b></div>
+          <div><span>saves</span><b class="ok">done</b></div>
+          <div><span>engine update</span><b class="ok">done</b></div>
+          <div><span>menu fill</span><b>next</b></div>
+          <div><span>tricky courses</span><b>later</b></div>
+          <div><span>multiplayer</span><b>later</b></div>
+        </div>
+      </section>
+
+      <section class="legal">
+        <p>
+          <strong>Own disc required.</strong> slope3 ships no game data and is not
+          affiliated with Electronic Arts. SSX is a trademark of EA. Bring your own
+          copy of SSX 3 for PlayStation 2.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <div class="foot-brand">
+        <img src="assets/icon.png" alt="" width="28" height="28" />
+        <span>slope3</span>
+      </div>
+      <p>GPL 3.0 or later · engine MIT · built for the SSX 3 community</p>
+      <div class="foot-links">
+        <a href="https://github.com/bitm4ncer/slope3">github</a>
+        <a href="https://github.com/andersfischernielsen/ssx3-decomp">engine</a>
+        <a href="https://github.com/bitm4ncer/slope3/blob/main/LICENSE">license</a>
+      </div>
+    </footer>
+  </body>
+</html>
