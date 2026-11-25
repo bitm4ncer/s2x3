@@ -162,15 +162,16 @@ code {
 .scene-flakes {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.scene-flakes use {
-  fill: none;
-  stroke: #ffffff;
-  stroke-width: 4;
-  stroke-linecap: round;
+  background-image:
+    url("assets/NowFlake_contour.svg"),
+    url("assets/NowFlake_fill.svg"),
+    url("assets/NowFlake_contour.svg");
+  background-repeat: no-repeat;
+  background-position: 2% 90px, 96% 78%, 66% 8%;
+  background-size: 24vw 24vw, 40vw 40vw, 30vw 30vw;
+  opacity: 0.38;
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.6) 60%, transparent 92%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.6) 60%, transparent 92%);
 }
 
 .scene-shade {
