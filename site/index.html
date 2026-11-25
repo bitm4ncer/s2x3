@@ -8,7 +8,7 @@
       name="description"
       content="A clean launcher and installer for the native SSX 3 port on PlayStation 2. Your disc, your settings, one place."
     />
-    <meta name="theme-color" content="#071c33" />
+    <meta name="theme-color" content="#03162b" />
     <link rel="icon" href="assets/icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,78 +17,111 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
-    <noscript>
-      <style>
-        .scroll-view { scrollbar-width: auto; }
-        .scroll-view::-webkit-scrollbar { display: block; width: 16px; }
-        .scrollbar { display: none; }
-      </style>
-    </noscript>
   </head>
   <body id="top">
     <div class="scene" aria-hidden="true">
       <div class="scene-photo"></div>
-      <div class="scene-streaks"></div>
       <div class="scene-shade"></div>
       <div class="scene-snow"></div>
     </div>
 
+    <a class="skip-link" href="#downloads">Skip to downloads</a>
+
     <div class="page">
+      <!-- ── Top strip ─────────────────────────────────────────────── -->
       <div class="topbar">
         <span><b>s2X3</b> // A FAN-MADE SSX 3 PORTAL</span>
-        <span class="topbar-note">BEST VIEWED AT 1024×768 · BROADBAND RECOMMENDED</span>
+        <span class="topbar-note">BEST VIEWED 1024×768 · BROADBAND RECOMMENDED</span>
       </div>
 
+      <!-- ── Brand + angled tab nav ────────────────────────────────── -->
+      <nav class="navbar" aria-label="Portal navigation">
+        <a class="brand" href="#top">
+          <img src="assets/icon.png" alt="" width="52" height="52" />
+          <span>s2X3</span>
+        </a>
+        <div class="tabs">
+          <a class="tab is-active" href="#top">Home</a>
+          <a class="tab" href="#downloads">Downloads<sup>NEW</sup></a>
+          <a class="tab" href="#features">Features</a>
+          <a class="tab" href="#install">Install</a>
+          <a class="tab" href="#status">Status</a>
+          <a class="tab" href="#credits">Credits</a>
+          <a class="tab tab-ext" href="https://github.com/bitm4ncer/s2x3">GitHub<span aria-hidden="true">↗</span></a>
+          <a class="tab tab-ext" href="https://github.com/bitm4ncer/s2x3/releases/latest">Releases<span aria-hidden="true">↗</span></a>
+        </div>
+      </nav>
+
+      <!-- ── Hero: mountain, chrome band, what's-new wedge ─────────── -->
       <header class="hero">
-        <div class="hero-copy">
-          <a class="brand" href="#top" aria-label="s2X3 home">
-            <img src="assets/icon.png" alt="" width="64" height="64" />
-            <span>s2X3</span>
-          </a>
-          <p class="kicker">THE UNOFFICIAL SSX 3 LAUNCHER // PS2</p>
-          <h1>
-            <span>IT'S YOUR <span class="h1-hot">RIG</span></span>
-            <span>AGAINST THE <span class="h1-accent">MOUNTAIN.</span></span>
-          </h1>
-          <p class="hero-sub">
-            s2X3 finds your disc, builds the native port and keeps every setting,
-            save and log in one place. No emulator. No game data. No account.
-          </p>
-          <div class="hero-badges">
-            <span class="badge badge-hot">LINUX + WINDOWS ALPHA</span>
-            <span class="badge">MACOS NEXT</span>
-            <span class="badge badge-ghost">GPL-3.0</span>
+        <div class="hero-stage">
+          <svg class="hero-slope" viewBox="0 0 1440 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-chrome" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#f6fcff" />
+                <stop offset="0.28" stop-color="#cfeaf9" />
+                <stop offset="0.5" stop-color="#ffffff" />
+                <stop offset="0.72" stop-color="#a5cfe9" />
+                <stop offset="1" stop-color="#e8f5ff" />
+              </linearGradient>
+              <linearGradient id="g-signal" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffc53d" />
+                <stop offset="0.45" stop-color="#ff9420" />
+                <stop offset="1" stop-color="#e35705" />
+              </linearGradient>
+            </defs>
+            <!-- speed streaks -->
+            <g class="streaks" opacity="0.5">
+              <path d="M980 40 L1440 0 L1440 8 L996 50 Z" fill="#ffffff" opacity="0.35" />
+              <path d="M1080 120 L1440 82 L1440 92 L1096 132 Z" fill="#ffffff" opacity="0.25" />
+              <path d="M880 12 L1240 -30 L1440 -30 L1440 -20 L900 24 Z" fill="#ffffff" opacity="0.2" />
+            </g>
+            <!-- speed streaks only; the chrome band itself grows with the copy -->
+            <path d="M980 40 L1440 0 L1440 8 L996 50 Z" fill="#ffffff" opacity="0.35" />
+            <path d="M1080 120 L1440 82 L1440 92 L1096 132 Z" fill="#ffffff" opacity="0.25" />
+            <path d="M880 12 L1240 -30 L1440 -30 L1440 -20 L900 24 Z" fill="#ffffff" opacity="0.2" />
+          </svg>
+
+          <div class="hero-copy">
+            <p class="kicker">THE UNOFFICIAL SSX 3 LAUNCHER // PS2</p>
+            <h1>
+              <span>IT'S YOUR <b>RIG</b></span>
+              <span>AGAINST THE <b class="hot">MOUNTAIN.</b></span>
+            </h1>
+            <p class="hero-sub">
+              s2X3 finds your disc, builds the native port and keeps every setting,
+              save and log in one place. No emulator. No game data. No account.
+            </p>
+            <div class="hero-badges">
+              <span class="badge badge-hot">LINUX + WINDOWS ALPHA</span>
+              <span class="badge">MACOS NEXT</span>
+              <span class="badge badge-ghost">GPL-3.0</span>
+            </div>
           </div>
-          <p class="hero-links">
-            <a href="https://github.com/bitm4ncer/s2x3/releases/latest">GET THE ALPHA &gt;&gt;</a>
-            <a href="#downloads">SEE WHAT'S INSIDE &gt;&gt;</a>
-          </p>
+
+          <a
+            class="hero-cta"
+            href="https://github.com/bitm4ncer/s2x3/releases/latest"
+          >
+            <span class="cta-word">GET THE ALPHA</span>
+            <span class="cta-arrow" aria-hidden="true">&gt;&gt;</span>
+            <small>0.0.1 · FREE · YOUR DISC</small>
+          </a>
         </div>
 
-        <div class="hero-art">
-          <div class="art-burst" aria-hidden="true"></div>
-          <div class="art-speed" aria-hidden="true"></div>
-          <figure class="art-shot">
-            <img
-              src="assets/launcher.webp"
-              alt="The s2X3 launcher showing session settings, paths and a play button"
-              width="1200"
-              height="834"
-            />
-            <figcaption>LAUNCHER // ALPHA BUILD</figcaption>
-          </figure>
-          <img
-            class="art-icon"
-            src="assets/icon.png"
-            alt="s2X3 app icon: white s2X3 wordmark with blue outline on an orange tile"
-            width="800"
-            height="800"
-          />
-          <span class="art-sticker">ALPHA<br /><b>0.0.1</b></span>
-          <span class="art-plate">NATIVE · PS2 · 60-240 HZ</span>
-        </div>
+        <!-- floating what's-new wedge -->
+        <aside class="whatsnew" aria-label="What's new">
+          <h2>what's new</h2>
+          <p>
+            <b>11.25.2026</b> — Save export &amp; import is in: timestamped
+            backups before anything is replaced. Alpha <b>0.0.1</b> rolling on
+            Linux + Windows.
+          </p>
+          <a href="https://github.com/bitm4ncer/s2x3/commits/main">Latest changes &gt;&gt;</a>
+        </aside>
       </header>
 
+      <!-- ── Ticker ribbon ─────────────────────────────────────────── -->
       <div class="ticker" aria-hidden="true">
         <div class="ticker-track">
           <span>★ s2X3 ALPHA 0.0.1 IN DEVELOPMENT</span>
@@ -104,437 +137,261 @@
         </div>
       </div>
 
-      <div class="layout">
-        <aside class="left-rail" aria-label="Portal navigation">
-          <nav class="side-nav">
-            <a href="#top">Home</a>
-            <a href="#downloads">Downloads<sup class="nav-flag">NEW</sup></a>
-            <a href="#features">Features</a>
-            <a href="#install">Install</a>
-            <a href="#status">Status</a>
-            <a href="#credits">Credits</a>
-            <a class="nav-ext" href="https://github.com/bitm4ncer/s2x3/blob/main/ROADMAP.md">Roadmap <span>↗</span></a>
-            <a class="nav-ext" href="https://github.com/bitm4ncer/s2x3/releases/latest">Releases <span>↗</span></a>
-            <a class="nav-ext" href="https://github.com/bitm4ncer/s2x3">GitHub <span>↗</span></a>
-          </nav>
-
-          <section class="online-panel" aria-label="s2X3 downloads">
-            <a
-              class="online-enter"
-              href="https://github.com/bitm4ncer/s2x3/releases/latest"
-              aria-label="ENTER: get the s2X3 alpha"
-            >
-              ENTER
-            </a>
-            <div class="online-inner">
-              <h2 class="online-title"><span aria-hidden="true">★</span> s2X3 downloads</h2>
-              <div class="online-strip" aria-hidden="true">
-                <img src="assets/icon.png" alt="" width="160" height="160" />
-                <img src="assets/launcher.webp" alt="" width="160" height="111" />
-                <img src="assets/background.jpg" alt="" width="160" height="90" />
-                <span class="tile-3">3</span>
-              </div>
-              <div class="online-counter">
-                <span>LATEST BUILD</span>
-                <span class="digits" aria-label="alpha 0.0.1"><i>ALPHA 0.0.1</i></span>
-              </div>
-            </div>
-          </section>
-        </aside>
-
-        <div class="center-col">
-          <main class="board" aria-labelledby="downloads-title">
-            <h2 class="board-tab" id="downloads-title">Downloads</h2>
-            <div class="board-frame">
-              <div class="board-inner">
-                <div class="board-meta">
-                  <span>&gt;&gt; s2X3 DOWNLOAD CENTER</span>
-                  <span>ALPHA 0.0.1 // 11.25.2026</span>
-                </div>
-
-                <div class="scroll-shell">
-                  <div
-                    class="scroll-view"
-                    id="portal-scroll"
-                    tabindex="0"
-                    aria-label="s2X3 download center, scrollable"
-                  >
-                    <span class="anchor" id="downloads"></span>
-
-                    <article class="item hero-item">
-                      <div class="thumb thumb-app">
-                        <img
-                          src="assets/icon.png"
-                          alt=""
-                          width="160"
-                          height="160"
-                          loading="eager"
-                        />
-                      </div>
-                      <div class="item-body">
-                        <h3>Check out s2X3</h3>
-                        <p>
-                          The launcher for the native SSX 3 port. Your disc, your settings,
-                          one place. It is not an emulator, a recompiler or a game
-                          distribution.
-                        </p>
-                        <figure class="shot">
-                          <img
-                            src="assets/launcher.webp"
-                            alt="The s2X3 launcher with session settings and rig panel"
-                            width="1200"
-                            height="834"
-                          />
-                          <figcaption>THE LAUNCHER // ALPHA BUILD</figcaption>
-                        </figure>
-                        <div class="btn-row">
-                          <a
-                            class="btn"
-                            href="https://github.com/bitm4ncer/s2x3/releases/download/v0.0.1/s2X3_0.0.1_x64-setup.exe"
-                          >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <use href="assets/platform-icons.svg#i-win"></use>
-                            </svg>
-                            <span>Windows</span>
-                          </a>
-                          <a
-                            class="btn"
-                            href="https://github.com/bitm4ncer/s2x3/releases/latest"
-                          >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <use href="assets/platform-icons.svg#i-mac"></use>
-                            </svg>
-                            <span>macOS</span>
-                          </a>
-                          <a
-                            class="btn"
-                            href="https://github.com/bitm4ncer/s2x3/releases/latest"
-                          >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <use href="assets/platform-icons.svg#i-linux"></use>
-                            </svg>
-                            <span>Linux</span>
-                          </a>
-                        </div>
-                        <p class="tiny">Linux and Windows alpha. macOS builds follow.</p>
-                        <p class="links">
-                          <a href="https://github.com/bitm4ncer/s2x3">View source &gt;&gt;</a>
-                          <a href="https://github.com/bitm4ncer/s2x3/blob/main/ROADMAP.md"
-                            >Read the roadmap &gt;&gt;</a
-                          >
-                        </p>
-                      </div>
-                    </article>
-
-                    <section class="portal-section" id="features">
-                      <h2 class="subhead">Features</h2>
-
-                      <div class="item">
-                        <div class="thumb" aria-hidden="true">
-                          <svg viewBox="0 0 48 48">
-                            <rect x="7" y="10" width="34" height="28" rx="2" />
-                            <path d="M7 19h34M14 26h8M14 31h5" />
-                          </svg>
-                        </div>
-                        <div class="item-body">
-                          <h3>Disc detection</h3>
-                          <p>
-                            Finds the USA disc image, checks <code>SLUS_207.72</code> and
-                            keeps the path for the next start.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div class="item">
-                        <div class="thumb" aria-hidden="true">
-                          <svg viewBox="0 0 48 48">
-                            <path d="M10 14h28M10 24h28M10 34h28" />
-                            <circle cx="18" cy="14" r="4" />
-                            <circle cx="30" cy="24" r="4" />
-                            <circle cx="22" cy="34" r="4" />
-                          </svg>
-                        </div>
-                        <div class="item-body">
-                          <h3>Settings that stay</h3>
-                          <p>
-                            Every engine option is generated from a schema. Changes from
-                            the F10 overlay are merged, never wiped.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div class="item">
-                        <div class="thumb" aria-hidden="true">
-                          <svg viewBox="0 0 48 48">
-                            <path d="M24 8v22M16 22l8 8 8-8" />
-                            <rect x="8" y="34" width="32" height="6" rx="2" />
-                          </svg>
-                        </div>
-                        <div class="item-body">
-                          <h3>Engine setup</h3>
-                          <p>
-                            Download and build
-                            <a href="https://github.com/andersfischernielsen/ssx3-decomp"
-                              >ssx3-decomp</a
-                            >
-                            from the app, with an update check when the repository moves.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div class="item">
-                        <div class="thumb" aria-hidden="true">
-                          <svg viewBox="0 0 48 48">
-                            <path d="M10 10h28v28H10z" />
-                            <path d="M16 10v10h16V10M16 38v-8h16v8" />
-                          </svg>
-                        </div>
-                        <div class="item-body">
-                          <h3>Saves</h3>
-                          <p>
-                            Export and import the PS2 memory card with timestamped backups
-                            before anything is replaced.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div class="item">
-                        <div class="thumb" aria-hidden="true">
-                          <svg viewBox="0 0 48 48">
-                            <path d="M10 30h28M14 30V18h20v12" />
-                            <circle cx="17" cy="36" r="4" />
-                            <circle cx="31" cy="36" r="4" />
-                          </svg>
-                        </div>
-                        <div class="item-body">
-                          <h3>Trick spin controls</h3>
-                          <p>
-                            Cross pad, left stick or right stick, with air gating so
-                            acceleration never flips by accident.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div class="item">
-                        <div class="thumb" aria-hidden="true">
-                          <svg viewBox="0 0 48 48">
-                            <path d="M24 6l14 6v12c0 9-6 15-14 18-8-3-14-9-14-18V12z" />
-                            <path d="M18 24l4 4 8-9" />
-                          </svg>
-                        </div>
-                        <div class="item-body">
-                          <h3>No game data</h3>
-                          <p>
-                            No ISO, no extracted assets, no recompiled code. You bring
-                            your own disc.
-                          </p>
-                        </div>
-                      </div>
-                    </section>
-
-                    <section class="portal-section" id="install">
-                      <h2 class="subhead">Install</h2>
-
-                      <div class="item">
-                        <div class="thumb thumb-num" aria-hidden="true">01</div>
-                        <div class="item-body">
-                          <h3>Pick your disc</h3>
-                          <p>
-                            Drop the USA ISO into the window or browse for it. s2X3
-                            verifies the game id.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div class="item">
-                        <div class="thumb thumb-num" aria-hidden="true">02</div>
-                        <div class="item-body">
-                          <h3>Install the engine</h3>
-                          <p>
-                            One button clones <code>ssx3-decomp</code>, runs setup and
-                            builds the game locally.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div class="item">
-                        <div class="thumb thumb-num" aria-hidden="true">03</div>
-                        <div class="item-body">
-                          <h3>Ride</h3>
-                          <p>
-                            Press play. Settings, saves and logs stay in the launcher,
-                            the game gets a clean child process.
-                          </p>
-                        </div>
-                      </div>
-                    </section>
-
-                    <section class="portal-section" id="status">
-                      <h2 class="subhead">Status</h2>
-                      <p class="body-copy">
-                        The launcher, settings, saves and engine setup work on Linux, with a
-                        Windows alpha installer available now. macOS follows. Menus and intro
-                        fill, performance presets, Tricky courses and audio are on the roadmap.
-                      </p>
-                      <table class="status-table">
-                        <thead>
-                          <tr>
-                            <th scope="col">PIECE</th>
-                            <th scope="col">STATE</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr><td>Launcher</td><td><span class="ok">Done</span></td></tr>
-                          <tr><td>Settings</td><td><span class="ok">Done</span></td></tr>
-                          <tr><td>Saves</td><td><span class="ok">Done</span></td></tr>
-                          <tr><td>Engine update</td><td><span class="ok">Done</span></td></tr>
-                          <tr><td>Menu fill</td><td><span class="next">Next</span></td></tr>
-                          <tr><td>Tricky courses</td><td><span class="later">Later</span></td></tr>
-                          <tr><td>Multiplayer</td><td><span class="later">Later</span></td></tr>
-                        </tbody>
-                      </table>
-                    </section>
-
-                    <section class="portal-section" id="credits">
-                      <h2 class="subhead">Credits</h2>
-                      <div class="item">
-                        <div class="thumb" aria-hidden="true">
-                          <svg viewBox="0 0 48 48">
-                            <path d="M24 6l4 8 9 1-6 7 2 9-9-4-9 4 2-9-6-7 9-1z" />
-                          </svg>
-                        </div>
-                        <div class="item-body">
-                          <h3>ssx3-decomp</h3>
-                          <p>
-                            The native port, recompiler and renderer come from
-                            <a href="https://github.com/andersfischernielsen/ssx3-decomp"
-                              >ssx3-decomp</a
-                            >, written by
-                            <a href="https://github.com/andersfischernielsen"
-                              >Anders Fischer Nielsen</a
-                            >
-                            and released under the MIT license.
-                          </p>
-                        </div>
-                      </div>
-                      <p class="legal">
-                        <strong>Own disc required.</strong> s2X3 ships no game data and
-                        is not affiliated with Electronic Arts. SSX is a trademark of EA.
-                      </p>
-                    </section>
-                  </div>
-
-                  <div class="scrollbar" aria-hidden="true">
-                    <div class="sb-btn sb-up"></div>
-                    <div class="sb-track"><div class="sb-thumb"></div></div>
-                    <div class="sb-btn sb-down"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </main>
-
-          <div class="bottom-split">
-            <a
-              class="hit-slopes"
-              href="https://github.com/bitm4ncer/s2x3/releases/latest"
-            >
-              <span class="play-ico" aria-hidden="true"></span>
-              <span class="hit-copy">
-                <small>HIT THE SLOPES</small>
-                <b>PRESS PLAY</b>
-              </span>
-            </a>
-            <div class="news-mini">
-              <div class="news-head">NEWS</div>
-              <p>
-                <b>11.25.2026</b> Save export and import with timestamped backups
-                before anything is replaced.
-              </p>
-              <a href="https://github.com/bitm4ncer/s2x3/commits/main"
-                >Latest changes &gt;&gt;</a
-              >
-            </div>
+      <main class="flow">
+        <!-- ── Downloads ───────────────────────────────────────────── -->
+        <section class="sec sec-download" id="downloads" aria-labelledby="downloads-title">
+          <div class="sec-head">
+            <h2 class="sec-title" id="downloads-title">Downloads</h2>
+            <span class="sec-slash" aria-hidden="true"></span>
+            <span class="sec-meta">ALPHA 0.0.1 // 11.25.2026</span>
           </div>
-        </div>
 
-        <aside class="right-rail">
-          <section class="panel platforms" aria-labelledby="platforms-title">
-            <div class="panel-inner">
-              <h2 id="platforms-title">Platforms</h2>
+          <div class="dl-panel">
+            <div class="dl-copy">
+              <h3>Check out s2X3</h3>
+              <p>
+                The launcher for the native SSX 3 port. Your disc, your settings,
+                one place. It is not an emulator, a recompiler or a game
+                distribution.
+              </p>
+              <div class="btn-row">
+                <a
+                  class="btn"
+                  href="https://github.com/bitm4ncer/s2x3/releases/download/v0.0.1/s2X3_0.0.1_x64-setup.exe"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/platform-icons.svg#i-win"></use></svg>
+                  <span>Windows</span>
+                </a>
+                <a class="btn" href="https://github.com/bitm4ncer/s2x3/releases/latest">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/platform-icons.svg#i-mac"></use></svg>
+                  <span>macOS</span>
+                </a>
+                <a class="btn" href="https://github.com/bitm4ncer/s2x3/releases/latest">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/platform-icons.svg#i-linux"></use></svg>
+                  <span>Linux</span>
+                </a>
+              </div>
+              <p class="tiny">Linux and Windows alpha. macOS builds follow.</p>
+              <p class="links">
+                <a href="https://github.com/bitm4ncer/s2x3">View source &gt;&gt;</a>
+                <a href="https://github.com/bitm4ncer/s2x3/blob/main/ROADMAP.md">Read the roadmap &gt;&gt;</a>
+              </p>
+            </div>
+
+            <figure class="dl-shot">
+              <div class="shot-plate">
+                <img
+                  src="assets/launcher.webp"
+                  alt="The s2X3 launcher showing session settings, paths and a play button"
+                  width="1200"
+                  height="834"
+                />
+              </div>
+              <figcaption>THE LAUNCHER // ALPHA BUILD</figcaption>
+            </figure>
+          </div>
+
+          <div class="dl-strip">
+            <span class="plat-chip"><img src="assets/icon.png" alt="" width="44" height="44" /> s2X3 ALPHA</span>
+            <span class="plat-chip plat-hot">VULKAN GPU</span>
+            <span class="plat-chip">60–240 HZ</span>
+            <span class="plat-chip plat-req">PS2 DISC REQUIRED</span>
+          </div>
+        </section>
+
+        <!-- ── Features ────────────────────────────────────────────── -->
+        <section class="sec" id="features" aria-labelledby="features-title">
+          <div class="sec-head">
+            <h2 class="sec-title" id="features-title">Features</h2>
+            <span class="sec-slash" aria-hidden="true"></span>
+            <span class="sec-meta">WHAT'S INSIDE</span>
+          </div>
+
+          <div class="feat-flow">
+            <article class="feat">
+              <div class="feat-ico" aria-hidden="true">
+                <svg viewBox="0 0 48 48"><rect x="7" y="10" width="34" height="28" rx="2" /><path d="M7 19h34M14 26h8M14 31h5" /></svg>
+              </div>
+              <h3>Disc detection</h3>
+              <p>Finds the USA disc image, checks <code>SLUS_207.72</code> and keeps the path for the next start.</p>
+            </article>
+
+            <article class="feat">
+              <div class="feat-ico" aria-hidden="true">
+                <svg viewBox="0 0 48 48"><path d="M10 14h28M10 24h28M10 34h28" /><circle cx="18" cy="14" r="4" /><circle cx="30" cy="24" r="4" /><circle cx="22" cy="34" r="4" /></svg>
+              </div>
+              <h3>Settings that stay</h3>
+              <p>Every engine option is generated from a schema. Changes from the F10 overlay are merged, never wiped.</p>
+            </article>
+
+            <article class="feat">
+              <div class="feat-ico" aria-hidden="true">
+                <svg viewBox="0 0 48 48"><path d="M24 8v22M16 22l8 8 8-8" /><rect x="8" y="34" width="32" height="6" rx="2" /></svg>
+              </div>
+              <h3>Engine setup</h3>
+              <p>Download and build <a href="https://github.com/andersfischernielsen/ssx3-decomp">ssx3-decomp</a> from the app, with an update check when the repository moves.</p>
+            </article>
+
+            <article class="feat">
+              <div class="feat-ico" aria-hidden="true">
+                <svg viewBox="0 0 48 48"><path d="M10 10h28v28H10z" /><path d="M16 10v10h16V10M16 38v-8h16v8" /></svg>
+              </div>
+              <h3>Saves</h3>
+              <p>Export and import the PS2 memory card with timestamped backups before anything is replaced.</p>
+            </article>
+
+            <article class="feat">
+              <div class="feat-ico" aria-hidden="true">
+                <svg viewBox="0 0 48 48"><path d="M10 30h28M14 30V18h20v12" /><circle cx="17" cy="36" r="4" /><circle cx="31" cy="36" r="4" /></svg>
+              </div>
+              <h3>Trick spin controls</h3>
+              <p>Cross pad, left stick or right stick, with air gating so acceleration never flips by accident.</p>
+            </article>
+
+            <article class="feat">
+              <div class="feat-ico" aria-hidden="true">
+                <svg viewBox="0 0 48 48"><path d="M24 6l14 6v12c0 9-6 15-14 18-8-3-14-9-14-18V12z" /><path d="M18 24l4 4 8-9" /></svg>
+              </div>
+              <h3>No game data</h3>
+              <p>No ISO, no extracted assets, no recompiled code. You bring your own disc.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- ── Install ─────────────────────────────────────────────── -->
+        <section class="sec" id="install" aria-labelledby="install-title">
+          <div class="sec-head">
+            <h2 class="sec-title" id="install-title">Install</h2>
+            <span class="sec-slash" aria-hidden="true"></span>
+            <span class="sec-meta">THREE MOVES AND YOU RIDE</span>
+          </div>
+
+          <ol class="steps">
+            <li class="step">
+              <span class="step-num" aria-hidden="true">1</span>
+              <div class="step-body">
+                <h3>Pick your disc</h3>
+                <p>Drop the USA ISO into the window or browse for it. s2X3 verifies the game id.</p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="step-num" aria-hidden="true">2</span>
+              <div class="step-body">
+                <h3>Install the engine</h3>
+                <p>One button clones <code>ssx3-decomp</code>, runs setup and builds the game locally.</p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="step-num step-num-hot" aria-hidden="true">3</span>
+              <div class="step-body">
+                <h3>Ride</h3>
+                <p>Press play. Settings, saves and logs stay in the launcher, the game gets a clean child process.</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <!-- ── Status + platforms ──────────────────────────────────── -->
+        <section class="sec sec-status" id="status" aria-labelledby="status-title">
+          <div class="sec-head">
+            <h2 class="sec-title" id="status-title">Status</h2>
+            <span class="sec-slash" aria-hidden="true"></span>
+            <span class="sec-meta">WHERE THE PORT STANDS</span>
+          </div>
+
+          <div class="status-split">
+            <div class="status-copy">
+              <p class="body-copy">
+                The launcher, settings, saves and engine setup work on Linux, with a
+                Windows alpha installer available now. macOS follows. Menus and intro
+                fill, performance presets, Tricky courses and audio are on the roadmap.
+              </p>
+              <table class="status-table">
+                <thead>
+                  <tr>
+                    <th scope="col">PIECE</th>
+                    <th scope="col">STATE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Launcher</td><td><span class="ok">Done</span></td></tr>
+                  <tr><td>Settings</td><td><span class="ok">Done</span></td></tr>
+                  <tr><td>Saves</td><td><span class="ok">Done</span></td></tr>
+                  <tr><td>Engine update</td><td><span class="ok">Done</span></td></tr>
+                  <tr><td>Menu fill</td><td><span class="next">Next</span></td></tr>
+                  <tr><td>Tricky courses</td><td><span class="later">Later</span></td></tr>
+                  <tr><td>Multiplayer</td><td><span class="later">Later</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="platforms">
+              <h3>Platforms</h3>
               <ul>
                 <li>
                   <a href="https://github.com/bitm4ncer/s2x3/releases/latest">
-                    <span>Linux<sup>™</sup></span><em class="os-tag tag-hot">ALPHA</em>
+                    <span>Linux</span><em class="os-tag tag-hot">ALPHA</em>
                   </a>
                 </li>
                 <li>
                   <a href="https://github.com/bitm4ncer/s2x3/releases/download/v0.0.1/s2X3_0.0.1_x64-setup.exe">
-                    <span>Windows<sup>®</sup></span><em class="os-tag tag-hot">ALPHA</em>
+                    <span>Windows</span><em class="os-tag tag-hot">ALPHA</em>
                   </a>
                 </li>
                 <li>
                   <a href="https://github.com/bitm4ncer/s2x3/releases/latest">
-                    <span>macOS<sup>®</sup></span><em class="os-tag">NEXT</em>
+                    <span>macOS</span><em class="os-tag">NEXT</em>
                   </a>
                 </li>
                 <li>
-                  <span class="plat-static"
-                    ><span>PS2 disc</span><em class="os-tag tag-req">REQUIRED</em></span
-                  >
+                  <span class="plat-static"><span>PS2 disc</span><em class="os-tag tag-req">REQUIRED</em></span>
                 </li>
               </ul>
-              <p class="plat-note">VULKAN GPU · 60-240 HZ · YOUR DISC</p>
+              <p class="plat-note">VULKAN GPU · 60–240 HZ · YOUR DISC</p>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section class="panel cta-panel" aria-labelledby="cta-title">
-            <div class="panel-inner">
-              <h2 id="cta-title" class="sr-only">Download s2X3</h2>
-              <a
-                class="star"
-                href="https://github.com/bitm4ncer/s2x3/releases/latest"
-              >
-                <b>DOWNLOAD<br />NOW</b>
-              </a>
-              <p class="quote">“Your disc, your settings, one place.”</p>
-              <p class="quote-src">THE s2X3 PREMISE</p>
-              <p class="cta-links">
-                <a href="https://github.com/bitm4ncer/s2x3/releases/latest"
-                  >Release notes &gt;&gt;</a
-                ><br />
-                <a href="https://github.com/bitm4ncer/s2x3/blob/main/ROADMAP.md"
-                  >Roadmap &gt;&gt;</a
-                >
+        <!-- ── Credits ─────────────────────────────────────────────── -->
+        <section class="sec sec-credits" id="credits" aria-labelledby="credits-title">
+          <div class="sec-head">
+            <h2 class="sec-title" id="credits-title">Credits</h2>
+            <span class="sec-slash" aria-hidden="true"></span>
+            <span class="sec-meta">STANDING ON SHOULDERS</span>
+          </div>
+          <div class="credits-panel">
+            <div class="feat-ico feat-ico-star" aria-hidden="true">
+              <svg viewBox="0 0 48 48"><path d="M24 6l4 8 9 1-6 7 2 9-9-4-9 4 2-9-6-7 9-1z" /></svg>
+            </div>
+            <div>
+              <h3>ssx3-decomp</h3>
+              <p>
+                The native port, recompiler and renderer come from
+                <a href="https://github.com/andersfischernielsen/ssx3-decomp">ssx3-decomp</a>, written by
+                <a href="https://github.com/andersfischernielsen">Anders Fischer Nielsen</a>
+                and released under the MIT license.
+              </p>
+              <p class="legal">
+                <strong>Own disc required.</strong> s2X3 ships no game data and
+                is not affiliated with Electronic Arts. SSX is a trademark of EA.
               </p>
             </div>
-          </section>
+          </div>
+        </section>
+      </main>
 
-          <section class="panel specs" aria-labelledby="specs-title">
-            <div class="panel-inner">
-              <h2 id="specs-title">System</h2>
-              <ul class="spec-list">
-                <li><b>DISC</b><span>USA PS2 image</span></li>
-                <li><b>GPU</b><span>Vulkan capable</span></li>
-                <li><b>BUILD</b><span>Rust + Python 3</span></li>
-              </ul>
-              <p class="spec-note">MACOS ON THE ROADMAP</p>
-            </div>
-          </section>
-        </aside>
-      </div>
-
+      <!-- ── Footer wedge ──────────────────────────────────────────── -->
       <footer class="footer">
-        <span>© 2026 s2X3 · fan project · GPL-3.0-or-later</span>
-        <div class="foot-links">
-          <a href="https://github.com/bitm4ncer/s2x3">GitHub</a>
-          <a href="https://github.com/andersfischernielsen/ssx3-decomp">Engine</a>
-          <a href="https://github.com/bitm4ncer/s2x3/blob/main/LICENSE">License</a>
+        <div class="footer-inner">
+          <span>© 2026 s2X3 · fan project · GPL-3.0-or-later</span>
+          <div class="foot-links">
+            <a href="https://github.com/bitm4ncer/s2x3">GitHub</a>
+            <a href="https://github.com/andersfischernielsen/ssx3-decomp">Engine</a>
+            <a href="https://github.com/bitm4ncer/s2x3/blob/main/LICENSE">License</a>
+          </div>
+          <span>NO GAME DATA · SSX IS AN EA TRADEMARK</span>
         </div>
-        <span>NO GAME DATA · SSX IS AN EA TRADEMARK</span>
       </footer>
     </div>
-
-    <script src="script.js"></script>
   </body>
 </html>

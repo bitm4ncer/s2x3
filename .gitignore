@@ -16,3 +16,9 @@ apps/desktop/src/assets/buttons/*.png
 
 .design/*.af
 .design/*~lock~
+
+# local QA artifacts
+/qa/
+qa.js
+package.json
+package-lock.json
