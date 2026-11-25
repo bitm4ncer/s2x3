@@ -288,7 +288,7 @@ code {
   text-decoration: none;
   color: var(--navy);
   background: linear-gradient(180deg, #ffffff 0%, #dff2fd 100%);
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
 }
 
 .tab sup {
@@ -341,7 +341,14 @@ code {
   position: relative;
   margin-top: 250px;
   padding: 34px 40px 30px;
-  background: var(--chrome);
+  background: linear-gradient(
+    118deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(234, 248, 255, 0.62) 45%,
+    rgba(207, 238, 252, 0.55) 100%
+  );
+  backdrop-filter: blur(8px) saturate(1.15);
+  -webkit-backdrop-filter: blur(8px) saturate(1.15);
   clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
 }
 
@@ -411,9 +418,7 @@ code {
 }
 
 .badge-ghost {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--navy-2);
-  border-radius: 0;
+  background: rgba(255, 255, 255, 0.45);
 }
 
 /* big navy CTA on the chrome panel */
@@ -560,7 +565,7 @@ code {
 .sec-title {
   position: relative;
   margin: 0;
-  padding: 6px 22px 7px 16px;
+  padding: 6px 24px 7px 16px;
   font-family: var(--display);
   font-style: italic;
   font-weight: 700;
@@ -570,17 +575,7 @@ code {
   color: #fff;
   text-shadow: 1px 2px 0 rgba(3, 22, 43, 0.55);
   background: var(--navygrad);
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
-}
-
-.sec-title::after {
-  content: "";
-  position: absolute;
-  right: 8px;
-  top: 4px;
-  bottom: 4px;
-  width: 4px;
-  background: var(--orange-2);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
 }
 
 .sec-slash {
@@ -745,7 +740,7 @@ code {
   letter-spacing: 0.1em;
   color: var(--navy);
   background: rgba(255, 255, 255, 0.85);
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
 }
 
 .plat-chip img {
@@ -851,7 +846,7 @@ code {
   color: #fff;
   text-shadow: 1px 1px 0 rgba(3, 22, 43, 0.5);
   background: var(--navygrad);
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%);
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
 }
 
 .step-num-hot {
@@ -975,8 +970,7 @@ code {
   margin-top: 8px;
 }
 
-.platforms a,
-.plat-static {
+.platforms a {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1011,11 +1005,6 @@ code {
 .tag-hot {
   color: #fff;
   background: var(--orange);
-}
-
-.tag-req {
-  color: #7c1d00;
-  background: var(--orange-2);
 }
 
 .plat-note {
