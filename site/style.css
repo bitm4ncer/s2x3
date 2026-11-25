@@ -843,16 +843,26 @@ code {
 }
 
 .feat {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 4px 14px;
+  align-items: start;
   padding: 16px 20px 15px 16px;
   background: rgba(255, 255, 255, 0.55);
   border-radius: var(--radius-sm);
 }
 
 .feat-ico {
-  flex: none;
+  grid-row: 1 / span 2;
+}
+
+.feat h3 {
+  margin: 2px 0 0;
+  align-self: center;
+  white-space: nowrap;
+}
+
+.feat-ico {
   display: grid;
   place-items: center;
   width: 44px;
