@@ -199,6 +199,159 @@ fn set_paths(engine_root: String, iso: String, saves: String) -> Result<StateDto
     Ok(state_dto(&config, engine.as_ref()))
 }
 
+const ENGINE_URL: &str = "https://github.com/andersfischernielsen/ssx3-decomp.git";
+
+#[tauri::command]
+fn set_iso(iso: String) -> Result<StateDto, String> {
+    let (mut config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    let path = PathBuf::from(&iso);
+    if !path.is_file() {
+        return Err(format!("disc image not found: {}", path.display()));
+    }
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if !matches!(ext.as_str(), "iso" | "bin" | "img") {
+        return Err("pick an .iso, .bin or .img disc image".into());
+    }
+    config.paths.iso = path;
+    config.save().map_err(|e| format!("{e:#}"))?;
+    let (config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    Ok(state_dto(&config, engine.as_ref()))
+}
+
+#[tauri::command]
+fn choose_iso() -> Result<StateDto, String> {
+    let path = rfd::FileDialog::new()
+        .add_filter("Disc image", &["iso", "bin", "img"])
+        .pick_file()
+        .ok_or("cancelled")?;
+    set_iso(path.display().to_string())
+}
+
+#[tauri::command]
+fn set_engine_root(root: String) -> Result<StateDto, String> {
+    let (mut config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    let path = PathBuf::from(&root);
+    if !path.is_dir() {
+        return Err(format!("folder not found: {}", path.display()));
+    }
+    config.engine.root = path;
+    config.save().map_err(|e| format!("{e:#}"))?;
+    let (config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    Ok(state_dto(&config, engine.as_ref()))
+}
+
+fn spawn_build(root: &Path, iso: &Path, command: &str) -> Result<u32, String> {
+    std::fs::create_dir_all(root).map_err(|e| format!("create {}: {e}", root.display()))?;
+    let log = slope3_core::Config::load()
+        .map_err(|e| format!("{e:#}"))?
+        .resolved()
+        .paths
+        .saves
+        .join("install.log");
+    if let Some(dir) = log.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let out = std::fs::File::create(&log).map_err(|e| format!("create {}: {e}", log.display()))?;
+    let err = out.try_clone().map_err(|e| format!("{e}"))?;
+    let mut child = std::process::Command::new("bash")
+        .arg("-lc")
+        .arg(command)
+        .current_dir(root)
+        .env("SSX3_ISO", iso)
+        .stdout(out)
+        .stderr(err)
+        .spawn()
+        .map_err(|e| format!("start build: {e}"))?;
+    let pid = child.id();
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(pid)
+}
+
+#[tauri::command]
+fn bootstrap_engine() -> Result<u32, String> {
+    let (config, _) = load().map_err(|e| format!("{e:#}"))?;
+    let root = config.engine.root.clone();
+    let iso = config.paths.iso.clone();
+    let cmd = format!(
+        "set -e; if [ ! -f tools/setup.py ]; then git clone --depth 1 {ENGINE_URL} .; fi; python3 tools/setup.py && cargo build --profile game -p ssx3"
+    );
+    spawn_build(&root, &iso, &cmd)
+}
+
+#[tauri::command]
+fn update_engine() -> Result<u32, String> {
+    let (config, _) = load().map_err(|e| format!("{e:#}"))?;
+    let root = config.engine.root.clone();
+    let iso = config.paths.iso.clone();
+    spawn_build(
+        &root,
+        &iso,
+        "set -e; git pull --ff-only; python3 tools/setup.py && cargo build --profile game -p ssx3",
+    )
+}
+
+#[derive(Serialize)]
+struct UpdateDto {
+    available: bool,
+    local: String,
+    remote: String,
+    detail: String,
+}
+
+#[tauri::command]
+fn check_engine_update() -> Result<UpdateDto, String> {
+    let (config, _) = load().map_err(|e| format!("{e:#}"))?;
+    let root = config.engine.root;
+    if !root.join(".git").exists() {
+        return Ok(UpdateDto {
+            available: false,
+            local: String::new(),
+            remote: String::new(),
+            detail: "not a git checkout".into(),
+        });
+    }
+    let local = std::process::Command::new("git")
+        .args(["-C"])
+        .arg(&root)
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .map_err(|e| format!("git: {e}"))?;
+    let remote = std::process::Command::new("git")
+        .args(["-C"])
+        .arg(&root)
+        .args(["ls-remote", "origin", "HEAD"])
+        .output()
+        .map_err(|e| format!("git: {e}"))?;
+    let local_s = String::from_utf8_lossy(&local.stdout).trim().to_string();
+    let remote_line = String::from_utf8_lossy(&remote.stdout);
+    let remote_s = remote_line.split_whitespace().next().unwrap_or("").to_string();
+    Ok(UpdateDto {
+        available: !remote_s.is_empty() && remote_s != local_s,
+        detail: if remote_s.is_empty() {
+            "cannot reach the repository".into()
+        } else if remote_s == local_s {
+            "up to date".into()
+        } else {
+            "a newer engine commit is available".into()
+        },
+        local: local_s.chars().take(8).collect(),
+        remote: remote_s.chars().take(8).collect(),
+    })
+}
+
+#[tauri::command]
+fn install_log_tail(lines: usize) -> Result<String, String> {
+    let (config, _) = load().map_err(|e| format!("{e:#}"))?;
+    let path = config.paths.saves.join("install.log");
+    read_tail(&path, lines.clamp(1, 2000)).map_err(|e| format!("{e:#}"))
+}
+
 #[tauri::command]
 fn saves_info() -> Result<slope3_core::SavesInfo, String> {
     let (_config, engine) = load().map_err(|e| format!("{e:#}"))?;
@@ -288,6 +441,13 @@ pub fn run() {
             state,
             save_settings,
             set_paths,
+            set_iso,
+            choose_iso,
+            set_engine_root,
+            bootstrap_engine,
+            update_engine,
+            check_engine_update,
+            install_log_tail,
             saves_info,
             export_saves,
             import_saves,

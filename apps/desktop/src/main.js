@@ -2,6 +2,8 @@ const hasTauri = !!window.__TAURI__;
 const invoke = hasTauri ? window.__TAURI__.core.invoke : null;
 
 const $ = (id) => document.getElementById(id);
+const forcedSetup = () =>
+  location.search.includes("setup") || localStorage.getItem("setupPreview") === "1";
 let state = null;
 let saveTimer = null;
 
@@ -69,6 +71,32 @@ const mockState = {
 };
 
 function mockInvoke(cmd, args) {
+  if (cmd === "state") {
+    if (location.search.includes("setup")) {
+      return Promise.resolve({
+        ...structuredClone(mockState),
+        binary: { state: "missing", detail: "target/game/ssx3" },
+        disc: { state: "missing", detail: "no disc image" },
+      });
+    }
+    return Promise.resolve(structuredClone(mockState));
+  }
+  if (cmd === "choose_iso" || cmd === "set_iso") {
+    mockState.iso = "/run/media/disc/SSX 3 (USA).iso";
+    mockState.disc = { state: "ready", detail: "SLUS_207.72, 2.8 GB" };
+    return Promise.resolve(structuredClone(mockState));
+  }
+  if (cmd === "bootstrap_engine" || cmd === "update_engine" || cmd === "install")
+    return Promise.resolve(777);
+  if (cmd === "check_engine_update")
+    return Promise.resolve({
+      available: true,
+      local: "321776e",
+      remote: "9f31c20",
+      detail: "a newer engine commit is available",
+    });
+  if (cmd === "install_log_tail")
+    return Promise.resolve("[setup] cloning ssx3-decomp…\n[setup] cargo build --profile game -p ssx3\n");
   if (cmd === "launch") return Promise.resolve(4242);
   if (cmd === "install") return Promise.resolve(777);
   if (cmd === "saves_info")
@@ -192,14 +220,19 @@ function collect() {
 function render(next) {
   state = next;
 
+  const preview = forcedSetup();
+  const engineReady = !preview && state.binary.state === "ready";
+  const discReady = !preview && state.disc.state === "ready";
+  const ready = engineReady && discReady;
   const chip = (id, ok, text) => {
     const el = $(id);
     el.classList.toggle("ok", ok);
     el.classList.toggle("bad", !ok);
     el.querySelector(".v").textContent = text;
   };
-  chip("chip-engine", state.binary.state === "ready", state.binary.state === "ready" ? "ready" : "missing");
-  chip("chip-disc", state.disc.state === "ready", state.disc.state === "ready" ? "disc ok" : "no disc");
+  chip("chip-engine", engineReady, engineReady ? "ready" : "missing");
+  chip("chip-disc", discReady, discReady ? "disc ok" : "no disc");
+
 
   $("rig-engine").textContent = state.engine_root;
   $("rig-disc").textContent = state.disc.detail;
@@ -229,8 +262,25 @@ function render(next) {
     }
   });
 
-  const ready = state.binary.state === "ready" && state.disc.state === "ready";
+  $("setup").hidden = ready;
+  $("settings-card").hidden = !ready;
+  $("install-engine").hidden = engineReady;
+  $("engine-note").hidden = engineReady;
+  $("grid").classList.toggle("setup-mode", !ready);
+  if (!engineReady) {
+    $("update-engine").hidden = true;
+    $("update-note").hidden = true;
+  }
+  $("drop-note").textContent = discReady
+    ? "disc image selected"
+    : "or drag the file anywhere into this window";
+  $("drop").classList.toggle("has-disc", discReady);
+
   $("play").disabled = !ready;
+  if (engineReady && !checkEngineUpdate.done) {
+    checkEngineUpdate.done = true;
+    setTimeout(checkEngineUpdate, 400);
+  }
   $("play-sub").textContent = ready
     ? "start the game"
     : state.binary.state !== "ready"
@@ -284,9 +334,101 @@ async function refreshSaves() {
   }
 }
 
+async function setIso(path) {
+  try {
+    const next = await call("set_iso", { iso: path });
+    render(next);
+    toast("Disc image set");
+  } catch (e) {
+    /* toast already shown */
+  }
+}
+
+async function pollBuild() {
+  $("setup-log").hidden = false;
+  const timer = setInterval(async () => {
+    try {
+      const text = await call("install_log_tail", { lines: 40 });
+      $("setup-log").textContent = text || "starting…";
+      $("setup-log").scrollTop = $("setup-log").scrollHeight;
+    } catch (e) {}
+  }, 2000);
+  setTimeout(async () => {
+    clearInterval(timer);
+    await refreshState();
+    if ($("setup").hidden) toast("Engine ready");
+  }, 30000);
+}
+
+async function checkEngineUpdate() {
+  if (!state || state.binary.state !== "ready" || forcedSetup()) return;
+  try {
+    const u = await call("check_engine_update");
+    const btn = $("update-engine");
+    btn.hidden = !u.available;
+    $("update-note").hidden = !u.available;
+    if (u.available) {
+      $("update-note").textContent = `Engine ${u.local} → ${u.remote}: ${u.detail}`;
+    }
+  } catch (e) {}
+}
+
 function bind() {
   hints();
   refreshSaves();
+  setTimeout(checkEngineUpdate, 800);
+
+  $("browse-iso").addEventListener("click", async () => {
+    try {
+      render(await call("choose_iso"));
+      toast("Disc image set");
+    } catch (e) {
+      if (!String(e).includes("cancelled")) toast(String(e), true);
+    }
+  });
+
+  $("install-engine").addEventListener("click", async () => {
+    const pid = await call("bootstrap_engine");
+    toast(`Engine download started (pid ${pid})`);
+    pollBuild();
+  });
+
+  $("update-engine").addEventListener("click", async () => {
+    const pid = await call("update_engine");
+    toast(`Engine update started (pid ${pid})`);
+    pollBuild();
+  });
+
+  const drop = $("drop");
+  const over = (on) => drop.classList.toggle("over", on);
+  ["dragenter", "dragover"].forEach((name) =>
+    document.addEventListener(name, (e) => {
+      e.preventDefault();
+      over(true);
+    }),
+  );
+  ["dragleave", "drop"].forEach((name) =>
+    document.addEventListener(name, () => over(false)),
+  );
+  document.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      const path = file.path || file.name;
+      if (path) setIso(path);
+    }
+  });
+
+  if (hasTauri) {
+    const ev = window.__TAURI__.event;
+    ev.listen("tauri://drag-enter", () => over(true));
+    ev.listen("tauri://drag-leave", () => over(false));
+    ev.listen("tauri://drag-drop", (e) => {
+      over(false);
+      const path = e.payload?.paths?.[0];
+      if (path) setIso(path);
+    });
+  }
 
   $("export-saves").addEventListener("click", async () => {
     try {
@@ -330,6 +472,12 @@ function bind() {
   });
 
   document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && (e.key === "D" || e.key === "d")) {
+      const on = localStorage.getItem("setupPreview") === "1";
+      localStorage.setItem("setupPreview", on ? "0" : "1");
+      refreshState();
+      return;
+    }
     if (e.key === "Enter" && !e.repeat && document.activeElement.tagName !== "INPUT") {
       if (!$("play").disabled) play();
     }

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Slope3 - SSX 3 launcher</title>
+    <title>slope3 · SSX 3 launcher</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -21,9 +21,9 @@
 
     <header class="top">
       <div class="brand">
-        <img class="app-icon" src="assets/icon.png" alt="Slope3" />
+        <img class="app-icon" src="assets/icon.png" alt="slope3" />
         <div class="brand-text">
-          <h1>SLOPE3</h1>
+          <h1>slope3</h1>
           <p>SSX 3 launcher</p>
         </div>
       </div>
@@ -44,20 +44,44 @@
     <main>
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">PLAYSTATION 2 &middot; RUST PORT</p>
+          <p class="eyebrow">PLAYSTATION 2 &middot; USA &middot; RUST PORT</p>
           <h2>Drop in.<br /><span class="accent">Ride again.</span></h2>
-          <p class="sub">Your disc, your settings, one launcher. Nothing is emulated here &mdash; Slope3 starts the native port and stays out of the way.</p>
+          <p class="sub">Your disc, your settings, one launcher. Nothing is emulated here. slope3 starts the native port and stays out of the way. Built for the USA disc, <code>SLUS_207.72</code>.</p>
         </div>
         <div class="hero-tags">
-          <span>60&ndash;240 Hz</span>
+          <span>60 to 240 Hz</span>
           <span>Widescreen</span>
           <span>HD textures</span>
           <span>Plugins</span>
         </div>
       </section>
 
-      <div class="grid">
-        <section class="card settings">
+      <section class="setup" id="setup" hidden>
+        <div class="drop" id="drop">
+          <div class="drop-badge">ISO</div>
+          <h3>Drop your SSX 3 disc image</h3>
+          <p>PlayStation 2 &middot; <code>SLUS_207.72</code> &middot; .iso, .bin or .img</p>
+          <button class="ghost small" id="browse-iso">Browse&hellip;</button>
+          <small id="drop-note">or drag the file anywhere into this window</small>
+        </div>
+        <div class="engine-box">
+          <div class="card-head"><h3>Engine</h3></div>
+          <p id="engine-note">The Rust port is not installed yet. slope3 downloads the
+            <code>ssx3-decomp</code> sources and builds them locally.</p>
+          <div class="engine-actions">
+            <button class="play small" id="install-engine">
+              <span class="play-label">download &amp; install</span>
+              <span class="play-sub">engine + recompiler</span>
+            </button>
+            <button class="ghost" id="update-engine" hidden>Update engine</button>
+          </div>
+          <p class="muted" id="update-note" hidden></p>
+          <pre id="setup-log" hidden></pre>
+        </div>
+      </section>
+
+      <div class="grid" id="grid">
+        <section class="card settings" id="settings-card">
           <div class="card-head">
             <h3>Session settings</h3>
             <span class="muted" id="settings-state">stored in the engine's cfg</span>
@@ -68,9 +92,10 @@
         <aside class="card side">
           <div class="card-head"><h3>Rig</h3></div>
           <dl class="rig">
-            <div><dt>Engine</dt><dd id="rig-engine">&mdash;</dd></div>
-            <div><dt>Disc</dt><dd id="rig-disc">&mdash;</dd></div>
-            <div><dt>Saves</dt><dd id="rig-saves">&mdash;</dd></div>
+            <div><dt>Region</dt><dd>USA &middot; SLUS_207.72</dd></div>
+            <div><dt>Engine</dt><dd id="rig-engine">not set</dd></div>
+            <div><dt>Disc</dt><dd id="rig-disc">not set</dd></div>
+            <div><dt>Saves</dt><dd id="rig-saves">not set</dd></div>
           </dl>
 
           <details class="paths">
