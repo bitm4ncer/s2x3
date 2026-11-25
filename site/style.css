@@ -764,6 +764,21 @@ code {
   color: #cfe2ee;
 }
 
+.disclaimer {
+  max-width: 46ch;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #aec9da;
+}
+
+.disclaimer b {
+  color: var(--orange-2);
+}
+
+.disclaimer a {
+  color: var(--cyan);
+}
+
 .links {
   margin: 8px 0 0;
   font-family: var(--ui);
