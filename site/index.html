@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Tomorrow:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
@@ -22,6 +22,16 @@
     <div class="scene" aria-hidden="true">
       <div class="scene-photo"></div>
       <div class="scene-streaks"></div>
+      <svg class="scene-flakes" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <g id="flake">
+            <path d="M0 -46 L0 46 M-40 -23 L40 23 M-40 23 L40 -23 M-16 -34 L0 -46 L16 -34 M-16 34 L0 46 L16 34 M-42 -13 L-40 -23 L-30 -30 M42 -13 L40 -23 L30 -30 M-42 13 L-40 23 L-30 30 M42 13 L40 23 L30 30" />
+          </g>
+        </defs>
+        <use href="#flake" x="70" y="150" transform="scale(1.6)" opacity="0.5" />
+        <use href="#flake" x="620" y="640" transform="scale(2.4)" opacity="0.4" />
+        <use href="#flake" x="1230" y="330" transform="scale(1.9)" opacity="0.45" />
+      </svg>
       <div class="scene-shade"></div>
       <div class="scene-snow"></div>
     </div>
@@ -56,6 +66,28 @@
       <!-- ── Hero: mountain photo, flat chrome panel, what's-new wedge ── -->
       <header class="hero">
         <div class="hero-stage">
+          <svg class="hero-ribbon" viewBox="0 0 140 620" aria-hidden="true">
+            <defs>
+              <linearGradient id="rib" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#f8842a" />
+                <stop offset="1" stop-color="#d94f04" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M-30 -30 C 96 30, 96 128, 24 186 C -44 240, 104 296, 64 424 C 38 508, -14 540, -34 640"
+              fill="none"
+              stroke="url(#rib)"
+              stroke-width="54"
+              stroke-linecap="round"
+            />
+          </svg>
+
+          <div class="hud" aria-hidden="true">
+            <span class="hud-meter"><i></i></span>
+            <span class="hud-temp">-13°C</span>
+            <span class="hud-tag">MCOMM</span>
+          </div>
+
           <div class="hero-copy">
             <p class="kicker">THE UNOFFICIAL SSX 3 LAUNCHER // PS2</p>
             <h1>
@@ -288,13 +320,34 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>Launcher</td><td><span class="ok">Done</span></td></tr>
-                  <tr><td>Settings</td><td><span class="ok">Done</span></td></tr>
-                  <tr><td>Saves</td><td><span class="ok">Done</span></td></tr>
-                  <tr><td>Engine update</td><td><span class="ok">Done</span></td></tr>
-                  <tr><td>Menu fill</td><td><span class="next">Next</span></td></tr>
-                  <tr><td>Tricky courses</td><td><span class="later">Later</span></td></tr>
-                  <tr><td>Multiplayer</td><td><span class="later">Later</span></td></tr>
+                  <tr>
+                    <td>Launcher</td>
+                    <td><span class="state"><span class="meter m-full" role="img" aria-label="Done"><i></i></span><b>Done</b></span></td>
+                  </tr>
+                  <tr>
+                    <td>Settings</td>
+                    <td><span class="state"><span class="meter m-full" role="img" aria-label="Done"><i></i></span><b>Done</b></span></td>
+                  </tr>
+                  <tr>
+                    <td>Saves</td>
+                    <td><span class="state"><span class="meter m-full" role="img" aria-label="Done"><i></i></span><b>Done</b></span></td>
+                  </tr>
+                  <tr>
+                    <td>Engine update</td>
+                    <td><span class="state"><span class="meter m-full" role="img" aria-label="Done"><i></i></span><b>Done</b></span></td>
+                  </tr>
+                  <tr>
+                    <td>Menu fill</td>
+                    <td><span class="state"><span class="meter m-part" role="img" aria-label="Next"><i></i></span><b>Next</b></span></td>
+                  </tr>
+                  <tr>
+                    <td>Tricky courses</td>
+                    <td><span class="state"><span class="meter m-none" role="img" aria-label="Later"><i></i></span><b>Later</b></span></td>
+                  </tr>
+                  <tr>
+                    <td>Multiplayer</td>
+                    <td><span class="state"><span class="meter m-none" role="img" aria-label="Later"><i></i></span><b>Later</b></span></td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -351,8 +404,22 @@
         </section>
       </main>
 
-      <!-- ── Footer wedge ──────────────────────────────────────────── -->
+      <!-- ── Footer: action bar + legal ribbon ─────────────────────── -->
       <footer class="footer">
+        <div class="actions">
+          <a href="https://github.com/bitm4ncer/s2x3/releases/latest">
+            <i class="glyph g-a" aria-hidden="true">A</i> Get the alpha
+          </a>
+          <a href="https://github.com/bitm4ncer/s2x3/blob/main/ROADMAP.md">
+            <i class="glyph g-y" aria-hidden="true">Y</i> Roadmap
+          </a>
+          <a href="https://github.com/bitm4ncer/s2x3">
+            <i class="glyph g-x" aria-hidden="true">X</i> Source
+          </a>
+          <a href="https://github.com/bitm4ncer/s2x3/commits/main">
+            <i class="glyph g-b" aria-hidden="true">B</i> Changes
+          </a>
+        </div>
         <div class="footer-inner">
           <span>© 2026 s2X3 · fan project · GPL-3.0-or-later</span>
           <div class="foot-links">
