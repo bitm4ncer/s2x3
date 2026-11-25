@@ -6,6 +6,7 @@ use slope3_core::{
     Capabilities, Config, EngineAdapter, FieldKind, LaunchConfig, Status,
 };
 use slope3_engines::by_id;
+use tauri::Manager;
 
 #[derive(Serialize)]
 struct FieldDto {
@@ -451,6 +452,12 @@ fn read_tail(path: &Path, lines: usize) -> anyhow::Result<String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.set_icon(tauri::include_image!("icons/icon.png"));
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             state,
             save_settings,
