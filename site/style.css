@@ -687,3 +687,13 @@ footer {
   margin-top: 12px;
   padding: 8px 16px;
 }
+
+.card p a {
+  color: var(--orange);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.card p a:hover {
+  color: #d9530a;
+}
