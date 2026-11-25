@@ -54,9 +54,9 @@ def load_font(size: int):
     return ImageFont.load_default()
 
 
-def asset_glyph(size: int, letter: str, buttons: Path) -> Image.Image | None:
+def asset_glyph(size: int, letter: str, buttons: Path, variant: int = 3) -> Image.Image | None:
     """The premium button PNG for a letter, trimmed and scaled to the slot."""
-    path = buttons / f"button_xbox_digital_{letter.lower()}_4.png"
+    path = buttons / f"button_xbox_digital_{letter.lower()}_{variant}.png"
     if not path.is_file():
         return None
     img = Image.open(path).convert("RGBA")
@@ -85,12 +85,12 @@ def draw_glyph(size: int, letter: str, colour: str) -> Image.Image:
     return tile.resize((size, size), Image.LANCZOS)
 
 
-def patch(src: Path, buttons: Path | None = None) -> Image.Image:
+def patch(src: Path, buttons: Path | None = None, variant: int = 3) -> Image.Image:
     img = Image.open(src).convert("RGBA")
     for x0, y0, x1, y1, letter, colour in GLYPHS:
         w, h = x1 - x0 + 1, y1 - y0 + 1
         img.paste((0, 0, 0, 0), (x0, y0, x1 + 1, y1 + 1))
-        glyph = asset_glyph(w, letter, buttons) if buttons else None
+        glyph = asset_glyph(w, letter, buttons, variant) if buttons else None
         img.alpha_composite(glyph or draw_glyph(w, letter, colour), (x0, y0))
     return img
 
@@ -99,6 +99,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dump", required=True, help="texture dump directory")
     ap.add_argument("--out", required=True, help="texture replacement directory")
+    ap.add_argument(
+        "--variant",
+        type=int,
+        default=3,
+        help="asset style number (3 = dark button, coloured letter)",
+    )
     ap.add_argument(
         "--buttons",
         default=os.environ.get("XBOX_BUTTONS_DIR", ""),
@@ -123,7 +129,7 @@ def main() -> int:
             print(f"skip {name} (not in the dump)", file=sys.stderr)
             continue
         dst = out / name
-        patch(src, Path(args.buttons) if args.buttons else None).save(dst)
+        patch(src, Path(args.buttons) if args.buttons else None, args.variant).save(dst)
         print(f"wrote {dst}")
         written += 1
 
