@@ -534,3 +534,73 @@ footer {
     align-items: flex-start;
   }
 }
+
+.credits {
+  padding: 52px 0 38px;
+}
+
+.credits-lede {
+  max-width: 720px;
+  margin: 0 0 24px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(11, 42, 73, 0.88);
+}
+
+.credits-lede strong {
+  color: var(--navy);
+}
+
+.credit-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.credit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 24px 26px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--orange);
+  text-decoration: none;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+  box-shadow: 0 18px 40px rgba(11, 42, 73, 0.14);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.credit-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 48px rgba(11, 42, 73, 0.2);
+}
+
+.credit-card span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+
+.credit-card b {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--navy);
+}
+
+.credit-card small {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .credit-links {
+    grid-template-columns: 1fr;
+  }
+}

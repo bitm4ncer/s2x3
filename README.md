@@ -108,6 +108,6 @@ the engine notices when you redistribute it.
 
 ## Credits
 
-- [ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp) by Anders Fischer Nielsen, MIT.
+- [ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp) by [Anders Fischer Nielsen](https://github.com/andersfischernielsen), MIT.
 - [Tauri](https://tauri.app) for the desktop shell.
 - The SSX 3 community for testing, saves and feedback.
