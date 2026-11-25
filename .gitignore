@@ -9,3 +9,5 @@ apps/desktop/src-tauri/gen/
 apps/desktop/src/fonts/*.ttf
 # premium button art (third party, do not redistribute)
 apps/desktop/src/assets/buttons/*.png
+
+.design/*~lock~

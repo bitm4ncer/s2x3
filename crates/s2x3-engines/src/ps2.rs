@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 
 use anyhow::{Context, Result};
-use slope3_core::{
+use s2x3_core::{
     human_size, Capabilities, Detection, EngineAdapter, LaunchConfig, SettingsField, SavesInfo,
     Status, FieldKind,
 };
@@ -197,11 +197,11 @@ fn known(key: &str) -> bool {
 }
 
 pub struct Ps2Rust {
-    config: slope3_core::Config,
+    config: s2x3_core::Config,
 }
 
 impl Ps2Rust {
-    pub fn new(config: slope3_core::Config) -> Self {
+    pub fn new(config: s2x3_core::Config) -> Self {
         Self { config }
     }
 
@@ -343,7 +343,7 @@ impl EngineAdapter for Ps2Rust {
             }
         }
         let mut text = String::from(
-            "# Written by Slope3. Lines are KEY=VALUE; environment variables win.\n",
+            "# Written by S2X3. Lines are KEY=VALUE; environment variables win.\n",
         );
         for (k, v) in &all {
             text.push_str(&format!("{k}={v}\n"));

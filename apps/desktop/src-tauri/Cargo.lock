@@ -2709,6 +2709,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
+name = "s2x3-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "toml 0.8.23",
+]
+
+[[package]]
+name = "s2x3-desktop"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rfd",
+ "s2x3-core",
+ "s2x3-engines",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+]
+
+[[package]]
+name = "s2x3-engines"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "s2x3-core",
+]
+
+[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3034,37 +3065,6 @@ name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
-
-[[package]]
-name = "slope3-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde",
- "toml 0.8.23",
-]
-
-[[package]]
-name = "slope3-desktop"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "rfd",
- "serde",
- "serde_json",
- "slope3-core",
- "slope3-engines",
- "tauri",
- "tauri-build",
-]
-
-[[package]]
-name = "slope3-engines"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "slope3-core",
-]
 
 [[package]]
 name = "smallvec"

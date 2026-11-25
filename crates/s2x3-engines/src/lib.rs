@@ -4,7 +4,7 @@ mod ps2;
 
 pub use ps2::Ps2Rust;
 
-use slope3_core::{Config, EngineAdapter};
+use s2x3_core::{Config, EngineAdapter};
 
 /// Build the adapter named in the config. Unknown ids are an error, so a
 /// typo never silently launches the wrong engine.

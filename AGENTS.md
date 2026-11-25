@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Instructions for anyone (human or agent) working on Slope3.
+Instructions for anyone (human or agent) working on S2X3.
 
 ## What this project is
 
@@ -16,7 +16,7 @@ game distribution.
    game.
 2. **No engine code in this repo.** The engines are external checkouts.
    Never vendor, copy or patch their sources here.
-3. **Licenses.** Slope3 is GPL-3.0-or-later. The PS2 engine is MIT; keep its
+3. **Licenses.** S2X3 is GPL-3.0-or-later. The PS2 engine is MIT; keep its
    notices. The Xbox recomp is GPL-2.0-or-later. Do not add assets with
    unclear licenses; bundled fonts must be OFL.
 4. **Trademarks.** "SSX" is an EA trademark. Use it descriptively
@@ -27,7 +27,7 @@ game distribution.
 
 Engine issues and launcher issues must never be mixed in one change.
 
-### A. Slope3 (this repo)
+### A. S2X3 (this repo)
 
 UI, installer, adapters, settings, logs, packaging, docs. Bugs that are
 caused by the launcher (wrong paths, wrong env, bad defaults, UI) are fixed
@@ -46,7 +46,7 @@ Workflow when a bug shows up while playing:
    logs, first hypothesis, affected engine commit.
 3. Work in the engine checkout (default
    `~/Projects/ssx3/ssx3-decomp`), on a branch
-   `slope3/<slug>`; keep the diff minimal and add a test or a scripted
+   `s2x3/<slug>`; keep the diff minimal and add a test or a scripted
    scenario where possible.
 4. Open a PR against `andersfischernielsen/ssx3-decomp` with the note's
    summary. Do not bundle unrelated changes.
@@ -54,22 +54,22 @@ Workflow when a bug shows up while playing:
    needs an unmerged fix, gate it: record the engine commit/PR in the note,
    keep a `[local]` marker, and make the launcher degrade gracefully when the
    fix is absent.
-6. Never copy the patched engine code into Slope3 and never make the launcher
+6. Never copy the patched engine code into S2X3 and never make the launcher
    the distribution channel for a patched engine.
 
 ## Repo layout
 
 ```
-crates/slope3-core/      models, config, EngineAdapter
-crates/slope3-engines/   one module per engine (ps2.rs today)
-crates/slope3-cli/       `slope3` command line (the reference client)
+crates/s2x3-core/      models, config, EngineAdapter
+crates/s2x3-engines/   one module per engine (ps2.rs today)
+crates/s2x3-cli/       `s2x3` command line (the reference client)
 apps/desktop/            Tauri app: src/ (UI), src-tauri/ (commands)
 docs/architecture.md     how the pieces fit
 docs/upstream/           per-bug engine notes
 ROADMAP.md               phases and acceptance criteria
 ```
 
-Other front ends (web, mobile) live in `apps/` and use `slope3-core` the same
+Other front ends (web, mobile) live in `apps/` and use `s2x3-core` the same
 way as the desktop app.
 
 ## Conventions

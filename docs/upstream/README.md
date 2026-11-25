@@ -1,7 +1,7 @@
 # Upstream notes
 
 One file per engine bug, named `YYYY-MM-DD-<slug>.md`. The rule: the fix
-lives in `ssx3-decomp`, never in Slope3 (see `AGENTS.md`).
+lives in `ssx3-decomp`, never in S2X3 (see `AGENTS.md`).
 
 Template:
 
@@ -11,7 +11,7 @@ Template:
 - Engine commit: <sha>
 - Found: <date>, by <name>
 - Status: open | patched locally | PR #<n> | merged
-- Slope3 setting/context: <tick rate, resolution, ...>
+- S2X3 setting/context: <tick rate, resolution, ...>
 
 ## Symptoms
 What the player sees. Include screenshots and log lines.

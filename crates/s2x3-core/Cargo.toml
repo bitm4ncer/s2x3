@@ -1,5 +1,5 @@
 [package]
-name = "slope3-core"
+name = "s2x3-core"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

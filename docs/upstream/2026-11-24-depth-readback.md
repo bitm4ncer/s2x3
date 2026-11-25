@@ -59,5 +59,5 @@ deviation).
 ## Launcher workaround (not a fix)
 
 `SSX3_DEPTH_SYNC=0` is worth trying to see whether the latest-depth path
-avoids the stall. Slope3 must not depend on an unmerged engine patch; if the
+avoids the stall. S2X3 must not depend on an unmerged engine patch; if the
 upstream fix lands, pin the engine version in the installer.

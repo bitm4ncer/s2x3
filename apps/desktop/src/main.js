@@ -21,7 +21,7 @@ function toast(text, bad = false) {
    the real commands. */
 const mockState = {
   version: "0.1.0",
-  config_path: "~/.config/slope3/config.toml",
+  config_path: "~/.config/s2x3/config.toml",
   engine_id: "ps2-rust",
   engine_name: "SSX 3 (PlayStation 2, Rust port)",
   engine_root: "/home/player/Projects/ssx3/ssx3-decomp",

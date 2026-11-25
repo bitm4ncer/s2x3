@@ -1,3 +1,3 @@
 fn main() {
-    slope3_desktop_lib::run()
+    s2x3_desktop_lib::run()
 }

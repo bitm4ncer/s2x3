@@ -1,15 +1,15 @@
 [package]
-name = "slope3-cli"
+name = "s2x3-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "slope3"
+name = "s2x3"
 path = "src/main.rs"
 
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-slope3-core = { path = "../slope3-core" }
-slope3-engines = { path = "../slope3-engines" }
+s2x3-core = { path = "../s2x3-core" }
+s2x3-engines = { path = "../s2x3-engines" }

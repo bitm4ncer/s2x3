@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/icon.png" alt="slope3" width="120">
+  <img src="docs/assets/icon.png" alt="S2X3" width="120">
 </p>
 
-<h1 align="center">slope3</h1>
+<h1 align="center">S2X3</h1>
 
 <p align="center">
   <strong>A clean launcher and installer for the native SSX 3 port on PlayStation 2.</strong><br>
@@ -19,7 +19,7 @@
 
 ---
 
-slope3 is a desktop launcher for [ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp),
+S2X3 is a desktop launcher for [ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp),
 the native Rust port of SSX 3 for PlayStation 2. It detects your installation,
 edits the engine settings through a schema, starts the engine as a child
 process and keeps paths, saves and logs in one place.
@@ -27,9 +27,9 @@ process and keeps paths, saves and logs in one place.
 It is not an emulator, not a recompiler and not a game distribution. It ships
 no engine code and no game data. You bring your own USA disc image.
 
-![slope3 launcher](docs/assets/launcher.png)
+![S2X3 launcher](docs/assets/launcher.png)
 
-[**Website and screenshots →**](https://bitm4ncer.github.io/slope3/)
+[**Website and screenshots →**](https://bitm4ncer.github.io/s2x3/)
 
 ## Features
 
@@ -55,9 +55,9 @@ Build the CLI and the desktop app:
 
 ```sh
 git clone https://github.com/bitm4ncer/s2x3.git
-cd slope3
+cd s2x3
 cargo build --release
-./target/release/slope3 detect
+./target/release/s2x3 detect
 ```
 
 ```sh
@@ -75,7 +75,7 @@ SSX3_ISO="/path/to/SSX 3 (USA).iso" python3 tools/setup.py
 cargo build --profile game -p ssx3
 ```
 
-Point slope3 at the engine folder and the ISO in **Change paths**, then press
+Point S2X3 at the engine folder and the ISO in **Change paths**, then press
 **play**.
 
 ## Status
@@ -95,7 +95,7 @@ Planned:
 
 ## Legal
 
-SSX is a trademark of Electronic Arts. slope3 is an unofficial fan project,
+SSX is a trademark of Electronic Arts. S2X3 is an unofficial fan project,
 not affiliated with or endorsed by EA. You need your own copy of the game. The
 repository contains no game data, no ISO, no extracted textures and no
 recompiled game code. Xbox button art and the Archie font are local, third

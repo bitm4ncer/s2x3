@@ -1,6 +1,6 @@
-# Slope3 Roadmap
+# S2X3 Roadmap
 
-Slope3 is a launcher and installer for SSX 3 ports. The first engine is the
+S2X3 is a launcher and installer for SSX 3 ports. The first engine is the
 PlayStation 2 / Rust port (`ssx3-decomp`); the Xbox recomp can follow as a
 second adapter.
 
@@ -11,13 +11,13 @@ data.** It detects, configures and starts engines.
 
 ### Phase 0 - Foundations (done)
 
-- Rust workspace: `slope3-core` (contract), `slope3-engines` (adapters),
-  `slope3-cli` (`slope3`).
+- Rust workspace: `s2x3-core` (contract), `s2x3-engines` (adapters),
+  `s2x3-cli` (`s2x3`).
 - `EngineAdapter` with capabilities, settings schema, detection and launch.
 - `ps2-rust` adapter: disc serial check, settings file, memory card, env.
-- Config at `~/.config/slope3/config.toml`.
+- Config at `~/.config/s2x3/config.toml`.
 
-Acceptance: `slope3 detect` sees the disc and the engine; `slope3 launch`
+Acceptance: `s2x3 detect` sees the disc and the engine; `s2x3 launch`
 starts a playable game at 60 fps.
 
 ### Phase 1 - Desktop launcher v0.1 (done 2026-11-25)
@@ -118,5 +118,5 @@ Plan:
 4. Acceptance: screenshots of main menu, character/peak select, pause,
    results, lodge/shop and the intro, all filling the width without
    distortion; race HUD unchanged.
-5. Upstream branch `slope3/menu-fill` plus a note in `docs/upstream/`.
+5. Upstream branch `s2x3/menu-fill` plus a note in `docs/upstream/`.
 

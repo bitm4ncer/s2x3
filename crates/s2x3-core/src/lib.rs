@@ -1,4 +1,4 @@
-//! Slope3 core: models and the engine adapter contract.
+//! S2X3 core: models and the engine adapter contract.
 //!
 //! The launcher never links an engine. It writes settings, checks paths and
 //! starts a child process. Everything engine specific lives behind
@@ -12,7 +12,7 @@ use std::process::Child;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-pub const CONFIG_ENV: &str = "SLOPE3_CONFIG";
+pub const CONFIG_ENV: &str = "S2X3_CONFIG";
 
 /// What an engine can do. The UI shows fields and buttons from this, so a
 /// new engine does not need UI code.
@@ -187,22 +187,45 @@ pub struct Paths {
     pub texreplace: PathBuf,
 }
 
-/// `$SLOPE3_CONFIG`, else `$XDG_CONFIG_HOME/slope3/config.toml`, else
-/// `~/.config/slope3/config.toml`.
+/// `$S2X3_CONFIG`, else `$XDG_CONFIG_HOME/s2x3/config.toml`, else
+/// `~/.config/s2x3/config.toml`.
 pub fn config_path() -> PathBuf {
     if let Some(p) = std::env::var_os(CONFIG_ENV) {
         return PathBuf::from(p);
     }
     if let Some(dir) = std::env::var_os("XDG_CONFIG_HOME") {
+        return PathBuf::from(dir).join("s2x3").join("config.toml");
+    }
+    let home = std::env::var_os("HOME").unwrap_or_default();
+    PathBuf::from(home).join(".config").join("s2x3").join("config.toml")
+}
+
+/// Configuration path used before the project was renamed. Read once so an
+/// existing installation keeps its engine, disc and save paths.
+fn legacy_config_path() -> PathBuf {
+    if let Some(dir) = std::env::var_os("XDG_CONFIG_HOME") {
         return PathBuf::from(dir).join("slope3").join("config.toml");
     }
     let home = std::env::var_os("HOME").unwrap_or_default();
-    PathBuf::from(home).join(".config").join("slope3").join("config.toml")
+    PathBuf::from(home)
+        .join(".config")
+        .join("slope3")
+        .join("config.toml")
 }
 
 impl Config {
     pub fn load() -> Result<Self> {
-        Self::load_from(&config_path())
+        let path = config_path();
+        if !path.exists() && std::env::var_os(CONFIG_ENV).is_none() {
+            let old = legacy_config_path();
+            if old.exists() {
+                if let Some(parent) = path.parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+                let _ = std::fs::copy(&old, &path);
+            }
+        }
+        Self::load_from(&path)
     }
 
     pub fn load_from(path: &Path) -> Result<Self> {

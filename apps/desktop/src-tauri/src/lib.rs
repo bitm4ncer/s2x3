@@ -2,10 +2,10 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
-use slope3_core::{
+use s2x3_core::{
     Capabilities, Config, EngineAdapter, FieldKind, LaunchConfig, Status,
 };
-use slope3_engines::by_id;
+use s2x3_engines::by_id;
 use tauri::Manager;
 
 #[derive(Serialize)]
@@ -145,7 +145,7 @@ fn state_dto(config: &Config, engine: &dyn EngineAdapter) -> StateDto {
     let log_path = config.paths.saves.join("launcher.log");
     StateDto {
         version: env!("CARGO_PKG_VERSION").into(),
-        config_path: slope3_core::config_path().display().to_string(),
+        config_path: s2x3_core::config_path().display().to_string(),
         engine_id: engine.id().into(),
         engine_name: engine.name().into(),
         engine_root: config.engine.root.display().to_string(),
@@ -307,7 +307,7 @@ fn set_engine_root(root: String) -> Result<StateDto, String> {
 
 fn spawn_build(root: &Path, iso: &Path, command: &str) -> Result<u32, String> {
     std::fs::create_dir_all(root).map_err(|e| format!("create {}: {e}", root.display()))?;
-    let log = slope3_core::Config::load()
+    let log = s2x3_core::Config::load()
         .map_err(|e| format!("{e:#}"))?
         .resolved()
         .paths
@@ -414,7 +414,7 @@ fn install_log_tail(lines: usize) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn saves_info() -> Result<slope3_core::SavesInfo, String> {
+fn saves_info() -> Result<s2x3_core::SavesInfo, String> {
     let (_config, engine) = load().map_err(|e| format!("{e:#}"))?;
     engine.saves_info().map_err(|e| format!("{e:#}"))
 }
@@ -525,5 +525,5 @@ pub fn run() {
             log_tail
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Slope3");
+        .expect("error while running S2X3");
 }

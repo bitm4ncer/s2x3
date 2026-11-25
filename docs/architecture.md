@@ -6,10 +6,10 @@
 UI (Tauri/web view, or any front end)
         |
         v
-slope3-core      config.toml, models, EngineAdapter
+s2x3-core      config.toml, models, EngineAdapter
         |
         v
-slope3-engines   ps2.rs  xbox.rs (later)  ...
+s2x3-engines   ps2.rs  xbox.rs (later)  ...
         |
         v
 child process   target/game/ssx3 | launcher.exe | ...
@@ -24,15 +24,15 @@ Rules:
    (plugins? netplay? splitscreen? max tick rate?) and renders fields from
    the engine's settings schema. A new engine must not need UI code.
 3. **Settings are data.** Each adapter maps its schema to a file and/or
-   environment. Slope3 stores the canonical values in
-   `~/.config/slope3/config.toml` and writes the engine's file before launch.
+   environment. S2X3 stores the canonical values in
+   `~/.config/s2x3/config.toml` and writes the engine's file before launch.
 4. **Saves are a separate service.** v1 imports/exports and backs up a
    per-engine save folder. Cross-engine conversion is a later, separate
    research item - the formats and regions differ.
 
 ## Adapters
 
-`EngineAdapter` (see `crates/slope3-core/src/lib.rs`):
+`EngineAdapter` (see `crates/s2x3-core/src/lib.rs`):
 
 ```rust
 fn id() -> &'static str;
@@ -59,7 +59,7 @@ fn launch(&LaunchConfig) -> Result<Child>;
 - Saves: the UDATA folder next to the game data.
 - Capabilities: HD textures, 4K, MSAA, splitscreen; no plugins, no netcode.
 
-There is no shared save format between the two engines today. Slope3 will
+There is no shared save format between the two engines today. S2X3 will
 offer backup/restore per engine and an explicit "export/import" action, not a
 silent conversion.
 

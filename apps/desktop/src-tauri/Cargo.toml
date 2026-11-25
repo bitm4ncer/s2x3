@@ -1,11 +1,11 @@
 [package]
-name = "slope3-desktop"
+name = "s2x3-desktop"
 version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 
 [lib]
-name = "slope3_desktop_lib"
+name = "s2x3_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -17,5 +17,5 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
 rfd = { version = "0.15", default-features = false, features = ["gtk3"] }
-slope3-core = { path = "../../../crates/slope3-core" }
-slope3-engines = { path = "../../../crates/slope3-engines" }
+s2x3-core = { path = "../../../crates/s2x3-core" }
+s2x3-engines = { path = "../../../crates/s2x3-engines" }
