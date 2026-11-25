@@ -39,8 +39,8 @@
   --pixel: "Silkscreen", "Courier New", monospace;
   --body: Verdana, Tahoma, Geneva, sans-serif;
 
-  --steelgrad: linear-gradient(150deg, #47738f 0%, #35607d 48%, #2a4f69 100%);
-  --navygrad: linear-gradient(150deg, #123a5e 0%, #08244a 55%, #041c30 100%);
+  --steelgrad: linear-gradient(150deg, rgba(71, 115, 143, 0.88) 0%, rgba(53, 96, 125, 0.84) 48%, rgba(42, 79, 105, 0.86) 100%);
+  --navygrad: linear-gradient(150deg, rgba(18, 58, 94, 0.92) 0%, rgba(8, 36, 74, 0.9) 55%, rgba(4, 28, 48, 0.92) 100%);
   --icegrad: linear-gradient(150deg, #ffffff 0%, #eaf8ff 55%, #d6ecfa 100%);
   --orangerib: linear-gradient(150deg, #ff9420 0%, #ee6a11 55%, #d94f04 100%);
   --radius: 16px;
@@ -348,7 +348,8 @@ code {
 
 .hero-stage {
   position: relative;
-  background: url("assets/background.jpg") center 30% / cover no-repeat;
+  /* no own background: the fixed mountain backdrop shows through and
+     the frosted panel blurs the real photo behind it */
   border-radius: 0 0 18px 18px;
 }
 
@@ -673,6 +674,15 @@ code {
 }
 
 /* ── Steel panels + white rows ──────────────────────────────────── */
+
+.dl-panel,
+.steps,
+.status-copy,
+.credits-panel,
+.platforms {
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+}
 
 .dl-panel {
   display: grid;
