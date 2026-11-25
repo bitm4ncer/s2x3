@@ -407,6 +407,20 @@ function bind() {
   refreshSaves();
   setTimeout(checkEngineUpdate, 800);
 
+  const search = "https://duckduckgo.com/?q=SSX+3+USA+PS2+iso";
+  ["iso-search", "iso-search-2"].forEach((id) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        await call("open_url", { url: search });
+      } catch (err) {
+        toast(String(err), true);
+      }
+    });
+  });
+
   $("browse-iso").addEventListener("click", async () => {
     try {
       render(await call("choose_iso"));

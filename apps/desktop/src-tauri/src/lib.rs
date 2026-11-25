@@ -238,6 +238,27 @@ fn set_iso(iso: String) -> Result<StateDto, String> {
 }
 
 #[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err("only http and https links".into());
+    }
+    #[cfg(target_os = "linux")]
+    let mut cmd = std::process::Command::new("xdg-open");
+    #[cfg(target_os = "macos")]
+    let mut cmd = std::process::Command::new("open");
+    #[cfg(target_os = "windows")]
+    let mut cmd = {
+        let mut c = std::process::Command::new("cmd");
+        c.args(["/C", "start", ""]);
+        c
+    };
+    cmd.arg(url)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("open browser: {e}"))
+}
+
+#[tauri::command]
 fn choose_iso() -> Result<StateDto, String> {
     let path = rfd::FileDialog::new()
         .add_filter("Disc image", &["iso", "bin", "img"])
@@ -464,6 +485,7 @@ pub fn run() {
             set_paths,
             set_iso,
             choose_iso,
+            open_url,
             set_engine_root,
             bootstrap_engine,
             update_engine,
