@@ -348,6 +348,13 @@ code {
   font-size: 12.5px;
 }
 
+.tab-ext .gh-mark {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  margin: 0 4px 0 -2px;
+}
+
 .tab-ext:hover,
 .tab-ext:focus-visible {
   color: #fff;
