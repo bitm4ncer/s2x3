@@ -352,16 +352,6 @@ code {
   border-radius: 0 0 18px 18px;
 }
 
-.hero-ribbon {
-  position: absolute;
-  left: -34px;
-  top: -36px;
-  height: calc(100% + 60px);
-  width: 140px;
-  z-index: 3;
-  pointer-events: none;
-}
-
 .hud {
   position: absolute;
   top: 14px;
@@ -417,15 +407,15 @@ code {
 .hero-copy {
   position: relative;
   margin-top: 250px;
-  padding: 34px 40px 30px 128px;
+  padding: 34px 40px 30px;
   background: linear-gradient(
     150deg,
-    rgba(255, 255, 255, 0.78) 0%,
-    rgba(228, 243, 251, 0.6) 45%,
-    rgba(190, 220, 238, 0.52) 100%
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(228, 243, 251, 0.52) 45%,
+    rgba(190, 220, 238, 0.45) 100%
   );
-  backdrop-filter: blur(10px) saturate(1.15);
-  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
   border-radius: 18px 18px 0 0;
 }
 
@@ -441,6 +431,7 @@ code {
   margin: 0 0 12px;
   max-width: 640px;
   font-family: var(--ui);
+  font-style: italic;
   font-weight: 600;
   font-size: clamp(38px, 5.4vw, 62px);
   line-height: 1.02;
@@ -452,7 +443,7 @@ code {
   display: block;
 }
 
-/* the one italic-black word: the logo voice */
+/* the logo voice: heavier italic black */
 .hero-copy h1 b.hot {
   font-family: var(--display);
   font-style: italic;
@@ -1301,10 +1292,6 @@ code {
     position: static;
     display: inline-block;
     margin-top: 14px;
-  }
-
-  .hero-ribbon {
-    display: none;
   }
 
   .whatsnew {
