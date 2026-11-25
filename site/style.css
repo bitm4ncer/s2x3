@@ -170,18 +170,18 @@ code {
 
 .scene-flake-fill {
   left: 2%;
-  top: 48px;
-  width: 30vw;
-  height: 30vw;
+  top: 40px;
+  width: 38vw;
+  height: 38vw;
   background-image: url("assets/NowFlake_fill.svg");
-  opacity: 0.38;
+  opacity: 0.36;
 }
 
 .scene-flake-contour {
   right: 0.5%;
-  bottom: 4%;
-  width: 19vw;
-  height: 19vw;
+  bottom: 3%;
+  width: 26vw;
+  height: 26vw;
   background-image: url("assets/NowFlake_contour.svg");
   /* white artwork over white snow: tone it navy to stay visible */
   filter: brightness(0);
