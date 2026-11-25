@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Tomorrow";
+  src: url("assets/fonts/Tomorrow-BlackItalic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
   --ink: #071c33;  --navy: #082a4a;
   --navy-2: #0b4c80;
@@ -12,7 +20,7 @@
   --orange-dark: #a63e00;
   --link: #1638b8;
   --link-hover: #5d1b8a;
-  --display: "Alpino", "Arial Black", "Arial Narrow", sans-serif;
+  --display: "Tomorrow", "Arial Black", "Arial Narrow", sans-serif;
   --pixel: "Silkscreen", "Courier New", monospace;
   --body: Verdana, Tahoma, Geneva, sans-serif;
   --bevel-out: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #6f9fbc;

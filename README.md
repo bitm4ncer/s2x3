@@ -98,8 +98,9 @@ Planned:
 SSX is a trademark of Electronic Arts. S2X3 is an unofficial fan project,
 not affiliated with or endorsed by EA. You need your own copy of the game. The
 repository contains no game data, no ISO, no extracted textures and no
-recompiled game code. Xbox button art and the Archie font are local, third
-party assets and are not committed.
+recompiled game code. Xbox button art is a local third-party asset and is not
+committed. The display face, Tomorrow (SIL OFL 1.1), is bundled with the
+source.
 
 ## License
 
@@ -110,4 +111,6 @@ the engine notices when you redistribute it.
 
 - [ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp) by [Anders Fischer Nielsen](https://github.com/andersfischernielsen), MIT.
 - [Tauri](https://tauri.app) for the desktop shell.
+- [Tomorrow](https://fonts.google.com/specimen/Tomorrow) display face by the Tomorrow Project Authors, SIL OFL 1.1.
+- [Silkscreen](https://fonts.google.com/specimen/Silkscreen) pixel face by Jason Kottke, SIL OFL 1.1.
 - The SSX 3 community for testing, saves and feedback.

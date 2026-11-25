@@ -7,7 +7,12 @@ apps/desktop/src-tauri/gen/
 
 # personal-use font: never commit (MadeType EULA)
 apps/desktop/src/fonts/*.ttf
+# the bundled display face is OFL and part of the source
+!apps/desktop/src/fonts/Tomorrow-BlackItalic.ttf
 # premium button art (third party, do not redistribute)
 apps/desktop/src/assets/buttons/*.png
 
+.design/*~lock~
+
+.design/*.af
 .design/*~lock~
