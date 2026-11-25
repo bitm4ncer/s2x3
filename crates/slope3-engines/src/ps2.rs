@@ -255,15 +255,32 @@ impl EngineAdapter for Ps2Rust {
             std::fs::create_dir_all(parent)
                 .with_context(|| format!("create {}", parent.display()))?;
         }
+        // Keep keys the launcher does not know (the engine's own settings
+        // file can contain more than this schema): read, overlay, write.
+        let mut all: BTreeMap<String, String> = BTreeMap::new();
+        if let Ok(text) = std::fs::read_to_string(&path) {
+            for line in text.lines() {
+                let line = line.trim();
+                if line.is_empty() || line.starts_with('#') {
+                    continue;
+                }
+                if let Some((k, v)) = line.split_once('=') {
+                    all.insert(k.trim().to_string(), v.trim().to_string());
+                }
+            }
+        }
+        for (k, v) in values {
+            if v.is_empty() {
+                all.remove(k);
+            } else {
+                all.insert(k.clone(), v.clone());
+            }
+        }
         let mut text = String::from(
             "# Written by Slope3. Lines are KEY=VALUE; environment variables win.\n",
         );
-        for field in SCHEMA {
-            if let Some(v) = values.get(field.key) {
-                if !v.is_empty() {
-                    text.push_str(&format!("{}={}\n", field.key, v));
-                }
-            }
+        for (k, v) in &all {
+            text.push_str(&format!("{k}={v}\n"));
         }
         std::fs::write(&path, text).with_context(|| format!("write {}", path.display()))
     }
