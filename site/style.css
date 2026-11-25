@@ -595,8 +595,11 @@ code {
 }
 
 .nav-flag {
+  position: absolute;
+  top: 2px;
+  left: calc(100% + 2px);
   display: inline-block;
-  margin-left: 3px;
+  margin-left: 0;
   padding: 1px 2px;
   font-family: var(--pixel);
   font-size: 5px;
@@ -608,7 +611,6 @@ code {
   border: 1px solid var(--navy);
   -webkit-text-stroke: 0;
   text-shadow: none;
-  vertical-align: super;
   transform: skewX(5deg) rotate(-4deg);
 }
 
@@ -1985,6 +1987,10 @@ body.dragging-scrollbar {
 
   .side-nav a {
     font-size: 23px;
+  }
+
+  .nav-flag {
+    display: none;
   }
 
   .side-nav a:hover {
