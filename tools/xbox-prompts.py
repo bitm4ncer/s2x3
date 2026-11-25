@@ -21,6 +21,7 @@ engine's pad mapping).
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -53,6 +54,18 @@ def load_font(size: int):
     return ImageFont.load_default()
 
 
+def asset_glyph(size: int, letter: str, buttons: Path) -> Image.Image | None:
+    """The premium button PNG for a letter, trimmed and scaled to the slot."""
+    path = buttons / f"button_xbox_digital_{letter.lower()}_4.png"
+    if not path.is_file():
+        return None
+    img = Image.open(path).convert("RGBA")
+    bbox = img.getchannel("A").getbbox()
+    if bbox:
+        img = img.crop(bbox)
+    return img.resize((size, size), Image.LANCZOS)
+
+
 def draw_glyph(size: int, letter: str, colour: str) -> Image.Image:
     scale = 8
     tile = Image.new("RGBA", (size * scale, size * scale), (0, 0, 0, 0))
@@ -72,12 +85,13 @@ def draw_glyph(size: int, letter: str, colour: str) -> Image.Image:
     return tile.resize((size, size), Image.LANCZOS)
 
 
-def patch(src: Path) -> Image.Image:
+def patch(src: Path, buttons: Path | None = None) -> Image.Image:
     img = Image.open(src).convert("RGBA")
     for x0, y0, x1, y1, letter, colour in GLYPHS:
         w, h = x1 - x0 + 1, y1 - y0 + 1
         img.paste((0, 0, 0, 0), (x0, y0, x1 + 1, y1 + 1))
-        img.alpha_composite(draw_glyph(w, letter, colour), (x0, y0))
+        glyph = asset_glyph(w, letter, buttons) if buttons else None
+        img.alpha_composite(glyph or draw_glyph(w, letter, colour), (x0, y0))
     return img
 
 
@@ -85,6 +99,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dump", required=True, help="texture dump directory")
     ap.add_argument("--out", required=True, help="texture replacement directory")
+    ap.add_argument(
+        "--buttons",
+        default=os.environ.get("XBOX_BUTTONS_DIR", ""),
+        help="folder with button_xbox_digital_<letter>_4.png (optional)",
+    )
     ap.add_argument(
         "--atlas",
         action="append",
@@ -104,7 +123,7 @@ def main() -> int:
             print(f"skip {name} (not in the dump)", file=sys.stderr)
             continue
         dst = out / name
-        patch(src).save(dst)
+        patch(src, Path(args.buttons) if args.buttons else None).save(dst)
         print(f"wrote {dst}")
         written += 1
 

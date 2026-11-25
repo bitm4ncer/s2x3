@@ -7,3 +7,5 @@ apps/desktop/src-tauri/gen/
 
 # personal-use font: never commit (MadeType EULA)
 apps/desktop/src/fonts/*.ttf
+# premium button art (third party, do not redistribute)
+apps/desktop/src/assets/buttons/*.png

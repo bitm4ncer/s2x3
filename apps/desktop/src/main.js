@@ -125,20 +125,15 @@ async function call(cmd, args) {
 }
 
 /* Xbox glyphs: the launcher's controller language. */
-const XBOX_COLORS = {
-  A: "#3fbf5f",
-  B: "#e5484d",
-  X: "#3b82f6",
-  Y: "#f2c744",
+const XBOX_ICONS = {
+  A: "assets/buttons/a.png",
+  B: "assets/buttons/b.png",
+  X: "assets/buttons/x.png",
+  Y: "assets/buttons/y.png",
 };
 
 function glyph(button) {
-  const color = XBOX_COLORS[button] || "#7c8ea0";
-  return `<svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
-    <circle cx="10" cy="10" r="9" fill="${color}" />
-    <text x="10" y="14" text-anchor="middle" font-family="Arial, sans-serif"
-      font-size="11" font-weight="700" fill="#04121f">${button}</text>
-  </svg>`;
+  return `<img class="btn-glyph" src="${XBOX_ICONS[button]}" alt="${button}" />`;
 }
 
 function dpadGlyph() {
@@ -158,6 +153,21 @@ function hints() {
     <span class="hint" style="color:#5f7d92">F11 fullscreen &middot; F10 settings in game</span>
   `;
 }
+
+const TABS = [
+  {
+    id: "display",
+    label: "display",
+    keys: ["SSX3_TICK_HZ", "SSX3_ASPECT", "SSX3_FULLSCREEN", "SSX3_SKIP_MOVIES", "SSX3_REAL_CLOCK"],
+  },
+  {
+    id: "graphics",
+    label: "graphics",
+    keys: ["SSX3_RENDER_SCALE", "SSX3_RENDER_SIZE", "SSX3_FOV", "SSX3_ANISO", "SSX3_AA", "SSX3_AO", "SSX3_BLOOM", "SSX3_SHADOWS"],
+  },
+  { id: "controls", label: "controls", keys: ["SSX3_STICK_TRICKS", "SSX3_PAD2"] },
+];
+let activeTab = localStorage.getItem("settingsTab") || "display";
 
 function field(f) {
   const row = document.createElement("div");
@@ -251,9 +261,27 @@ function render(next) {
     .map((c) => `<span>${c}</span>`)
     .join("");
 
+  const tabs = $("tabs");
+  tabs.innerHTML = "";
+  TABS.forEach((t) => {
+    const b = document.createElement("button");
+    b.className = "tab" + (t.id === activeTab ? " active" : "");
+    b.textContent = t.label;
+    b.addEventListener("click", () => {
+      activeTab = t.id;
+      localStorage.setItem("settingsTab", t.id);
+      render(state);
+    });
+    tabs.append(b);
+  });
+
+  const known = new Set(TABS.flatMap((t) => t.keys));
+  const keys = new Set(TABS.find((t) => t.id === activeTab)?.keys ?? []);
   const fields = $("fields");
   fields.innerHTML = "";
-  state.schema.forEach((f) => fields.append(field(f)));
+  state.schema
+    .filter((f) => keys.has(f.key) || !known.has(f.key))
+    .forEach((f) => fields.append(field(f)));
 
   fields.querySelectorAll("[data-key]").forEach((el) => {
     el.addEventListener("change", scheduleSave);
@@ -498,6 +526,8 @@ function bind() {
 }
 
 bind();
+history.scrollRestoration = "manual";
+document.querySelector("main").scrollTop = 0;
 refreshState();
 function active() {
   return !document.hidden && document.hasFocus();
