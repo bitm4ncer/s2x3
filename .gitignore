@@ -4,3 +4,6 @@
 node_modules/
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
+
+# personal-use font: never commit (MadeType EULA)
+apps/desktop/src/fonts/*.ttf
