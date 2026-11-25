@@ -10,7 +10,7 @@
   --line-2: rgba(18, 58, 99, 0.34);
   --muted: #5b7794;
   --green: #2f9e63;
-  --display: "Barlow Condensed", "Archivo Narrow", "Arial Narrow", sans-serif;
+  --display: "Alpino", "Archivo Narrow", "Arial Narrow", sans-serif;
   --body: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
@@ -609,4 +609,81 @@ footer {
 .status .eyebrow,
 .credits .section-head .eyebrow {
   color: var(--orange);
+}
+
+.downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.dl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--line-2);
+  color: var(--navy);
+  text-decoration: none;
+  clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+  transition: transform 0.12s, background 0.12s;
+}
+
+.dl:hover {
+  transform: translateY(-1px);
+  background: #fff;
+}
+
+.dl.primary {
+  background: linear-gradient(135deg, var(--orange-2), var(--orange) 45%, #d9530a);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(242, 106, 27, 0.35);
+}
+
+.dl.primary:hover {
+  background: linear-gradient(135deg, #ffb271, var(--orange) 45%, #e05a0f);
+}
+
+.dl-icon {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+  flex: none;
+}
+
+.dl-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1;
+}
+
+.dl-name {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+.dl small {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.dl-note {
+  margin: 10px 0 0;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: rgba(11, 42, 73, 0.75);
+}
+
+.ghost.source {
+  margin-top: 12px;
+  padding: 8px 16px;
 }
