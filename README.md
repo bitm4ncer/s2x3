@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="docs/assets/icon.png" alt="s2X3" width="120">
+  <a href="https://bitm4ncer.github.io/s2x3/">
+    <img src="docs/assets/icon.png" alt="s2X3" width="120">
+  </a>
 </p>
 
 <h1 align="center">s2X3</h1>
