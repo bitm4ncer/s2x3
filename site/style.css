@@ -178,14 +178,13 @@ code {
 }
 
 .scene-flake-contour {
-  right: 0.5%;
-  bottom: 3%;
-  width: 26vw;
-  height: 26vw;
+  right: -6vw;
+  bottom: -8vw;
+  width: 52vw;
+  height: 52vw;
   background-image: url("assets/NowFlake_contour.svg");
-  /* white artwork over white snow: tone it navy to stay visible */
-  filter: brightness(0);
-  opacity: 0.15;
+  /* white artwork over white snow: light contour keeps it visible */
+  opacity: 0.5;
 }
 
 .scene-shade {
