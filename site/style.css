@@ -514,7 +514,7 @@ code {
 }
 
 .cta-word {
-  display: block;
+  display: inline;
   font-family: var(--ui);
   font-weight: 600;
   font-size: 20px;
