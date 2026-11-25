@@ -54,7 +54,7 @@ no engine code and no game data. You bring your own USA disc image.
 Build the CLI and the desktop app:
 
 ```sh
-git clone https://github.com/bitm4ncer/slope3.git
+git clone https://github.com/bitm4ncer/s2x3.git
 cd slope3
 cargo build --release
 ./target/release/slope3 detect
