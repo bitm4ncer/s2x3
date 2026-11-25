@@ -66,6 +66,25 @@ body {
   pointer-events: none;
 }
 
+.bg .photo {
+  position: absolute;
+  inset: 0;
+  background: url("assets/background.jpg") center 45% / cover no-repeat;
+  opacity: 0.85;
+}
+
+.bg .shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(16, 55, 95, 0.5) 0%,
+    rgba(120, 180, 215, 0.16) 34%,
+    rgba(225, 242, 250, 0.55) 68%,
+    rgba(255, 255, 255, 0.96) 100%
+  );
+}
+
 .bg::before {
   content: "";
   position: absolute;
