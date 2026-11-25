@@ -39,8 +39,8 @@
   --pixel: "Silkscreen", "Courier New", monospace;
   --body: Verdana, Tahoma, Geneva, sans-serif;
 
-  --steelgrad: linear-gradient(150deg, rgba(71, 115, 143, 0.88) 0%, rgba(53, 96, 125, 0.84) 48%, rgba(42, 79, 105, 0.86) 100%);
-  --navygrad: linear-gradient(150deg, rgba(18, 58, 94, 0.92) 0%, rgba(8, 36, 74, 0.9) 55%, rgba(4, 28, 48, 0.92) 100%);
+  --steelgrad: linear-gradient(150deg, rgba(71, 115, 143, 0.66) 0%, rgba(53, 96, 125, 0.6) 48%, rgba(42, 79, 105, 0.68) 100%);
+  --navygrad: linear-gradient(150deg, rgba(18, 58, 94, 0.74) 0%, rgba(8, 36, 74, 0.7) 55%, rgba(4, 28, 48, 0.76) 100%);
   --icegrad: linear-gradient(150deg, #ffffff 0%, #eaf8ff 55%, #d6ecfa 100%);
   --orangerib: linear-gradient(150deg, #ff9420 0%, #ee6a11 55%, #d94f04 100%);
   --radius: 16px;
@@ -684,7 +684,13 @@ code {
 .steps,
 .status-copy,
 .credits-panel,
-.platforms {
+.platforms,
+.feat,
+.status-table td,
+.plat-chip,
+.shot-plate,
+.actions,
+.hud {
   backdrop-filter: blur(16px) saturate(1.15);
   -webkit-backdrop-filter: blur(16px) saturate(1.15);
 }
@@ -782,7 +788,7 @@ code {
 .shot-plate {
   position: relative;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.7);
   border-radius: 12px;
 }
 
@@ -852,7 +858,7 @@ code {
   gap: 14px;
   align-items: flex-start;
   padding: 16px 20px 15px 16px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.55);
   border-radius: var(--radius-sm);
 }
 
@@ -908,7 +914,7 @@ code {
 .step {
   position: relative;
   padding: 18px 18px 14px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.62);
   color: var(--ink);
   border-radius: var(--radius-sm);
 }
@@ -995,7 +1001,7 @@ code {
 }
 
 .status-table td {
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.55);
   color: var(--ink);
 }
 
@@ -1182,7 +1188,7 @@ code {
   gap: 12px 26px;
   margin: 44px 0 14px;
   padding: 12px 18px;
-  background: rgba(255, 255, 255, 0.66);
+  background: rgba(255, 255, 255, 0.55);
   border-radius: 14px;
 }
 
