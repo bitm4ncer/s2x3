@@ -94,7 +94,11 @@ body {
   font-style: italic;
   font-size: 58vh;
   line-height: 1;
-  color: rgba(242, 106, 27, 0.14);
+  background: linear-gradient(180deg, #ffffff 0%, #eef9ff 42%, #c3e4f6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0.8;
   user-select: none;
 }
 
@@ -156,6 +160,13 @@ footer.dock {
   height: 54px;
   border-radius: 14px;
   box-shadow: 0 10px 22px rgba(18, 58, 99, 0.22);
+}
+
+.wordmark {
+  display: block;
+  height: 62px;
+  width: auto;
+  filter: drop-shadow(0 3px 0 rgba(11, 42, 73, 0.12));
 }
 
 .brand-text h1 {

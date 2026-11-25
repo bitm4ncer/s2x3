@@ -164,9 +164,14 @@ const TABS = [
   {
     id: "graphics",
     label: "graphics",
-    keys: ["SSX3_RENDER_SCALE", "SSX3_RENDER_SIZE", "SSX3_FOV", "SSX3_ANISO", "SSX3_AA", "SSX3_AO", "SSX3_BLOOM", "SSX3_SHADOWS"],
+    keys: ["SSX3_RENDER_SCALE", "SSX3_RENDER_SIZE", "SSX3_RESOLUTION", "SSX3_FOV", "SSX3_ANISO", "SSX3_LOD_BIAS", "SSX3_AA", "SSX3_AO", "SSX3_BLOOM", "SSX3_SHADOWS", "SSX3_SNOW"],
   },
   { id: "controls", label: "controls", keys: ["SSX3_STICK_TRICKS", "SSX3_PAD2"] },
+  {
+    id: "advanced",
+    label: "advanced",
+    keys: ["SSX3_CATCHUP", "SSX3_FAST_MATH", "SSX3_RENDER", "SSX3_SND", "SSX3_IOP_SIO2", "SSX3_NATIVE_FILES"],
+  },
 ];
 let activeTab = localStorage.getItem("settingsTab") || "display";
 

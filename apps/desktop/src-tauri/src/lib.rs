@@ -103,18 +103,25 @@ fn fields(engine: &dyn EngineAdapter) -> Vec<FieldDto> {
                 ),
                 FieldKind::Text => ("text".to_string(), vec![], None, None),
             };
-            let choice_labels = if f.key == "SSX3_STICK_TRICKS" {
-                vec![
-                    "Cross Pad (default)".to_string(),
-                    "Left Stick".to_string(),
-                    "Right Stick".to_string(),
-                ]
-            } else {
-                choices
-                    .iter()
-                    .map(|c| if c.is_empty() { "Auto".to_string() } else { c.clone() })
-                    .collect()
+            let labels: Option<&[&str]> = match f.key {
+                "SSX3_STICK_TRICKS" => Some(&["Cross Pad (default)", "Left Stick", "Right Stick"]),
+                "SSX3_RESOLUTION" => Some(&["100%", "75%", "50%"]),
+                "SSX3_LOD_BIAS" => Some(&["Soft", "Standard", "Sharp", "Sharper"]),
+                "SSX3_CATCHUP" => Some(&["On", "Off"]),
+                "SSX3_RENDER" => Some(&["Native (wgpu)", "Emulated GS"]),
+                "SSX3_SND" => Some(&["Native mixer", "Emulated IOP"]),
+                "SSX3_IOP_SIO2" => Some(&["Native", "Emulated IOP"]),
+                "SSX3_NATIVE_FILES" => Some(&["Native", "Emulated CD"]),
+                _ => None,
             };
+            let choice_labels = labels
+                .map(|l| l.iter().map(|s| s.to_string()).collect())
+                .unwrap_or_else(|| {
+                    choices
+                        .iter()
+                        .map(|c| if c.is_empty() { "Auto".to_string() } else { c.clone() })
+                        .collect()
+                });
             FieldDto {
                 key: f.key.to_string(),
                 label: f.label.to_string(),
