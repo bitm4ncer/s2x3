@@ -604,3 +604,10 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+.features .section-head .eyebrow,
+.how .section-head .eyebrow,
+.status .eyebrow,
+.credits .section-head .eyebrow {
+  color: var(--orange);
+}
