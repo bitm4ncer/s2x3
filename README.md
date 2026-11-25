@@ -11,11 +11,16 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue"></a>
-  <img alt="Platforms: Linux, macOS, Windows" src="https://img.shields.io/badge/platforms-Linux%20%7C%20macOS%20%7C%20Windows-555">
-  <img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-f26a1b">
-  <img alt="Engine: ssx3-decomp" src="https://img.shields.io/badge/engine-ssx3--decomp-123a63">
-  <img alt="No game data" src="https://img.shields.io/badge/game%20data-none-2f9e63">
+  <a href="https://github.com/bitm4ncer/s2x3/releases/latest"><img alt="Linux alpha" src="https://img.shields.io/badge/Linux-alpha-f26a1b?logo=linux&amp;logoColor=white"></a>
+  <a href="https://github.com/bitm4ncer/s2x3/releases/latest"><img alt="Windows alpha" src="https://img.shields.io/badge/Windows-alpha-f26a1b?logo=windows&amp;logoColor=white"></a>
+  <a href="https://github.com/bitm4ncer/s2x3/releases/latest"><img alt="macOS planned" src="https://img.shields.io/badge/macOS-planned-555555?logo=apple&amp;logoColor=white"></a>
+  <a href="https://github.com/bitm4ncer/s2x3/releases/latest"><img alt="Status: alpha" src="https://img.shields.io/badge/status-alpha-f26a1b"></a>
+  <a href="https://github.com/andersfischernielsen/ssx3-decomp"><img alt="Engine: ssx3-decomp" src="https://img.shields.io/badge/engine-ssx3--decomp-123a63?logo=rust&amp;logoColor=white"></a>
 </p>
+
+> **You need your own SSX 3 PS2 USA ISO.** s2X3 ships no game data and no ISO.
+> Use a legally owned copy of the game. [Search DuckDuckGo](https://duckduckgo.com/?q=SSX+3+USA+PS2+ISO)
+> for the USA disc image (`SLUS_207.72`).
 
 ---
 
