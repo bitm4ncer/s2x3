@@ -305,6 +305,27 @@ fn set_engine_root(root: String) -> Result<StateDto, String> {
     Ok(state_dto(&config, engine.as_ref()))
 }
 
+fn shell_command(command: &str) -> std::process::Command {
+    #[cfg(target_os = "windows")]
+    {
+        let mut cmd = std::process::Command::new("powershell");
+        cmd.args([
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            command,
+        ]);
+        cmd
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let mut cmd = std::process::Command::new("bash");
+        cmd.args(["-lc", command]);
+        cmd
+    }
+}
+
 fn spawn_build(root: &Path, iso: &Path, command: &str) -> Result<u32, String> {
     std::fs::create_dir_all(root).map_err(|e| format!("create {}: {e}", root.display()))?;
     let log = s2x3_core::Config::load()
@@ -318,9 +339,7 @@ fn spawn_build(root: &Path, iso: &Path, command: &str) -> Result<u32, String> {
     }
     let out = std::fs::File::create(&log).map_err(|e| format!("create {}: {e}", log.display()))?;
     let err = out.try_clone().map_err(|e| format!("{e}"))?;
-    let mut child = std::process::Command::new("bash")
-        .arg("-lc")
-        .arg(command)
+    let mut child = shell_command(command)
         .current_dir(root)
         .env("SSX3_ISO", iso)
         .stdout(out)
@@ -339,6 +358,11 @@ fn bootstrap_engine() -> Result<u32, String> {
     let (config, _) = load().map_err(|e| format!("{e:#}"))?;
     let root = config.engine.root.clone();
     let iso = config.paths.iso.clone();
+    #[cfg(target_os = "windows")]
+    let cmd = format!(
+        "if (-not (Test-Path 'tools/setup.py')) {{ git clone --depth 1 {ENGINE_URL} . }}\nif ($LASTEXITCODE -ne 0) {{ exit $LASTEXITCODE }}\npython tools/setup.py\nif ($LASTEXITCODE -ne 0) {{ exit $LASTEXITCODE }}\ncargo build --profile game -p ssx3"
+    );
+    #[cfg(not(target_os = "windows"))]
     let cmd = format!(
         "set -e; if [ ! -f tools/setup.py ]; then git clone --depth 1 {ENGINE_URL} .; fi; python3 tools/setup.py && cargo build --profile game -p ssx3"
     );
@@ -350,11 +374,12 @@ fn update_engine() -> Result<u32, String> {
     let (config, _) = load().map_err(|e| format!("{e:#}"))?;
     let root = config.engine.root.clone();
     let iso = config.paths.iso.clone();
-    spawn_build(
-        &root,
-        &iso,
-        "set -e; git pull --ff-only; python3 tools/setup.py && cargo build --profile game -p ssx3",
-    )
+    #[cfg(target_os = "windows")]
+    let command = "git pull --ff-only\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/setup.py\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build --profile game -p ssx3";
+    #[cfg(not(target_os = "windows"))]
+    let command =
+        "set -e; git pull --ff-only; python3 tools/setup.py && cargo build --profile game -p ssx3";
+    spawn_build(&root, &iso, command)
 }
 
 #[derive(Serialize)]

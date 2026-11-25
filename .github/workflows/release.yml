@@ -1,0 +1,52 @@
+name: release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+
+      - name: Install frontend dependencies
+        working-directory: apps/desktop
+        run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/desktop
+          tagName: v0.1.0
+          releaseName: "s2X3 v0.1.0 — Windows alpha"
+          releaseBody: |
+            Windows installer for **s2X3**, the unofficial SSX 3 launcher.
+
+            - Windows 10/11, 64-bit; WebView2 is bootstrapped by the installer.
+            - You need your own USA disc image (`SLUS_207.72`).
+            - No game data, no ISO and no engine code is included.
+            - Linux is the daily-driver; Windows engine setup is experimental.
+            - Unsigned alpha build; Windows SmartScreen may warn.
+
+            Source and license: <https://github.com/bitm4ncer/s2x3> (GPL-3.0-or-later).
+
+            SSX is a trademark of Electronic Arts. s2X3 is not affiliated with EA.
+          releaseDraft: true
+          prerelease: false
+          args: ""

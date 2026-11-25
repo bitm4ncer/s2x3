@@ -24,7 +24,7 @@ Rules:
    (plugins? netplay? splitscreen? max tick rate?) and renders fields from
    the engine's settings schema. A new engine must not need UI code.
 3. **Settings are data.** Each adapter maps its schema to a file and/or
-   environment. S2X3 stores the canonical values in
+   environment. s2X3 stores the canonical values in
    `~/.config/s2x3/config.toml` and writes the engine's file before launch.
 4. **Saves are a separate service.** v1 imports/exports and backs up a
    per-engine save folder. Cross-engine conversion is a later, separate
@@ -59,7 +59,7 @@ fn launch(&LaunchConfig) -> Result<Child>;
 - Saves: the UDATA folder next to the game data.
 - Capabilities: HD textures, 4K, MSAA, splitscreen; no plugins, no netcode.
 
-There is no shared save format between the two engines today. S2X3 will
+There is no shared save format between the two engines today. s2X3 will
 offer backup/restore per engine and an explicit "export/import" action, not a
 silent conversion.
 

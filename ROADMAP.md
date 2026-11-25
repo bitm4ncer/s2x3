@@ -1,6 +1,6 @@
-# S2X3 Roadmap
+# s2X3 Roadmap
 
-S2X3 is a launcher and installer for SSX 3 ports. The first engine is the
+s2X3 is a launcher and installer for SSX 3 ports. The first engine is the
 PlayStation 2 / Rust port (`ssx3-decomp`); the Xbox recomp can follow as a
 second adapter.
 

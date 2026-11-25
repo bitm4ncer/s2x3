@@ -218,6 +218,15 @@ footer.dock {
   text-transform: uppercase;
 }
 
+.brand-text p.brand-meta {
+  margin-top: 3px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 2px rgba(11, 42, 73, 0.55);
+}
+
 .chips {
   display: flex;
   gap: 10px;
@@ -297,45 +306,10 @@ main::-webkit-scrollbar-thumb:hover {
 
 .hero {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-end;
   gap: 30px;
-  padding: 10px 4px 24px;
-}
-
-.eyebrow {
-  margin: 0 0 12px;
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0.3em;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(11, 42, 73, 0.6);
-  text-transform: uppercase;
-}
-
-.hero h2 {
-  margin: 0;
-  font-family: var(--display);
-  font-style: italic;
-  font-size: clamp(38px, 4.4vw, 62px);
-  line-height: 0.94;
-  letter-spacing: 0.01em;
-  text-transform: lowercase;
-  font-weight: 400;
-  color: var(--navy);
-}
-
-.hero h2 .accent {
-  color: var(--orange);
-  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.6);
-}
-
-.hero .sub {
-  margin: 14px 0 0;
-  max-width: 560px;
-  color: rgba(11, 42, 73, 0.9);
-  line-height: 1.65;
-  font-size: 13px;
+  padding: 0 4px 16px;
 }
 
 .hero-tags {
@@ -1084,6 +1058,7 @@ details[open] > summary::before {
 }
 
 .glyphs img,
+.glyphs .btn-glyph,
 .ps-glyph {
   width: 20px;
   height: 20px;

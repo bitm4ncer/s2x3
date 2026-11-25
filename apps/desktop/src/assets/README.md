@@ -5,7 +5,7 @@
 written in this repository. It is not derived from EA promotional art.
 No game assets are stored here.
 
-`buttons/` is third party Xbox button art and is never committed (see its
-README). `fonts/` contains the bundled **Tomorrow Black Italic** display face
-and its SIL OFL 1.1 license. The legacy Archie Pro Italic file is personal-use
-and local-only; the UI no longer loads it.
+Controller glyphs are original inline SVG in `main.js`; no third-party button
+art is required. `fonts/` contains the bundled **Tomorrow Black Italic**
+display face and its SIL OFL 1.1 license. The legacy Archie Pro Italic file is
+personal-use and local-only; the UI no longer loads it.

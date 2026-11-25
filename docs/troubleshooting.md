@@ -2,7 +2,7 @@
 
 ## The whole machine is slow: CPU locked at 400 MHz
 
-Symptom: every game stutters, not just S2X3 or one engine. All cores stay
+Symptom: every game stutters, not just s2X3 or one engine. All cores stay
 at ~400 MHz under full load, while the governor and EPP report
 `performance`, the package stays cool (~46 °C) and the fan spins (~2450 RPM).
 

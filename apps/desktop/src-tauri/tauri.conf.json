@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "S2X3",
+  "productName": "s2X3",
   "version": "0.1.0",
   "identifier": "dev.s2x3.launcher",
   "build": {
@@ -11,7 +11,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "S2X3 · SSX 3 launcher",
+        "title": "s2X3 \u00b7 SSX 3 launcher",
         "width": 1180,
         "height": 820,
         "minWidth": 980,
@@ -33,7 +33,8 @@
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon-512.png",
-      "icons/icon.png"
+      "icons/icon.png",
+      "icons/icon.ico"
     ]
   }
 }

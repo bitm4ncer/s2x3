@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/icon.png" alt="S2X3" width="120">
+  <img src="docs/assets/icon.png" alt="s2X3" width="120">
 </p>
 
-<h1 align="center">S2X3</h1>
+<h1 align="center">s2X3</h1>
 
 <p align="center">
   <strong>A clean launcher and installer for the native SSX 3 port on PlayStation 2.</strong><br>
@@ -19,7 +19,7 @@
 
 ---
 
-S2X3 is a desktop launcher for [ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp),
+s2X3 is a desktop launcher for [ssx3-decomp](https://github.com/andersfischernielsen/ssx3-decomp),
 the native Rust port of SSX 3 for PlayStation 2. It detects your installation,
 edits the engine settings through a schema, starts the engine as a child
 process and keeps paths, saves and logs in one place.
@@ -27,7 +27,7 @@ process and keeps paths, saves and logs in one place.
 It is not an emulator, not a recompiler and not a game distribution. It ships
 no engine code and no game data. You bring your own USA disc image.
 
-![S2X3 launcher](docs/assets/launcher.png)
+![s2X3 launcher](docs/assets/launcher.png)
 
 [**Website and screenshots →**](https://bitm4ncer.github.io/s2x3/)
 
@@ -75,7 +75,7 @@ SSX3_ISO="/path/to/SSX 3 (USA).iso" python3 tools/setup.py
 cargo build --profile game -p ssx3
 ```
 
-Point S2X3 at the engine folder and the ISO in **Change paths**, then press
+Point s2X3 at the engine folder and the ISO in **Change paths**, then press
 **play**.
 
 ## Status
@@ -95,12 +95,12 @@ Planned:
 
 ## Legal
 
-SSX is a trademark of Electronic Arts. S2X3 is an unofficial fan project,
+SSX is a trademark of Electronic Arts. s2X3 is an unofficial fan project,
 not affiliated with or endorsed by EA. You need your own copy of the game. The
 repository contains no game data, no ISO, no extracted textures and no
-recompiled game code. Xbox button art is a local third-party asset and is not
-committed. The display face, Tomorrow (SIL OFL 1.1), is bundled with the
-source.
+recompiled game code. Controller glyphs are original inline SVG; no third-party
+button art is bundled. The display face, Tomorrow (SIL OFL 1.1), is bundled
+with the source.
 
 ## License
 

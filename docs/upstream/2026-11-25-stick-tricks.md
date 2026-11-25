@@ -3,7 +3,7 @@
 - Engine commit: `321776e` (branch `s2x3/stick-tricks`, local patch)
 - Found: 2026-11-25, request while playing with an Xbox pad
 - Status: patched locally, to be proposed upstream
-- S2X3 setting: `SSX3_STICK_TRICKS=right` (choice: off / right / left)
+- s2X3 setting: `SSX3_STICK_TRICKS=right` (choice: off / right / left)
 
 ## Symptoms / request
 
@@ -42,6 +42,6 @@ with the option set should be added before the PR.
 
 ## Notes
 
-- S2X3 exposes it as a choice field (`Stick tricks`: off / right / left).
+- s2X3 exposes it as a choice field (`Stick tricks`: off / right / left).
 - Until merged, the launcher must tolerate an engine that ignores the
   variable (older builds simply do nothing).

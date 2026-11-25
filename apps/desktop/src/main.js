@@ -132,16 +132,21 @@ async function call(cmd, args) {
   }
 }
 
-/* Xbox glyphs: the launcher's controller language. */
-const XBOX_ICONS = {
-  A: "assets/buttons/a.png",
-  B: "assets/buttons/b.png",
-  X: "assets/buttons/x.png",
-  Y: "assets/buttons/y.png",
+/* Xbox glyphs: original inline SVG, no third-party button art. */
+const XBOX_COLORS = {
+  A: "#3fbf5f",
+  B: "#e5484d",
+  X: "#3f7fd6",
+  Y: "#e8b52b",
 };
 
 function glyph(button) {
-  return `<img class="btn-glyph" src="${XBOX_ICONS[button]}" alt="${button}" />`;
+  const color = XBOX_COLORS[button] ?? XBOX_COLORS.A;
+  return `<svg class="btn-glyph" viewBox="0 0 20 20" role="img" aria-label="${button}">
+    <circle cx="10" cy="10" r="8.4" fill="${color}" />
+    <text x="10" y="14" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif"
+      font-size="11" font-weight="800" fill="#fff">${button}</text>
+  </svg>`;
 }
 
 function psGlyph(kind) {
@@ -196,10 +201,7 @@ function promptSet() {
       </button>
       <button class="prompt-card ${ps2 ? "" : "active"}" data-set="xbox">
         <span class="glyphs">
-          <img src="assets/buttons/x.png" alt="" />
-          <img src="assets/buttons/b.png" alt="" />
-          <img src="assets/buttons/a.png" alt="" />
-          <img src="assets/buttons/y.png" alt="" />
+          ${glyph("X")}${glyph("B")}${glyph("A")}${glyph("Y")}
         </span>
         <b>Xbox</b>
         <small>texture patch</small>

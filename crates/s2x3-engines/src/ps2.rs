@@ -207,11 +207,12 @@ impl Ps2Rust {
 
     pub fn binary(&self) -> PathBuf {
         let root = &self.config.engine.root;
-        let built = root.join("target/game/ssx3");
+        let exe = format!("ssx3{}", std::env::consts::EXE_SUFFIX);
+        let built = root.join("target/game").join(&exe);
         if built.exists() {
             return built;
         }
-        root.join("dist/ssx3")
+        root.join("dist").join(exe)
     }
 
     pub fn settings_path(&self) -> PathBuf {
@@ -424,10 +425,21 @@ impl EngineAdapter for Ps2Rust {
         let out = std::fs::File::create(&log_path)
             .with_context(|| format!("create {}", log_path.display()))?;
         let err = out.try_clone().context("clone install log")?;
+        #[cfg(target_os = "windows")]
+        let script = "python tools/setup.py\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build --profile game -p ssx3";
+        #[cfg(not(target_os = "windows"))]
+        let script = "python3 tools/setup.py && cargo build --profile game -p ssx3";
+
+        #[cfg(target_os = "windows")]
+        let mut cmd = Command::new("powershell");
+        #[cfg(target_os = "windows")]
+        cmd.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script]);
+        #[cfg(not(target_os = "windows"))]
         let mut cmd = Command::new("bash");
-        cmd.arg("-lc")
-            .arg("python3 tools/setup.py && cargo build --profile game -p ssx3")
-            .current_dir(root)
+        #[cfg(not(target_os = "windows"))]
+        cmd.args(["-lc", script]);
+
+        cmd.current_dir(root)
             .env("SSX3_ISO", &self.config.paths.iso)
             .stdout(out)
             .stderr(err);

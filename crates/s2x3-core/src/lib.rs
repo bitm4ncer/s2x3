@@ -187,11 +187,15 @@ pub struct Paths {
     pub texreplace: PathBuf,
 }
 
-/// `$S2X3_CONFIG`, else `$XDG_CONFIG_HOME/s2x3/config.toml`, else
-/// `~/.config/s2x3/config.toml`.
+/// `$S2X3_CONFIG`, else `%APPDATA%/s2x3/config.toml` on Windows, else
+/// `$XDG_CONFIG_HOME/s2x3/config.toml`, else `~/.config/s2x3/config.toml`.
 pub fn config_path() -> PathBuf {
     if let Some(p) = std::env::var_os(CONFIG_ENV) {
         return PathBuf::from(p);
+    }
+    #[cfg(target_os = "windows")]
+    if let Some(dir) = std::env::var_os("APPDATA") {
+        return PathBuf::from(dir).join("s2x3").join("config.toml");
     }
     if let Some(dir) = std::env::var_os("XDG_CONFIG_HOME") {
         return PathBuf::from(dir).join("s2x3").join("config.toml");
@@ -203,6 +207,10 @@ pub fn config_path() -> PathBuf {
 /// Configuration path used before the project was renamed. Read once so an
 /// existing installation keeps its engine, disc and save paths.
 fn legacy_config_path() -> PathBuf {
+    #[cfg(target_os = "windows")]
+    if let Some(dir) = std::env::var_os("APPDATA") {
+        return PathBuf::from(dir).join("slope3").join("config.toml");
+    }
     if let Some(dir) = std::env::var_os("XDG_CONFIG_HOME") {
         return PathBuf::from(dir).join("slope3").join("config.toml");
     }
