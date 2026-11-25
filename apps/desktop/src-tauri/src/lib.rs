@@ -200,6 +200,40 @@ fn set_paths(engine_root: String, iso: String, saves: String) -> Result<StateDto
 }
 
 #[tauri::command]
+fn saves_info() -> Result<slope3_core::SavesInfo, String> {
+    let (_config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    engine.saves_info().map_err(|e| format!("{e:#}"))
+}
+
+#[tauri::command]
+fn export_saves(dest: Option<String>) -> Result<String, String> {
+    let (_config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    let path = match dest {
+        Some(p) => std::path::PathBuf::from(p),
+        None => rfd::FileDialog::new()
+            .set_file_name("ssx3-mc0.ps2")
+            .save_file()
+            .ok_or("cancelled")?,
+    };
+    let out = engine.export_saves(&path).map_err(|e| format!("{e:#}"))?;
+    Ok(out.display().to_string())
+}
+
+#[tauri::command]
+fn import_saves(src: Option<String>) -> Result<String, String> {
+    let (_config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    let path = match src {
+        Some(p) => std::path::PathBuf::from(p),
+        None => rfd::FileDialog::new()
+            .add_filter("PS2 memory card", &["ps2", "bin", "img"])
+            .pick_file()
+            .ok_or("cancelled")?,
+    };
+    let dst = engine.import_saves(&path).map_err(|e| format!("{e:#}"))?;
+    Ok(dst.display().to_string())
+}
+
+#[tauri::command]
 fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
     let (config, engine) = load().map_err(|e| format!("{e:#}"))?;
     let log = config.paths.saves.join("launcher.log");
@@ -254,6 +288,9 @@ pub fn run() {
             state,
             save_settings,
             set_paths,
+            saves_info,
+            export_saves,
+            import_saves,
             install,
             launch,
             log_tail

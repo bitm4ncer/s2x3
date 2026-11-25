@@ -12,9 +12,12 @@ use std::process::{Child, Command};
 
 use anyhow::{Context, Result};
 use slope3_core::{
-    human_size, Capabilities, Detection, EngineAdapter, LaunchConfig, SettingsField, Status,
-    FieldKind,
+    human_size, Capabilities, Detection, EngineAdapter, LaunchConfig, SettingsField, SavesInfo,
+    Status, FieldKind,
 };
+
+/// A PS2 memory card image is exactly 8 MiB of card data plus its header.
+const CARD_BYTES: u64 = 8_650_752;
 
 pub const ID: &str = "ps2-rust";
 
@@ -283,6 +286,65 @@ impl EngineAdapter for Ps2Rust {
             text.push_str(&format!("{k}={v}\n"));
         }
         std::fs::write(&path, text).with_context(|| format!("write {}", path.display()))
+    }
+
+    fn saves_info(&self) -> Result<SavesInfo> {
+        let path = self.memcard_path();
+        let meta = std::fs::metadata(&path).ok();
+        Ok(SavesInfo {
+            path,
+            exists: meta.is_some(),
+            size: meta.map(|m| m.len()).unwrap_or(0),
+        })
+    }
+
+    fn export_saves(&self, dest: &Path) -> Result<PathBuf> {
+        let src = self.memcard_path();
+        if !src.is_file() {
+            anyhow::bail!("no memory card yet: {}", src.display());
+        }
+        let target = if dest.is_dir() {
+            dest.join(src.file_name().context("memory card has no file name")?)
+        } else {
+            dest.to_path_buf()
+        };
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("create {}", parent.display()))?;
+        }
+        std::fs::copy(&src, &target)
+            .with_context(|| format!("copy {} to {}", src.display(), target.display()))?;
+        Ok(target)
+    }
+
+    fn import_saves(&self, src: &Path) -> Result<PathBuf> {
+        let meta = std::fs::metadata(src)
+            .with_context(|| format!("read {}", src.display()))?;
+        if meta.len() != CARD_BYTES {
+            anyhow::bail!(
+                "{} is not a PS2 memory card: expected {} bytes, got {}",
+                src.display(),
+                CARD_BYTES,
+                meta.len()
+            );
+        }
+        let dst = self.memcard_path();
+        if let Some(parent) = dst.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("create {}", parent.display()))?;
+        }
+        if dst.exists() {
+            let stamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            let backup = dst.with_extension(format!("ps2.bak-{stamp}"));
+            std::fs::copy(&dst, &backup)
+                .with_context(|| format!("back up {} to {}", dst.display(), backup.display()))?;
+        }
+        std::fs::copy(src, &dst)
+            .with_context(|| format!("copy {} to {}", src.display(), dst.display()))?;
+        Ok(dst)
     }
 
     fn install(&self) -> Result<Child> {

@@ -345,6 +345,8 @@ main::-webkit-scrollbar-thumb {
 .field input[type="number"],
 .field select,
 .paths input {
+  -webkit-appearance: none;
+  appearance: none;
   background: #04121f;
   border: 1px solid var(--line-2);
   color: var(--ice);
@@ -365,6 +367,15 @@ main::-webkit-scrollbar-thumb {
 
 .field input[type="number"] {
   width: 84px;
+}
+
+.field select option {
+  background: #04121f;
+  color: var(--ice);
+}
+
+body {
+  color-scheme: dark;
 }
 
 .switch {
@@ -458,6 +469,40 @@ main::-webkit-scrollbar-thumb {
   color: var(--muted);
   border: 1px solid var(--line);
   padding: 4px 8px;
+}
+
+.saves {
+  margin: 4px 20px 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.saves h4 {
+  margin: 0 0 6px;
+  font-family: var(--display);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.saves p {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.saves-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.saves-actions .ghost {
+  margin-top: 0;
+  width: auto;
+  flex: 1;
+  padding: 8px 6px;
 }
 
 .paths,

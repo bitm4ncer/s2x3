@@ -71,6 +71,14 @@ const mockState = {
 function mockInvoke(cmd, args) {
   if (cmd === "launch") return Promise.resolve(4242);
   if (cmd === "install") return Promise.resolve(777);
+  if (cmd === "saves_info")
+    return Promise.resolve({
+      path: "/home/player/Games/SSX3-ps2/saves/ssx3-mc0.ps2",
+      exists: true,
+      size: 8650752,
+    });
+  if (cmd === "export_saves") return Promise.resolve("/home/player/Desktop/ssx3-mc0.ps2");
+  if (cmd === "import_saves") return Promise.resolve("/home/player/Games/SSX3-ps2/saves/ssx3-mc0.ps2");
   if (cmd === "log_tail") return Promise.resolve("[ssx3] 8082 hand-written functions installed\n[window] display 60 Hz, game 60 Hz");
   if (cmd === "save_settings") {
     mockState.values = args.values;
@@ -258,8 +266,46 @@ async function refreshState() {
   render(await call("state"));
 }
 
+function human(bytes) {
+  const u = ["B", "KB", "MB", "GB"];
+  let v = bytes, i = 0;
+  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(i ? 1 : 0)} ${u[i]}`;
+}
+
+async function refreshSaves() {
+  try {
+    const info = await call("saves_info");
+    $("saves-info").textContent = info.exists
+      ? `${human(info.size)} · ${info.path}`
+      : `no memory card yet · ${info.path}`;
+  } catch (e) {
+    $("saves-info").textContent = "save info unavailable";
+  }
+}
+
 function bind() {
   hints();
+  refreshSaves();
+
+  $("export-saves").addEventListener("click", async () => {
+    try {
+      const path = await call("export_saves", { dest: null });
+      toast(`Save exported to ${path}`);
+    } catch (e) {
+      if (!String(e).includes("cancelled")) toast(String(e), true);
+    }
+  });
+
+  $("import-saves").addEventListener("click", async () => {
+    try {
+      const path = await call("import_saves", { src: null });
+      toast(`Save imported into ${path}`);
+      refreshSaves();
+    } catch (e) {
+      if (!String(e).includes("cancelled")) toast(String(e), true);
+    }
+  });
   $("play").addEventListener("click", play);
 
   $("save-paths").addEventListener("click", async () => {

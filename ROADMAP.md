@@ -20,13 +20,16 @@ data.** It detects, configures and starts engines.
 Acceptance: `slope3 detect` sees the disc and the engine; `slope3 launch`
 starts a playable game at 60 fps.
 
-### Phase 1 - Desktop launcher v0.1 (current)
+### Phase 1 - Desktop launcher v0.1 (done 2026-11-25)
 
 - Tauri app (`apps/desktop`) with a static web UI, packaged for Linux first.
 - One screen: game status, settings generated from the adapter schema,
   play button, controller hints with Xbox glyphs.
-- Settings are written to the engine file; the launcher stores defaults.
-- Launcher log (engine stdout/stderr) available from the UI.
+- Settings are written to the engine file; the launcher stores defaults and
+  never overwrites what the engine's own overlay (F10) saved.
+- Save game export/import: copies the memory card to/from a file chosen in a
+  native dialog, keeps a timestamped backup before importing.
+- Engine log tail in the UI.
 
 Acceptance: a fresh user can point at disc + engine, change a setting, press
 Play and get into the game; the app never blocks on the engine.

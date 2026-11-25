@@ -106,6 +106,21 @@ pub trait EngineAdapter {
     /// Start the engine. The caller owns the child (stdio, wait, logs).
     fn launch(&self, config: &LaunchConfig) -> Result<Child>;
 
+    /// Where the engine keeps its saves and whether they exist.
+    fn saves_info(&self) -> Result<SavesInfo> {
+        anyhow::bail!("this engine has no save file")
+    }
+
+    /// Copy the engine's save file to `dest` (a file or an existing folder).
+    fn export_saves(&self, _dest: &Path) -> Result<PathBuf> {
+        anyhow::bail!("this engine cannot export saves")
+    }
+
+    /// Replace the engine's save file with `src`, after backing up the old one.
+    fn import_saves(&self, _src: &Path) -> Result<PathBuf> {
+        anyhow::bail!("this engine cannot import saves")
+    }
+
     /// Build/install the engine from its sources (optional). Returns a child
     /// whose output the caller may capture.
     fn install(&self) -> Result<Child> {
@@ -199,6 +214,14 @@ impl Config {
         }
         c
     }
+}
+
+/// A save file the launcher can back up or restore.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SavesInfo {
+    pub path: PathBuf,
+    pub exists: bool,
+    pub size: u64,
 }
 
 /// Human readable "1.4 GB" for the UI/log.

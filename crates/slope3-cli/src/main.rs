@@ -23,6 +23,16 @@ struct Cli {
 }
 
 #[derive(Subcommand)]
+enum SavesAction {
+    /// Where the save file is and how big it is.
+    Info,
+    /// Copy the save file to a path (file or folder).
+    Export { path: PathBuf },
+    /// Replace the save file with a copy from a path (keeps a backup).
+    Import { path: PathBuf },
+}
+
+#[derive(Subcommand)]
 enum Command {
     /// Write the launcher config.
     Init {
@@ -48,6 +58,11 @@ enum Command {
         /// Remove a setting (back to its default).
         #[arg(long = "unset", value_name = "KEY")]
         unset: Vec<String>,
+    },
+    /// Inspect, export or import the engine's save file.
+    Saves {
+        #[command(subcommand)]
+        action: SavesAction,
     },
     /// Build the engine from its sources (setup + cargo build).
     Install,
@@ -105,6 +120,7 @@ fn run() -> Result<()> {
                 eprintln!("(not ready yet: {e})");
             }
         }
+        Command::Saves { action } => saves(&config, action)?,
         Command::Install => install(&config)?,
         Command::Detect => detect(&config)?,
         Command::Doctor => doctor(&config)?,
@@ -116,6 +132,29 @@ fn run() -> Result<()> {
 
 fn adapter(config: &slope3_core::Config) -> Result<Box<dyn slope3_core::EngineAdapter>> {
     by_id(config)
+}
+
+fn saves(config: &slope3_core::Config, action: SavesAction) -> Result<()> {
+    let engine = adapter(config)?;
+    match action {
+        SavesAction::Info => {
+            let info = engine.saves_info()?;
+            println!("path:   {}", info.path.display());
+            println!("exists: {}", info.exists);
+            if info.exists {
+                println!("size:   {}", slope3_core::human_size(info.size));
+            }
+        }
+        SavesAction::Export { path } => {
+            let out = engine.export_saves(&path)?;
+            println!("exported to {}", out.display());
+        }
+        SavesAction::Import { path } => {
+            let dst = engine.import_saves(&path)?;
+            println!("imported into {}", dst.display());
+        }
+    }
+    Ok(())
 }
 
 fn install(config: &slope3_core::Config) -> Result<()> {
