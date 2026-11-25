@@ -351,7 +351,16 @@ function bind() {
 
 bind();
 refreshState();
+function active() {
+  return !document.hidden && document.hasFocus();
+}
+
 setInterval(() => {
   const tag = document.activeElement?.tagName;
-  if (!["INPUT", "SELECT", "TEXTAREA"].includes(tag)) refreshState();
+  if (active() && !["INPUT", "SELECT", "TEXTAREA"].includes(tag)) refreshState();
 }, 5000);
+
+document.addEventListener("visibilitychange", () => {
+  if (active()) refreshState();
+});
+window.addEventListener("focus", refreshState);
