@@ -159,19 +159,33 @@ code {
   -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.45) 55%, transparent 84%);
 }
 
-.scene-flakes {
+.scene-flake {
   position: absolute;
-  inset: 0;
-  background-image:
-    url("assets/NowFlake_contour.svg"),
-    url("assets/NowFlake_fill.svg"),
-    url("assets/NowFlake_contour.svg");
+  z-index: 1;
   background-repeat: no-repeat;
-  background-position: 2% 90px, 96% 78%, 66% 8%;
-  background-size: 24vw 24vw, 40vw 40vw, 30vw 30vw;
+  background-position: center;
+  background-size: contain;
+  pointer-events: none;
+}
+
+.scene-flake-fill {
+  left: 2%;
+  top: 48px;
+  width: 30vw;
+  height: 30vw;
+  background-image: url("assets/NowFlake_fill.svg");
   opacity: 0.38;
-  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.6) 60%, transparent 92%);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.6) 60%, transparent 92%);
+}
+
+.scene-flake-contour {
+  right: 0.5%;
+  bottom: 4%;
+  width: 19vw;
+  height: 19vw;
+  background-image: url("assets/NowFlake_contour.svg");
+  /* white artwork over white snow: tone it navy to stay visible */
+  filter: brightness(0);
+  opacity: 0.15;
 }
 
 .scene-shade {
