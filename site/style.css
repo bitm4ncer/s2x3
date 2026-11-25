@@ -53,7 +53,6 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
 }
 
 body {
@@ -64,7 +63,6 @@ body {
   line-height: 1.55;
   color: var(--ink);
   background: #b9d9ec;
-  overflow-x: hidden;
 }
 
 a {
@@ -133,12 +131,11 @@ code {
   inset: 0;
   background: url("assets/background.jpg") center 24% / cover no-repeat;
   filter: saturate(1.12) contrast(1.03) brightness(1.03);
-  transform: scale(1.02);
 }
 
 .scene-streaks {
   position: absolute;
-  inset: -10% -10% 0;
+  inset: 0 0 10% 0;
   background:
     linear-gradient(
       113deg,
@@ -178,10 +175,10 @@ code {
 }
 
 .scene-flake-contour {
-  right: -6vw;
-  bottom: -8vw;
-  width: 52vw;
-  height: 52vw;
+  right: 0;
+  bottom: 0;
+  width: 46vw;
+  height: 46vw;
   background-image: url("assets/NowFlake_contour.svg");
   opacity: 0.5;
 }
@@ -257,6 +254,9 @@ code {
 /* ── Brand bar + rounded tabs ───────────────────────────────────── */
 
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -640,6 +640,11 @@ code {
   flex-direction: column;
   gap: 40px;
   padding-top: 26px;
+}
+
+/* keep anchored sections clear of the sticky navbar */
+.sec {
+  scroll-margin-top: 84px;
 }
 
 .sec-head {
