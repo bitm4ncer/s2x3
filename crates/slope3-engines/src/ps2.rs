@@ -37,7 +37,7 @@ static SCHEMA: &[SettingsField] = &[
         key: "SSX3_ASPECT",
         label: "Aspect",
         help: "Fixed aspect instead of following the window. Empty: follow the window.",
-        kind: FieldKind::Choice(&["", "4:3", "16:9", "stretch"]),
+        kind: FieldKind::Choice(&["", "4:3", "16:9", "stretch", "cover"]),
         default: "",
     },
     SettingsField {

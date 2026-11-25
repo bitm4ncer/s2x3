@@ -92,3 +92,28 @@ Engine bugs are fixed **upstream** in `ssx3-decomp`, never in this repo. See
 - Emulation, BIOS handling, piracy: the user brings their own disc.
 - Hosting builds that contain game code.
 - Using EA trademarks in the project name or logo.
+
+## Overnight / parked tasks
+
+Work that is defined well enough to run unattended, but is not next.
+
+### Menu and intro-video fill (4:3 → window)
+
+Problem: menus, overlays and the intro movie are 4:3 content with black side
+bars baked into the wide frame. Presenter scaling cannot remove them (tried
+`SSX3_ASPECT=cover`).
+
+Plan:
+
+1. Engine helper `in_frontend()`: read the pause/frontend flags at
+   `gp - 0x6A0` (bit 1 = frontend; `gp` is CPU register 28).
+2. Presenter: with `SSX3_ASPECT=cover`, copy the central 4:3 region out of the
+   frame (GPU texture copy) and scale it to the window, cropping top/bottom.
+   Only while `in_frontend()`; races and their HUD stay untouched.
+3. Launcher setting `Menus: 4:3 / fill` (default 4:3), also covering the intro
+   movie and loading screens.
+4. Acceptance: screenshots of main menu, character/peak select, pause,
+   results, lodge/shop and the intro, all filling the width without
+   distortion; race HUD unchanged.
+5. Upstream branch `slope3/menu-fill` plus a note in `docs/upstream/`.
+
