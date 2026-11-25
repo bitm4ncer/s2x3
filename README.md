@@ -49,7 +49,7 @@ no engine code and no game data. You bring your own USA disc image.
 
 ## Requirements
 
-- Linux today, Windows and macOS are planned. The engine itself builds on all three.
+- Linux is the daily-driver. Windows alpha installers are published in [Releases](https://github.com/bitm4ncer/s2x3/releases/latest); macOS is planned. The engine itself builds on all three.
 - Your own **USA** disc image of SSX 3 for PlayStation 2 (`SLUS_207.72`).
 - Rust and Python 3 to build the engine locally, Vulkan drivers to run it.
 - A Vulkan capable GPU. Intel Iris Xe runs it at 60 fps with the heavy effects off.
