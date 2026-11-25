@@ -430,7 +430,6 @@ code {
 
 .hero-copy h1 {
   margin: 0 0 12px;
-  max-width: 640px;
   font-family: var(--ui);
   font-style: italic;
   font-weight: 600;
