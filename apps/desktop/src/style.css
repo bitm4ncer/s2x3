@@ -94,11 +94,17 @@ body {
   font-style: italic;
   font-size: 58vh;
   line-height: 1;
-  background: linear-gradient(180deg, #ffffff 0%, #eef9ff 42%, #c3e4f6 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.5) 42%,
+    rgba(255, 255, 255, 0) 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
   color: transparent;
-  opacity: 0.8;
+  opacity: 0.62;
   user-select: none;
 }
 
