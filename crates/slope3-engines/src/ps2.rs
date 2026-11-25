@@ -303,7 +303,13 @@ impl EngineAdapter for Ps2Rust {
         }
         std::fs::create_dir_all(&self.config.paths.saves)
             .with_context(|| format!("create {}", self.config.paths.saves.display()))?;
-        self.write_settings(&self.config.settings)?;
+        // Merge, never overwrite: the engine's own overlay (F10) writes this
+        // file too, and a launch must not wipe what the player changed.
+        let mut values = self.read_settings().unwrap_or_default();
+        for (k, v) in &self.config.settings {
+            values.insert(k.clone(), v.clone());
+        }
+        self.write_settings(&values)?;
 
         let mut cmd = Command::new(&binary);
         cmd.current_dir(&self.config.engine.root)
