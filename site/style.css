@@ -242,11 +242,6 @@ code {
   letter-spacing: 0.08em;
 }
 
-.topbar-note {
-  color: #9edcf6;
-  text-align: right;
-}
-
 /* ── Brand bar + rounded tabs ───────────────────────────────────── */
 
 .navbar {
@@ -704,6 +699,8 @@ code {
   color: #fff;
   background: var(--steelgrad);
   border-radius: var(--radius);
+  /* asymmetric diagonal slice on the bottom-left */
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 170px 100%, 0 calc(100% - 130px));
 }
 
 .dl-copy h3 {
@@ -1363,7 +1360,6 @@ code {
     gap: 26px;
   }
 
-  .topbar-note,
   .sec-meta {
     display: none;
   }
