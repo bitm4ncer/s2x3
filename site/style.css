@@ -182,9 +182,8 @@ code {
   bottom: -8vw;
   width: 52vw;
   height: 52vw;
-  background-image: url("assets/NowFlake_contour_thin.svg");
-  /* thin white contour over the snow */
-  opacity: 0.45;
+  background-image: url("assets/NowFlake_contour.svg");
+  opacity: 0.5;
 }
 
 .scene-shade {
