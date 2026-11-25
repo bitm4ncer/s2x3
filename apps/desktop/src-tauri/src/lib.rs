@@ -14,6 +14,7 @@ struct FieldDto {
     help: String,
     kind: String,
     choices: Vec<String>,
+    choice_labels: Vec<String>,
     min: Option<i64>,
     max: Option<i64>,
     default: String,
@@ -101,12 +102,25 @@ fn fields(engine: &dyn EngineAdapter) -> Vec<FieldDto> {
                 ),
                 FieldKind::Text => ("text".to_string(), vec![], None, None),
             };
+            let choice_labels = if f.key == "SSX3_STICK_TRICKS" {
+                vec![
+                    "Cross Pad (default)".to_string(),
+                    "Left Stick".to_string(),
+                    "Right Stick".to_string(),
+                ]
+            } else {
+                choices
+                    .iter()
+                    .map(|c| if c.is_empty() { "Auto".to_string() } else { c.clone() })
+                    .collect()
+            };
             FieldDto {
                 key: f.key.to_string(),
                 label: f.label.to_string(),
                 help: f.help.to_string(),
                 kind,
                 choices,
+                choice_labels,
                 min,
                 max,
                 default: f.default.to_string(),

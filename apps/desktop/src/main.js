@@ -52,6 +52,7 @@ const mockState = {
     { key: "SSX3_BLOOM", label: "Bloom", help: "Modern renderer bloom.", kind: "bool", default: "0", choices: [], min: null, max: null },
     { key: "SSX3_SHADOWS", label: "Real-time lighting", help: "Experimental: sun shadows from the renderer.", kind: "bool", default: "0", choices: [], min: null, max: null },
     { key: "SSX3_PAD2", label: "Second controller", help: "Plug in pad 2 for Multi Play.", kind: "bool", default: "0", choices: [], min: null, max: null },
+    { key: "SSX3_STICK_TRICKS", label: "Trick Spin Controls", help: "Cross Pad is the original scheme. Left Stick or Right Stick also presses the d-pad.", kind: "choice", choices: ["", "left", "right"], choice_labels: ["Cross Pad (default)", "Left Stick", "Right Stick"], default: "", min: null, max: null },
   ],
   values: {
     SSX3_TICK_HZ: "60",
@@ -186,8 +187,8 @@ function field(f) {
       <span></span></label>`;
   } else if (f.kind === "choice") {
     const options = f.choices
-      .map((c) => {
-        const label = c === "" ? "Auto" : c;
+      .map((c, i) => {
+        const label = f.choice_labels?.[i] ?? (c === "" ? "Auto" : c);
         return `<option value="${c}" ${c === value ? "selected" : ""}>${label}</option>`;
       })
       .join("");

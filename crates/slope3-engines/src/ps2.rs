@@ -115,9 +115,9 @@ static SCHEMA: &[SettingsField] = &[
     },
     SettingsField {
         key: "SSX3_STICK_TRICKS",
-        label: "Stick tricks",
-        help: "The chosen stick also presses the d-pad, so trick combos work without reaching for it. Off by default.",
-        kind: FieldKind::Choice(&["", "right", "left"]),
+        label: "Trick Spin Controls",
+        help: "Cross Pad is the original scheme. Left Stick or Right Stick also presses the d-pad, so trick combos work without reaching for it.",
+        kind: FieldKind::Choice(&["", "left", "right"]),
         default: "",
     },
     SettingsField {
