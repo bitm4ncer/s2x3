@@ -1008,3 +1008,84 @@ details[open] > summary::before {
   margin-top: 5px;
   font-size: 10px;
 }
+
+.prompt-set {
+  margin: 12px 20px 4px;
+  padding: 6px 0 10px;
+  border-bottom: 1px dashed rgba(18, 58, 99, 0.3);
+}
+
+.prompt-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prompt-head b {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: var(--navy);
+}
+
+.prompt-head small {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.prompt-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.prompt-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--line-2);
+  clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+  cursor: pointer;
+}
+
+.prompt-card:hover {
+  background: #fff;
+}
+
+.prompt-card.active {
+  border-color: var(--orange);
+  background: rgba(255, 245, 235, 0.95);
+  box-shadow: inset 0 0 0 2px rgba(242, 106, 27, 0.25);
+}
+
+.prompt-card b {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--navy);
+}
+
+.prompt-card small {
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+.glyphs {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.glyphs img,
+.ps-glyph {
+  width: 20px;
+  height: 20px;
+  display: block;
+}

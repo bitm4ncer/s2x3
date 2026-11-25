@@ -8,274 +8,535 @@
       name="description"
       content="A clean launcher and installer for the native SSX 3 port on PlayStation 2. Your disc, your settings, one place."
     />
+    <meta name="theme-color" content="#071c33" />
     <link rel="icon" href="assets/icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://api.fontshare.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <link href="https://api.fontshare.com/v2/css?f[]=alpino@700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
+    <noscript>
+      <style>
+        .scroll-view { scrollbar-width: auto; }
+        .scroll-view::-webkit-scrollbar { display: block; width: 16px; }
+        .scrollbar { display: none; }
+      </style>
+    </noscript>
   </head>
-  <body>
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-      <symbol id="i-win" viewBox="0 0 24 24"><path d="M2 4.5 10.5 3.2v7.3H2zM11.5 3.1 22 1.6v9H11.5zM2 12.5h8.5v7.3L2 18.5zM11.5 12.5H22v9l-10.5-1.6z" /></symbol>
-      <symbol id="i-mac" viewBox="0 0 24 24"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" /></symbol>
-      <symbol id="i-linux" viewBox="0 0 24 24"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706.953.953 0 01-.213.335.71.71 0 00-.088-.042c-.104-.045-.198-.064-.284-.133a1.312 1.312 0 00-.22-.066c.05-.06.146-.133.183-.198.053-.128.082-.264.088-.402v-.02a1.21 1.21 0 00-.061-.4c-.045-.134-.101-.2-.183-.333-.084-.066-.167-.132-.267-.132h-.016c-.093 0-.176.03-.262.132a.8.8 0 00-.205.334 1.18 1.18 0 00-.09.4v.019c.002.089.008.179.02.267-.193-.067-.438-.135-.607-.202a1.635 1.635 0 01-.018-.2v-.02a1.772 1.772 0 01.15-.768c.082-.22.232-.406.43-.533a.985.985 0 01.594-.2zm-2.962.059h.036c.142 0 .27.048.399.135.146.129.264.288.344.465.09.199.14.4.153.667v.004c.007.134.006.2-.002.266v.08c-.03.007-.056.018-.083.024-.152.055-.274.135-.393.2.012-.09.013-.18.003-.267v-.015c-.012-.133-.04-.2-.082-.333a.613.613 0 00-.166-.267.248.248 0 00-.183-.064h-.021c-.071.006-.13.04-.186.132a.552.552 0 00-.12.27.944.944 0 00-.023.33v.015c.012.135.037.2.08.334.046.134.098.2.166.268.01.009.02.018.034.024-.07.057-.117.07-.176.136a.304.304 0 01-.131.068 2.62 2.62 0 01-.275-.402 1.772 1.772 0 01-.155-.667 1.759 1.759 0 01.08-.668 1.43 1.43 0 01.283-.535c.128-.133.26-.2.418-.2zm1.37 1.706c.332 0 .733.065 1.216.399.293.2.523.269 1.052.468h.003c.255.136.405.266.478.399v-.131a.571.571 0 01.016.47c-.123.31-.516.643-1.063.842v.002c-.268.135-.501.333-.775.465-.276.135-.588.292-1.012.267a1.139 1.139 0 01-.448-.067 3.566 3.566 0 01-.322-.198c-.195-.135-.363-.332-.612-.465v-.005h-.005c-.4-.246-.616-.512-.686-.71-.07-.268-.005-.47.193-.6.224-.135.38-.271.483-.336.104-.074.143-.102.176-.131h.002v-.003c.169-.202.436-.47.839-.601.139-.036.294-.065.466-.065zm2.8 2.142c.358 1.417 1.196 3.475 1.735 4.473.286.534.855 1.659 1.102 3.024.156-.005.33.018.513.064.646-1.671-.546-3.467-1.089-3.966-.22-.2-.232-.335-.123-.335.59.534 1.365 1.572 1.646 2.757.13.535.16 1.104.021 1.67.067.028.135.06.205.067 1.032.534 1.413.938 1.23 1.537v-.043c-.06-.003-.12 0-.18 0h-.016c.151-.467-.182-.825-1.065-1.224-.915-.4-1.646-.336-1.77.465-.008.043-.013.066-.018.135-.068.023-.139.053-.209.064-.43.268-.662.669-.793 1.187-.13.533-.17 1.156-.205 1.869v.003c-.02.334-.17.838-.319 1.35-1.5 1.072-3.58 1.538-5.348.334a2.645 2.645 0 00-.402-.533 1.45 1.45 0 00-.275-.333c.182 0 .338-.03.465-.067a.615.615 0 00.314-.334c.108-.267 0-.697-.345-1.163-.345-.467-.931-.995-1.788-1.521-.63-.4-.986-.87-1.15-1.396-.165-.534-.143-1.085-.015-1.645.245-1.07.873-2.11 1.274-2.763.107-.065.037.135-.408.974-.396.751-1.14 2.497-.122 3.854a8.123 8.123 0 01.647-2.876c.564-1.278 1.743-3.504 1.836-5.268.048.036.217.135.289.202.218.133.38.333.59.465.21.201.477.335.876.335.039.003.075.006.11.006.412 0 .73-.134.997-.268.29-.134.52-.334.74-.4h.005c.467-.135.835-.402 1.044-.7zm2.185 8.958c.037.6.343 1.245.882 1.377.588.134 1.434-.333 1.791-.765l.211-.01c.315-.007.577.01.847.268l.003.003c.208.199.305.53.391.876.085.4.154.78.409 1.066.486.527.645.906.636 1.14l.003-.007v.018l-.003-.012c-.015.262-.185.396-.498.595-.63.401-1.746.712-2.457 1.57-.618.737-1.37 1.14-2.036 1.191-.664.053-1.237-.2-1.574-.898l-.005-.003c-.21-.4-.12-1.025.056-1.69.176-.668.428-1.344.463-1.897.037-.714.076-1.335.195-1.814.12-.465.308-.797.641-.984l.045-.022zm-10.814.049h.01c.053 0 .105.005.157.014.376.055.706.333 1.023.752l.91 1.664.003.003c.243.533.754 1.064 1.189 1.637.434.598.77 1.131.729 1.57v.006c-.057.744-.48 1.148-1.125 1.294-.645.135-1.52.002-2.395-.464-.968-.536-2.118-.469-2.857-.602-.369-.066-.61-.2-.723-.4-.11-.2-.113-.602.123-1.23v-.004l.002-.003c.117-.334.03-.752-.027-1.118-.055-.401-.083-.71.043-.94.16-.334.396-.4.69-.533.294-.135.64-.202.915-.47h.002v-.002c.256-.268.445-.601.668-.838.19-.201.38-.336.663-.336zm7.159-9.074c-.435.201-.945.535-1.488.535-.542 0-.97-.267-1.28-.466-.154-.134-.28-.268-.373-.335-.164-.134-.144-.333-.074-.333.109.016.129.134.199.2.096.066.215.2.36.333.292.2.68.467 1.167.467.485 0 1.053-.267 1.398-.466.195-.135.445-.334.648-.467.156-.136.149-.267.279-.267.128.016.034.134-.147.332a8.097 8.097 0 01-.69.468zm-1.082-1.583V5.64c-.006-.02.013-.042.029-.05.074-.043.18-.027.26.004.063 0 .16.067.15.135-.006.049-.085.066-.135.066-.055 0-.092-.043-.141-.068-.052-.018-.146-.008-.163-.065zm-.551 0c-.02.058-.113.049-.166.066-.047.025-.086.068-.14.068-.05 0-.13-.02-.136-.068-.01-.066.088-.133.15-.133.08-.031.184-.047.259-.005.019.009.036.03.03.05v.02h.003z" /></symbol>
-    </svg>
-
+  <body id="top">
     <div class="scene" aria-hidden="true">
       <div class="scene-photo"></div>
+      <div class="scene-streaks"></div>
       <div class="scene-shade"></div>
       <div class="scene-snow"></div>
     </div>
 
     <div class="page">
-      <header class="masthead">
-        <h1>ONE LAUNCHER.<br /><span>ONE MOUNTAIN.</span></h1>
-        <a class="logo" href="#top" aria-label="slope3">
-          <img src="assets/icon.png" alt="" width="76" height="76" />
-          <svg class="brand-word" viewBox="-7 -78 282 113" role="img" aria-label="slope3">
-            <defs>
-              <linearGradient id="wm-orange" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#ffe2b8" />
-                <stop offset="0.45" stop-color="#ffb05e" />
-                <stop offset="1" stop-color="#e05a0f" />
-              </linearGradient>
-            </defs>
-            <path d="M23.43675934538105 -8.8Q28.036759345381046 -8.8 28.472435932958458 -11.9Q28.697301268482285 -13.5 27.173788019714436 -14.4Q25.650274770946588 -15.3 20.79081560564898 -16.3Q6.384329942815677 -19.1 7.803792373309831 -29.200000000000003Q8.63298329805394 -35.1 14.03893030298255 -38.7Q19.44487730791116 -42.300000000000004 27.94487730791116 -42.300000000000004Q38.04487730791116 -42.300000000000004 44.796768052571835 -38.400000000000006Q46.084335384809926 -37.6 45.359470049286095 -36.0L42.044333208012226 -30.200000000000003Q41.02108928819672 -27.900000000000002 38.8897382898396 -29.1Q32.76757712782773 -32.5 26.867577127827722 -32.5Q22.667577127827723 -32.5 22.28811687413127 -29.8Q22.09135970554792 -28.400000000000002 23.714872954315766 -27.5Q25.338386203083616 -26.6 30.569737201440745 -25.400000000000002Q37.85892594938716 -23.900000000000002 40.80135752875022 -21.0Q43.74378910811329 -18.1 42.984868600720375 -12.700000000000001Q41.05945916529761 1.0 21.45945916529761 1.0Q11.159459165297609 1.0 3.893514337166696 -2.8000000000000003Q2.3200010883988487 -3.7 3.4010827578036316 -5.7L6.502165515607263 -11.4Q7.469193101541807 -13.3 9.142706350309656 -12.4Q16.036759345381046 -8.8 23.43675934538105 -8.8Z M49.424865335523826 -1.6 58.53191142423879 -66.4Q58.630290008530466 -67.10000000000001 59.19353338414654 -67.55000000000001Q59.756776759762616 -68.0 60.45677675976262 -68.0H70.65677675976262Q72.45677675976262 -68.0 72.2319114242388 -66.4L63.12486533552383 -1.6Q62.900000000000006 0.0 61.1 0.0H50.9Q50.2 0.0 49.76324337561608 -0.45Q49.32648675123215 -0.9 49.424865335523826 -1.6Z M120.09514119486926 -20.6Q118.66162468090486 -10.4 111.66054192310123 -4.7Q104.6594591652976 1.0 93.9594591652976 1.0Q83.2594591652976 1.0 77.81054192310123 -4.7Q72.36162468090487 -10.4 73.79514119486926 -20.6Q75.22865770883365 -30.8 82.2867675083724 -36.550000000000004Q89.34487730791116 -42.300000000000004 100.04487730791115 -42.300000000000004Q110.74487730791115 -42.300000000000004 116.14379455010751 -36.6Q121.54271179230389 -30.900000000000002 120.09514119486926 -20.6ZM95.54757059743463 -10.3Q99.54757059743463 -10.3 102.29108493460133 -13.100000000000001Q105.03459927176803 -15.9 105.69514119486925 -20.6Q106.36973720144074 -25.400000000000002 104.41325153860743 -28.200000000000003Q102.45676587577412 -31.0 98.45676587577412 -31.0Q94.35676587577413 -31.0 91.61325153860743 -28.200000000000003Q88.86973720144073 -25.400000000000002 88.19514119486925 -20.6Q87.53459927176802 -15.9 89.49108493460133 -13.100000000000001Q91.44757059743463 -10.3 95.54757059743463 -10.3Z M121.92539855143428 23.3 130.7654170542147 -39.6Q130.8637956385064 -40.300000000000004 131.43406605585756 -40.800000000000004Q132.00433647320875 -41.300000000000004 132.70433647320877 -41.300000000000004H143.00433647320875Q144.70433647320877 -41.300000000000004 144.4654170542147 -39.6L144.15622721786946 -37.4Q149.74487730791117 -42.300000000000004 157.44487730791116 -42.300000000000004Q165.64487730791114 -42.300000000000004 169.97892975878312 -36.85Q174.3129822096551 -31.400000000000002 172.79514119486927 -20.6Q171.36162468090487 -10.4 165.56054192310125 -4.7Q159.7594591652976 1.0 151.2594591652976 1.0Q144.0594591652976 1.0 139.3637847545179 -3.3000000000000003L135.62539855143427 23.3Q135.38647913244023 25.0 133.6864791324402 25.0H123.38647913244021Q122.68647913244021 25.0 122.25674954979141 24.5Q121.8270199671426 24.0 121.92539855143428 23.3ZM148.94757059743463 -10.3Q152.74757059743462 -10.3 155.2410849346013 -13.100000000000001Q157.73459927176802 -15.9 158.39514119486927 -20.6Q159.06973720144074 -25.400000000000002 157.31325153860746 -28.200000000000003Q155.55676587577415 -31.0 151.75676587577414 -31.0Q147.25676587577414 -31.0 142.65244028655385 -26.700000000000003L140.9097339362442 -14.3Q144.34757059743464 -10.3 148.94757059743463 -10.3Z M218.651352086756 -2.5Q211.45945916529763 1.0 200.15945916529762 1.0Q188.3594591652976 1.0 182.75351488136613 -4.65Q177.14757059743465 -10.3 178.59514119486926 -20.6Q180.02865770883366 -30.8 186.88676750837243 -36.550000000000004Q193.74487730791117 -42.300000000000004 203.94487730791116 -42.300000000000004Q213.04487730791118 -42.300000000000004 217.8000108839885 -37.0Q222.55514446006583 -31.700000000000003 221.33243919815501 -23.0Q220.95297894445855 -20.3 220.5983840262859 -19.200000000000003Q220.12973502464305 -18.0 218.62973502464305 -18.0H192.52973502464306Q193.23513792967273 -9.5 202.93513792967272 -9.5Q207.23513792967273 -9.5 216.31459818336918 -12.200000000000001Q218.1848686007204 -12.700000000000001 218.5740573486668 -11.200000000000001L219.846487839631 -4.6000000000000005Q220.23567658757742 -3.1 218.651352086756 -2.5ZM202.3113607939468 -32.1Q199.3113607939468 -32.1 196.980279124542 -30.1Q194.6491974551372 -28.1 193.47135861714906 -24.700000000000003H208.67135861714908Q208.71136079394677 -32.1 202.3113607939468 -32.1Z M236.12378801971442 -14.4 236.92487077751807 -20.1Q237.24811469733356 -22.400000000000002 239.24811469733356 -22.400000000000002Q244.44811469733358 -22.400000000000002 246.9362234084735 -24.450000000000003Q249.42433211961338 -26.5 249.8600087071908 -29.6Q250.19730671047654 -32.0 248.60811796253012 -33.5Q247.0189292145837 -35.0 243.5189292145837 -35.0Q242.5189292145837 -35.0 241.44784808937834 -34.85Q240.376766964173 -34.7 239.7056858389676 -34.55Q239.03460471376226 -34.4 237.8783883798813 -34.0Q236.72217204600037 -33.6 236.3440638790599 -33.400000000000006Q235.9659557121194 -33.2 234.68163121129797 -32.6Q233.39730671047653 -32.0 233.0832526270063 -31.900000000000002Q231.3708199592444 -31.1 230.82379346170868 -32.9L229.2356874715659 -40.1Q228.76055280708974 -41.7 230.3589313913814 -42.400000000000006Q238.10704064672072 -46.300000000000004 247.80704064672074 -46.300000000000004Q256.7070406467207 -46.300000000000004 260.88785026617603 -42.25Q265.06865988563135 -38.2 264.1129822096551 -31.400000000000002Q263.5086566204348 -27.1 260.52379074071155 -23.650000000000002Q257.5389248609883 -20.200000000000003 252.40000544199424 -18.5Q257.7751401064704 -16.900000000000002 260.4121660598067 -13.250000000000002Q263.04919201314294 -9.600000000000001 262.33243375616075 -4.5Q261.1940529950714 3.6 254.48351107197016 8.3Q247.77296914886892 13.0 237.9729691488689 13.0Q227.6729691488689 13.0 221.22107840420824 9.1Q219.80540290502967 8.5 220.74432232402373 6.800000000000001L224.45621633388095 -0.4Q225.30918983634527 -2.2 226.99675716858334 -1.4000000000000001Q232.7470264975357 1.8 238.7470264975357 1.8Q242.6470264975357 1.8 245.31405408347024 -0.09999999999999998Q247.98108166940477 -2.0 248.4167582569822 -5.1000000000000005Q249.3864900164287 -12.0 237.8864900164287 -12.0Q235.7864900164287 -12.0 236.12378801971442 -14.4Z" fill="#ffffff" stroke="url(#wm-orange)" stroke-width="9"
-              stroke-linejoin="round" paint-order="stroke" />
-          </svg>
-        </a>
-      </header>
-
-      <div class="layout">
-        <aside class="side-nav">
-          <a href="#top">Home</a>
-          <a href="#features">Features</a>
-          <a href="#install">Install</a>
-          <a href="#status">Status</a>
-          <a href="#credits">Credits</a>
-          <a href="https://github.com/bitm4ncer/slope3">Github</a>
-
-          <div class="online">
-            <b>source code</b>
-            <span><a href="https://github.com/bitm4ncer/slope3">GitHub repo</a></span>
-          </div>
-        </aside>
-
-        <main class="board" id="top">
-          <div class="tab">DOWNLOADS</div>
-          <div class="board-inner">
-            <section class="item hero-item">
-              <div class="ico disc-ico" aria-hidden="true">
-                <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" /><circle cx="24" cy="24" r="6" /><path d="M24 5v8M24 35v8M5 24h8M35 24h8" /></svg>
-              </div>
-              <div class="item-body">
-                <h3>Check out slope3</h3>
-                <p>
-                  The launcher for the native SSX 3 port. Your disc, your
-                  settings, one place. No emulator, no game data, no account.
-                </p>
-                <figure class="shot">
-                  <img src="assets/launcher.webp" alt="slope3 launcher with session settings and rig panel" />
-                </figure>
-                <div class="btn-row">
-                  <a class="btn orange" href="https://github.com/bitm4ncer/slope3/releases/latest">
-                    <svg aria-hidden="true"><use href="#i-win" /></svg> Windows
-                  </a>
-                  <a class="btn orange" href="https://github.com/bitm4ncer/slope3/releases/latest">
-                    <svg aria-hidden="true"><use href="#i-mac" /></svg> macOS
-                  </a>
-                  <a class="btn orange" href="https://github.com/bitm4ncer/slope3/releases/latest">
-                    <svg aria-hidden="true"><use href="#i-linux" /></svg> Linux
-                  </a>
-                </div>
-                <p class="small">Linux alpha. Windows and macOS builds follow.</p>
-                <p class="links">
-                  <a href="https://github.com/bitm4ncer/slope3">View source &gt;&gt;</a>
-                  <a href="https://github.com/bitm4ncer/slope3/blob/main/ROADMAP.md">Read the roadmap &gt;&gt;</a>
-                </p>
-              </div>
-            </section>
-
-            <section id="features">
-              <h2 class="subhead">Features</h2>
-
-              <div class="item">
-                <div class="ico" aria-hidden="true">
-                  <svg viewBox="0 0 48 48"><rect x="7" y="10" width="34" height="28" rx="4" /><path d="M7 19h34M14 26h8M14 31h5" /></svg>
-                </div>
-                <div class="item-body">
-                  <h3>Disc detection</h3>
-                  <p>Finds the USA disc image, checks <code>SLUS_207.72</code> and keeps the path for the next start.</p>
-                </div>
-              </div>
-
-              <div class="item">
-                <div class="ico" aria-hidden="true">
-                  <svg viewBox="0 0 48 48"><path d="M10 14h28M10 24h28M10 34h28" /><circle cx="18" cy="14" r="4" /><circle cx="30" cy="24" r="4" /><circle cx="22" cy="34" r="4" /></svg>
-                </div>
-                <div class="item-body">
-                  <h3>Settings that stay</h3>
-                  <p>Every engine option is generated from a schema. Changes from the F10 overlay are merged, never wiped.</p>
-                </div>
-              </div>
-
-              <div class="item">
-                <div class="ico" aria-hidden="true">
-                  <svg viewBox="0 0 48 48"><path d="M24 8v22M16 22l8 8 8-8" /><rect x="8" y="34" width="32" height="6" rx="2" /></svg>
-                </div>
-                <div class="item-body">
-                  <h3>Engine setup</h3>
-                  <p>Download and build <a href="https://github.com/andersfischernielsen/ssx3-decomp">ssx3-decomp</a> from the app, with an update check when the repository moves.</p>
-                </div>
-              </div>
-
-              <div class="item">
-                <div class="ico" aria-hidden="true">
-                  <svg viewBox="0 0 48 48"><path d="M10 10h28v28H10z" /><path d="M16 10v10h16V10M16 38v-8h16v8" /></svg>
-                </div>
-                <div class="item-body">
-                  <h3>Saves</h3>
-                  <p>Export and import the PS2 memory card with timestamped backups before anything is replaced.</p>
-                </div>
-              </div>
-
-              <div class="item">
-                <div class="ico" aria-hidden="true">
-                  <svg viewBox="0 0 48 48"><path d="M10 30h28M14 30V18h20v12" /><circle cx="17" cy="36" r="4" /><circle cx="31" cy="36" r="4" /></svg>
-                </div>
-                <div class="item-body">
-                  <h3>Trick spin controls</h3>
-                  <p>Cross pad, left stick or right stick, with air gating so acceleration never flips by accident.</p>
-                </div>
-              </div>
-
-              <div class="item">
-                <div class="ico" aria-hidden="true">
-                  <svg viewBox="0 0 48 48"><path d="M24 6l14 6v12c0 9-6 15-14 18-8-3-14-9-14-18V12z" /><path d="M18 24l4 4 8-9" /></svg>
-                </div>
-                <div class="item-body">
-                  <h3>No game data</h3>
-                  <p>No ISO, no extracted assets, no recompiled code. You bring your own disc.</p>
-                </div>
-              </div>
-            </section>
-
-            <section id="install">
-              <h2 class="subhead">Install</h2>
-
-              <div class="item">
-                <div class="ico num-ico">01</div>
-                <div class="item-body">
-                  <h3>Pick your disc</h3>
-                  <p>Drop the USA ISO into the window or browse for it. slope3 verifies the game id.</p>
-                </div>
-              </div>
-
-              <div class="item">
-                <div class="ico num-ico">02</div>
-                <div class="item-body">
-                  <h3>Install the engine</h3>
-                  <p>One button clones <code>ssx3-decomp</code>, runs setup and builds the game locally.</p>
-                </div>
-              </div>
-
-              <div class="item">
-                <div class="ico num-ico">03</div>
-                <div class="item-body">
-                  <h3>Ride</h3>
-                  <p>Press play. Settings, saves and logs stay in the launcher, the game gets a clean child process.</p>
-                </div>
-              </div>
-            </section>
-
-            <section id="status">
-              <h2 class="subhead">Status</h2>
-              <p class="body-copy">
-                The launcher, settings, saves and engine setup work on Linux.
-                Windows and macOS follow. Menus and intro fill, performance
-                presets, Tricky courses and audio are on the roadmap.
-              </p>
-              <ul class="status-list">
-                <li><b>Launcher</b><span class="ok">Done</span></li>
-                <li><b>Settings</b><span class="ok">Done</span></li>
-                <li><b>Saves</b><span class="ok">Done</span></li>
-                <li><b>Engine update</b><span class="ok">Done</span></li>
-                <li><b>Menu fill</b><span>Next</span></li>
-                <li><b>Tricky courses</b><span>Later</span></li>
-                <li><b>Multiplayer</b><span>Later</span></li>
-              </ul>
-            </section>
-
-            <section id="credits">
-              <h2 class="subhead">Credits</h2>
-              <div class="item">
-                <div class="ico" aria-hidden="true">
-                  <svg viewBox="0 0 48 48"><path d="M24 6l4 8 9 1-6 7 2 9-9-4-9 4 2-9-6-7 9-1z" /></svg>
-                </div>
-                <div class="item-body">
-                  <h3>ssx3-decomp</h3>
-                  <p>
-                    The native port, recompiler and renderer come from
-                    <a href="https://github.com/andersfischernielsen/ssx3-decomp">ssx3-decomp</a>,
-                    written by <a href="https://github.com/andersfischernielsen">Anders Fischer Nielsen</a>
-                    and released under the MIT license.
-                  </p>
-                </div>
-              </div>
-              <p class="legal">
-                <strong>Own disc required.</strong> slope3 ships no game data and is
-                not affiliated with Electronic Arts. SSX is a trademark of EA.
-              </p>
-            </section>
-          </div>
-        </main>
-
-        <aside class="right">
-          <section class="panel platforms">
-            <h2>Platforms</h2>
-            <ul>
-              <li><a href="https://github.com/bitm4ncer/slope3/releases/latest">Windows<sup>®</sup></a></li>
-              <li><a href="https://github.com/bitm4ncer/slope3/releases/latest">macOS<sup>®</sup></a></li>
-              <li><a href="https://github.com/bitm4ncer/slope3/releases/latest">Linux</a></li>
-            </ul>
-            <a class="star" href="https://github.com/bitm4ncer/slope3/releases/latest">
-              <span>DOWNLOAD</span>
-            </a>
-          </section>
-
-          <section class="panel news-panel">
-            <h2>News</h2>
-            <p><b>11.25.2026</b> slope3 alpha 0.1 is up. Linux first, Windows and macOS next.</p>
-            <p><b>11.24.2026</b> Save export and import with timestamped backups.</p>
-            <p class="links"><a href="https://github.com/bitm4ncer/slope3">Read more &gt;&gt;</a></p>
-          </section>
-        </aside>
+      <div class="topbar">
+        <span><b>SLOPE3</b> // A FAN-MADE SSX 3 PORTAL</span>
+        <span class="topbar-note">BEST VIEWED AT 1024×768 · BROADBAND RECOMMENDED</span>
       </div>
 
-      <div class="bottom">
-        <div class="slopes">
-          <small>HIT THE SLOPES</small>
-          <b>PRESS PLAY</b>
+      <header class="hero">
+        <div class="hero-copy">
+          <a class="brand" href="#top" aria-label="slope3 home">
+            <img src="assets/icon.png" alt="" width="64" height="64" />
+            <span>slope3</span>
+          </a>
+          <p class="kicker">THE UNOFFICIAL SSX 3 LAUNCHER // PS2</p>
+          <h1>
+            <span>IT'S YOUR <span class="h1-hot">RIG</span></span>
+            <span>AGAINST THE <span class="h1-accent">MOUNTAIN.</span></span>
+          </h1>
+          <p class="hero-sub">
+            slope3 finds your disc, builds the native port and keeps every setting,
+            save and log in one place. No emulator. No game data. No account.
+          </p>
+          <div class="hero-badges">
+            <span class="badge badge-hot">LINUX ALPHA 0.1</span>
+            <span class="badge">WINDOWS + MACOS NEXT</span>
+            <span class="badge badge-ghost">GPL-3.0</span>
+          </div>
+          <p class="hero-links">
+            <a href="https://github.com/bitm4ncer/slope3/releases/latest">GET THE ALPHA &gt;&gt;</a>
+            <a href="#downloads">SEE WHAT'S INSIDE &gt;&gt;</a>
+          </p>
         </div>
-        <div class="newsbox">
-          <h2>News</h2>
-          <p>Save export and import with timestamped backups before anything is replaced.</p>
-          <a href="https://github.com/bitm4ncer/slope3/commits/main">Latest changes &gt;&gt;</a>
+
+        <div class="hero-art">
+          <div class="art-burst" aria-hidden="true"></div>
+          <div class="art-speed" aria-hidden="true"></div>
+          <figure class="art-shot">
+            <img
+              src="assets/launcher.webp"
+              alt="The slope3 launcher showing session settings, paths and a play button"
+              width="1600"
+              height="1112"
+            />
+            <figcaption>LAUNCHER // ALPHA BUILD</figcaption>
+          </figure>
+          <img
+            class="art-icon"
+            src="assets/icon.png"
+            alt="slope3 app icon: a white s3 on an orange snowboard-style tile"
+            width="800"
+            height="800"
+          />
+          <span class="art-sticker">ALPHA<br /><b>0.1</b></span>
+          <span class="art-plate">NATIVE · PS2 · 60–240 HZ</span>
         </div>
+      </header>
+
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker-track">
+          <span>★ SLOPE3 ALPHA 0.1 IS LIVE</span>
+          <span>★ LINUX FIRST — WINDOWS + MACOS NEXT</span>
+          <span>★ SAVE EXPORT &amp; IMPORT IS IN</span>
+          <span>★ NO GAME DATA, EVER</span>
+          <span>★ BRING YOUR OWN DISC</span>
+          <span>★ SLOPE3 ALPHA 0.1 IS LIVE</span>
+          <span>★ LINUX FIRST — WINDOWS + MACOS NEXT</span>
+          <span>★ SAVE EXPORT &amp; IMPORT IS IN</span>
+          <span>★ NO GAME DATA, EVER</span>
+          <span>★ BRING YOUR OWN DISC</span>
+        </div>
+      </div>
+
+      <div class="layout">
+        <aside class="left-rail" aria-label="Portal navigation">
+          <nav class="side-nav">
+            <a href="#top">Home</a>
+            <a href="#downloads">Downloads<sup class="nav-flag">NEW</sup></a>
+            <a href="#features">Features</a>
+            <a href="#install">Install</a>
+            <a href="#status">Status</a>
+            <a href="#credits">Credits</a>
+            <a class="nav-ext" href="https://github.com/bitm4ncer/slope3/blob/main/ROADMAP.md">Roadmap <span>↗</span></a>
+            <a class="nav-ext" href="https://github.com/bitm4ncer/slope3/releases/latest">Releases <span>↗</span></a>
+            <a class="nav-ext" href="https://github.com/bitm4ncer/slope3">GitHub <span>↗</span></a>
+          </nav>
+
+          <section class="online-panel" aria-label="slope3 online">
+            <a
+              class="online-enter"
+              href="https://github.com/bitm4ncer/slope3/releases/latest"
+              aria-label="ENTER — get the slope3 alpha"
+            >
+              ENTER
+            </a>
+            <div class="online-inner">
+              <h2 class="online-title"><span aria-hidden="true">★</span> slope3 online</h2>
+              <div class="online-strip" aria-hidden="true">
+                <img src="assets/icon.png" alt="" width="160" height="160" />
+                <img src="assets/launcher.webp" alt="" width="160" height="111" />
+                <img src="assets/background.jpg" alt="" width="160" height="90" />
+                <span class="tile-3">3</span>
+              </div>
+              <div class="online-counter">
+                <span>RIDERS ONLINE NOW</span>
+                <span class="digits" aria-label="44 riders online"><i>0</i><i>4</i><i>4</i></span>
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        <div class="center-col">
+          <main class="board" aria-labelledby="downloads-title">
+            <h2 class="board-tab" id="downloads-title">Downloads</h2>
+            <div class="board-frame">
+              <div class="board-inner">
+                <div class="board-meta">
+                  <span>&gt;&gt; SLOPE3 DOWNLOAD CENTER</span>
+                  <span>ALPHA 0.1 // 11.25.2026</span>
+                </div>
+
+                <div class="scroll-shell">
+                  <div
+                    class="scroll-view"
+                    id="portal-scroll"
+                    tabindex="0"
+                    aria-label="slope3 download center, scrollable"
+                  >
+                    <span class="anchor" id="downloads"></span>
+
+                    <article class="item hero-item">
+                      <div class="thumb thumb-app">
+                        <img
+                          src="assets/icon.png"
+                          alt=""
+                          width="160"
+                          height="160"
+                          loading="eager"
+                        />
+                      </div>
+                      <div class="item-body">
+                        <h3>Check out slope3</h3>
+                        <p>
+                          The launcher for the native SSX 3 port. Your disc, your settings,
+                          one place. It is not an emulator, a recompiler or a game
+                          distribution.
+                        </p>
+                        <figure class="shot">
+                          <img
+                            src="assets/launcher.webp"
+                            alt="The slope3 launcher with session settings and rig panel"
+                            width="1600"
+                            height="1112"
+                          />
+                          <figcaption>THE LAUNCHER // ALPHA BUILD</figcaption>
+                        </figure>
+                        <div class="btn-row">
+                          <a
+                            class="btn"
+                            href="https://github.com/bitm4ncer/slope3/releases/latest"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <use href="assets/platform-icons.svg#i-win"></use>
+                            </svg>
+                            <span>Windows</span>
+                          </a>
+                          <a
+                            class="btn"
+                            href="https://github.com/bitm4ncer/slope3/releases/latest"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <use href="assets/platform-icons.svg#i-mac"></use>
+                            </svg>
+                            <span>macOS</span>
+                          </a>
+                          <a
+                            class="btn"
+                            href="https://github.com/bitm4ncer/slope3/releases/latest"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <use href="assets/platform-icons.svg#i-linux"></use>
+                            </svg>
+                            <span>Linux</span>
+                          </a>
+                        </div>
+                        <p class="tiny">Linux alpha. Windows and macOS builds follow.</p>
+                        <p class="links">
+                          <a href="https://github.com/bitm4ncer/slope3">View source &gt;&gt;</a>
+                          <a href="https://github.com/bitm4ncer/slope3/blob/main/ROADMAP.md"
+                            >Read the roadmap &gt;&gt;</a
+                          >
+                        </p>
+                      </div>
+                    </article>
+
+                    <section class="portal-section" id="features">
+                      <h2 class="subhead">Features</h2>
+
+                      <div class="item">
+                        <div class="thumb" aria-hidden="true">
+                          <svg viewBox="0 0 48 48">
+                            <rect x="7" y="10" width="34" height="28" rx="2" />
+                            <path d="M7 19h34M14 26h8M14 31h5" />
+                          </svg>
+                        </div>
+                        <div class="item-body">
+                          <h3>Disc detection</h3>
+                          <p>
+                            Finds the USA disc image, checks <code>SLUS_207.72</code> and
+                            keeps the path for the next start.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="item">
+                        <div class="thumb" aria-hidden="true">
+                          <svg viewBox="0 0 48 48">
+                            <path d="M10 14h28M10 24h28M10 34h28" />
+                            <circle cx="18" cy="14" r="4" />
+                            <circle cx="30" cy="24" r="4" />
+                            <circle cx="22" cy="34" r="4" />
+                          </svg>
+                        </div>
+                        <div class="item-body">
+                          <h3>Settings that stay</h3>
+                          <p>
+                            Every engine option is generated from a schema. Changes from
+                            the F10 overlay are merged, never wiped.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="item">
+                        <div class="thumb" aria-hidden="true">
+                          <svg viewBox="0 0 48 48">
+                            <path d="M24 8v22M16 22l8 8 8-8" />
+                            <rect x="8" y="34" width="32" height="6" rx="2" />
+                          </svg>
+                        </div>
+                        <div class="item-body">
+                          <h3>Engine setup</h3>
+                          <p>
+                            Download and build
+                            <a href="https://github.com/andersfischernielsen/ssx3-decomp"
+                              >ssx3-decomp</a
+                            >
+                            from the app, with an update check when the repository moves.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="item">
+                        <div class="thumb" aria-hidden="true">
+                          <svg viewBox="0 0 48 48">
+                            <path d="M10 10h28v28H10z" />
+                            <path d="M16 10v10h16V10M16 38v-8h16v8" />
+                          </svg>
+                        </div>
+                        <div class="item-body">
+                          <h3>Saves</h3>
+                          <p>
+                            Export and import the PS2 memory card with timestamped backups
+                            before anything is replaced.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="item">
+                        <div class="thumb" aria-hidden="true">
+                          <svg viewBox="0 0 48 48">
+                            <path d="M10 30h28M14 30V18h20v12" />
+                            <circle cx="17" cy="36" r="4" />
+                            <circle cx="31" cy="36" r="4" />
+                          </svg>
+                        </div>
+                        <div class="item-body">
+                          <h3>Trick spin controls</h3>
+                          <p>
+                            Cross pad, left stick or right stick, with air gating so
+                            acceleration never flips by accident.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="item">
+                        <div class="thumb" aria-hidden="true">
+                          <svg viewBox="0 0 48 48">
+                            <path d="M24 6l14 6v12c0 9-6 15-14 18-8-3-14-9-14-18V12z" />
+                            <path d="M18 24l4 4 8-9" />
+                          </svg>
+                        </div>
+                        <div class="item-body">
+                          <h3>No game data</h3>
+                          <p>
+                            No ISO, no extracted assets, no recompiled code. You bring
+                            your own disc.
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="portal-section" id="install">
+                      <h2 class="subhead">Install</h2>
+
+                      <div class="item">
+                        <div class="thumb thumb-num" aria-hidden="true">01</div>
+                        <div class="item-body">
+                          <h3>Pick your disc</h3>
+                          <p>
+                            Drop the USA ISO into the window or browse for it. slope3
+                            verifies the game id.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="item">
+                        <div class="thumb thumb-num" aria-hidden="true">02</div>
+                        <div class="item-body">
+                          <h3>Install the engine</h3>
+                          <p>
+                            One button clones <code>ssx3-decomp</code>, runs setup and
+                            builds the game locally.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="item">
+                        <div class="thumb thumb-num" aria-hidden="true">03</div>
+                        <div class="item-body">
+                          <h3>Ride</h3>
+                          <p>
+                            Press play. Settings, saves and logs stay in the launcher,
+                            the game gets a clean child process.
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="portal-section" id="status">
+                      <h2 class="subhead">Status</h2>
+                      <p class="body-copy">
+                        The launcher, settings, saves and engine setup work on Linux.
+                        Windows and macOS follow. Menus and intro fill, performance
+                        presets, Tricky courses and audio are on the roadmap.
+                      </p>
+                      <table class="status-table">
+                        <thead>
+                          <tr>
+                            <th scope="col">PIECE</th>
+                            <th scope="col">STATE</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr><td>Launcher</td><td><span class="ok">Done</span></td></tr>
+                          <tr><td>Settings</td><td><span class="ok">Done</span></td></tr>
+                          <tr><td>Saves</td><td><span class="ok">Done</span></td></tr>
+                          <tr><td>Engine update</td><td><span class="ok">Done</span></td></tr>
+                          <tr><td>Menu fill</td><td><span class="next">Next</span></td></tr>
+                          <tr><td>Tricky courses</td><td><span class="later">Later</span></td></tr>
+                          <tr><td>Multiplayer</td><td><span class="later">Later</span></td></tr>
+                        </tbody>
+                      </table>
+                    </section>
+
+                    <section class="portal-section" id="credits">
+                      <h2 class="subhead">Credits</h2>
+                      <div class="item">
+                        <div class="thumb" aria-hidden="true">
+                          <svg viewBox="0 0 48 48">
+                            <path d="M24 6l4 8 9 1-6 7 2 9-9-4-9 4 2-9-6-7 9-1z" />
+                          </svg>
+                        </div>
+                        <div class="item-body">
+                          <h3>ssx3-decomp</h3>
+                          <p>
+                            The native port, recompiler and renderer come from
+                            <a href="https://github.com/andersfischernielsen/ssx3-decomp"
+                              >ssx3-decomp</a
+                            >, written by
+                            <a href="https://github.com/andersfischernielsen"
+                              >Anders Fischer Nielsen</a
+                            >
+                            and released under the MIT license.
+                          </p>
+                        </div>
+                      </div>
+                      <p class="legal">
+                        <strong>Own disc required.</strong> slope3 ships no game data and
+                        is not affiliated with Electronic Arts. SSX is a trademark of EA.
+                      </p>
+                    </section>
+                  </div>
+
+                  <div class="scrollbar" aria-hidden="true">
+                    <div class="sb-btn sb-up"></div>
+                    <div class="sb-track"><div class="sb-thumb"></div></div>
+                    <div class="sb-btn sb-down"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <div class="bottom-split">
+            <a
+              class="hit-slopes"
+              href="https://github.com/bitm4ncer/slope3/releases/latest"
+            >
+              <span class="play-ico" aria-hidden="true"></span>
+              <span class="hit-copy">
+                <small>HIT THE SLOPES</small>
+                <b>PRESS PLAY</b>
+              </span>
+            </a>
+            <div class="news-mini">
+              <div class="news-head">NEWS</div>
+              <p>
+                <b>11.25.2026</b> Save export and import with timestamped backups
+                before anything is replaced.
+              </p>
+              <a href="https://github.com/bitm4ncer/slope3/commits/main"
+                >Latest changes &gt;&gt;</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <aside class="right-rail">
+          <section class="panel platforms" aria-labelledby="platforms-title">
+            <div class="panel-inner">
+              <h2 id="platforms-title">Platforms</h2>
+              <ul>
+                <li>
+                  <a href="https://github.com/bitm4ncer/slope3/releases/latest">
+                    <span>Linux<sup>™</sup></span><em class="os-tag tag-hot">ALPHA</em>
+                  </a>
+                </li>
+                <li>
+                  <a href="https://github.com/bitm4ncer/slope3/releases/latest">
+                    <span>Windows<sup>®</sup></span><em class="os-tag">NEXT</em>
+                  </a>
+                </li>
+                <li>
+                  <a href="https://github.com/bitm4ncer/slope3/releases/latest">
+                    <span>macOS<sup>®</sup></span><em class="os-tag">NEXT</em>
+                  </a>
+                </li>
+                <li>
+                  <span class="plat-static"
+                    ><span>PS2 disc</span><em class="os-tag tag-req">REQUIRED</em></span
+                  >
+                </li>
+              </ul>
+              <p class="plat-note">VULKAN GPU · 60–240 HZ · YOUR DISC</p>
+            </div>
+          </section>
+
+          <section class="panel cta-panel" aria-labelledby="cta-title">
+            <div class="panel-inner">
+              <h2 id="cta-title" class="sr-only">Download slope3</h2>
+              <a
+                class="star"
+                href="https://github.com/bitm4ncer/slope3/releases/latest"
+              >
+                <b>DOWNLOAD<br />NOW</b>
+              </a>
+              <p class="quote">“Your disc, your settings, one place.”</p>
+              <p class="quote-src">— THE SLOPE3 PREMISE</p>
+              <p class="cta-links">
+                <a href="https://github.com/bitm4ncer/slope3/releases/latest"
+                  >Release notes &gt;&gt;</a
+                ><br />
+                <a href="https://github.com/bitm4ncer/slope3/blob/main/ROADMAP.md"
+                  >Roadmap &gt;&gt;</a
+                >
+              </p>
+            </div>
+          </section>
+
+          <section class="panel specs" aria-labelledby="specs-title">
+            <div class="panel-inner">
+              <h2 id="specs-title">System</h2>
+              <ul class="spec-list">
+                <li><b>DISC</b><span>USA PS2 image</span></li>
+                <li><b>GPU</b><span>Vulkan capable</span></li>
+                <li><b>BUILD</b><span>Rust + Python 3</span></li>
+              </ul>
+              <p class="spec-note">WINDOWS + MACOS ON THE ROADMAP</p>
+            </div>
+          </section>
+        </aside>
       </div>
 
       <footer class="footer">
-        <span>© 2026 slope3 · fan project · GPL 3.0 or later</span>
+        <span>© 2026 slope3 · fan project · GPL-3.0-or-later</span>
         <div class="foot-links">
-          <a href="https://github.com/bitm4ncer/slope3">Github</a>
+          <a href="https://github.com/bitm4ncer/slope3">GitHub</a>
           <a href="https://github.com/andersfischernielsen/ssx3-decomp">Engine</a>
           <a href="https://github.com/bitm4ncer/slope3/blob/main/LICENSE">License</a>
         </div>
+        <span>NO GAME DATA · SSX IS AN EA TRADEMARK</span>
       </footer>
     </div>
+
+    <script src="script.js"></script>
   </body>
 </html>

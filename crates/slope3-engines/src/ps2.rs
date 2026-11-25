@@ -458,6 +458,9 @@ impl EngineAdapter for Ps2Rust {
             .env("SSX3_ISO", &self.config.paths.iso)
             .env("SSX3_MEMCARD", self.memcard_path())
             .env("SSX3_SETTINGS", self.settings_path());
+        if self.config.ui.buttons == "xbox" && self.config.paths.texreplace.is_dir() {
+            cmd.env("SSX3_TEX_REPLACE", &self.config.paths.texreplace);
+        }
 
         for (k, v) in &self.config.settings {
             cmd.env(k, v);

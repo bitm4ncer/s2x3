@@ -53,6 +53,9 @@ struct StateDto {
     capabilities: CapsDto,
     schema: Vec<FieldDto>,
     values: BTreeMap<String, String>,
+    buttons: String,
+    texreplace: String,
+    texreplace_present: bool,
     log_path: String,
 }
 
@@ -154,6 +157,9 @@ fn state_dto(config: &Config, engine: &dyn EngineAdapter) -> StateDto {
         capabilities: caps(&engine.capabilities()),
         schema: fields(engine),
         values: engine.read_settings().unwrap_or_default(),
+        buttons: config.ui.buttons.clone(),
+        texreplace: config.paths.texreplace.display().to_string(),
+        texreplace_present: config.paths.texreplace.is_dir(),
         log_path: log_path.display().to_string(),
     }
 }
@@ -222,6 +228,18 @@ fn set_paths(engine_root: String, iso: String, saves: String) -> Result<StateDto
 }
 
 const ENGINE_URL: &str = "https://github.com/andersfischernielsen/ssx3-decomp.git";
+
+#[tauri::command]
+fn set_buttons(value: String) -> Result<StateDto, String> {
+    if !matches!(value.as_str(), "ps2" | "xbox") {
+        return Err("button set must be ps2 or xbox".into());
+    }
+    let (mut config, _) = load().map_err(|e| format!("{e:#}"))?;
+    config.ui.buttons = value;
+    config.save().map_err(|e| format!("{e:#}"))?;
+    let (config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    Ok(state_dto(&config, engine.as_ref()))
+}
 
 #[tauri::command]
 fn set_iso(iso: String) -> Result<StateDto, String> {
@@ -492,6 +510,7 @@ pub fn run() {
             set_paths,
             set_iso,
             choose_iso,
+            set_buttons,
             open_url,
             set_engine_root,
             bootstrap_engine,

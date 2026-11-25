@@ -68,6 +68,9 @@ const mockState = {
     SSX3_SHADOWS: "0",
     SSX3_PAD2: "0",
   },
+  buttons: "xbox",
+  texreplace: "/home/player/Games/SSX3-ps2/texreplace",
+  texreplace_present: true,
   log_path: "…/saves/launcher.log",
 };
 
@@ -109,6 +112,10 @@ function mockInvoke(cmd, args) {
   if (cmd === "export_saves") return Promise.resolve("/home/player/Desktop/ssx3-mc0.ps2");
   if (cmd === "import_saves") return Promise.resolve("/home/player/Games/SSX3-ps2/saves/ssx3-mc0.ps2");
   if (cmd === "log_tail") return Promise.resolve("[ssx3] 8082 hand-written functions installed\n[window] display 60 Hz, game 60 Hz");
+  if (cmd === "set_buttons") {
+    mockState.buttons = args.value;
+    return Promise.resolve(structuredClone(mockState));
+  }
   if (cmd === "save_settings") {
     mockState.values = args.values;
     return Promise.resolve(structuredClone(mockState));
@@ -137,6 +144,16 @@ function glyph(button) {
   return `<img class="btn-glyph" src="${XBOX_ICONS[button]}" alt="${button}" />`;
 }
 
+function psGlyph(kind) {
+  const shapes = {
+    triangle: '<path d="M10 3.2 17 16H3z" fill="#3fbf5f" />',
+    circle: '<circle cx="10" cy="10" r="6.6" fill="none" stroke="#e5484d" stroke-width="2.8" />',
+    cross: '<path d="M4.2 4.2 15.8 15.8M15.8 4.2 4.2 15.8" stroke="#5b8fd6" stroke-width="3" />',
+    square: '<rect x="3.6" y="3.6" width="12.8" height="12.8" rx="1.5" fill="none" stroke="#e88bb0" stroke-width="2.8" />',
+  };
+  return `<svg class="ps-glyph" viewBox="0 0 20 20" aria-hidden="true">${shapes[kind]}</svg>`;
+}
+
 function dpadGlyph() {
   return `<svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
     <rect x="7" y="1" width="6" height="6" rx="1" fill="#7c8ea0"/>
@@ -147,12 +164,55 @@ function dpadGlyph() {
 }
 
 function hints() {
+  const ps = state?.buttons === "ps2";
+  const play = ps ? psGlyph("cross") : glyph("A");
+  const back = ps ? psGlyph("circle") : glyph("B");
   $("hints").innerHTML = `
-    <span class="hint">${glyph("A")} Play</span>
+    <span class="hint">${play} Play</span>
     <span class="hint">${dpadGlyph()} Navigate</span>
-    <span class="hint">${glyph("B")} Back (in game)</span>
+    <span class="hint">${back} Back (in game)</span>
     <span class="hint" style="color:#5f7d92">F11 fullscreen &middot; F10 settings in game</span>
   `;
+}
+
+function promptSet() {
+  const ps2 = state.buttons === "ps2";
+  const wrap = document.createElement("div");
+  wrap.className = "prompt-set";
+  wrap.innerHTML = `
+    <div class="prompt-head">
+      <b>Button prompts</b>
+      <small>${
+        state.texreplace_present
+          ? "Xbox uses the texture patch in the texreplace folder."
+          : "No texture patch found. In game prompts stay PlayStation 2."
+      }</small>
+    </div>
+    <div class="prompt-cards">
+      <button class="prompt-card ${ps2 ? "active" : ""}" data-set="ps2">
+        <span class="glyphs">${psGlyph("triangle")}${psGlyph("circle")}${psGlyph("cross")}${psGlyph("square")}</span>
+        <b>PlayStation 2</b>
+        <small>original glyphs</small>
+      </button>
+      <button class="prompt-card ${ps2 ? "" : "active"}" data-set="xbox">
+        <span class="glyphs">
+          <img src="assets/buttons/x.png" alt="" />
+          <img src="assets/buttons/b.png" alt="" />
+          <img src="assets/buttons/a.png" alt="" />
+          <img src="assets/buttons/y.png" alt="" />
+        </span>
+        <b>Xbox</b>
+        <small>texture patch</small>
+      </button>
+    </div>`;
+  wrap.querySelectorAll("[data-set]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const next = await call("set_buttons", { value: btn.dataset.set });
+      render(next);
+      toast(`Button prompts: ${btn.dataset.set.toUpperCase()}`);
+    });
+  });
+  return wrap;
 }
 
 const TABS = [
@@ -235,6 +295,7 @@ function collect() {
 
 function render(next) {
   state = next;
+  document.querySelectorAll(".prompt-set").forEach((el) => el.remove());
 
   const preview = forcedSetup();
   const engineReady = !preview && state.binary.state === "ready";
@@ -284,6 +345,7 @@ function render(next) {
   const known = new Set(TABS.flatMap((t) => t.keys));
   const keys = new Set(TABS.find((t) => t.id === activeTab)?.keys ?? []);
   const fields = $("fields");
+  if (activeTab === "controls") fields.before(promptSet());
   fields.innerHTML = "";
   state.schema
     .filter((f) => keys.has(f.key) || !known.has(f.key))
@@ -310,6 +372,7 @@ function render(next) {
     : "or drag the file anywhere into this window";
   $("drop").classList.toggle("has-disc", discReady);
 
+  hints();
   $("play").disabled = !ready;
   if (engineReady && !checkEngineUpdate.done) {
     checkEngineUpdate.done = true;

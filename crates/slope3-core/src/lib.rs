@@ -138,6 +138,29 @@ pub struct Config {
     /// Launcher-side defaults, written into the engine's settings file.
     #[serde(default)]
     pub settings: BTreeMap<String, String>,
+    /// Launcher behaviour that is not an engine setting.
+    #[serde(default)]
+    pub ui: Ui,
+}
+
+/// Launcher UI preferences.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Ui {
+    /// Which button prompts to show and inject: "xbox" or "ps2".
+    #[serde(default = "default_buttons")]
+    pub buttons: String,
+}
+
+fn default_buttons() -> String {
+    "xbox".into()
+}
+
+impl Default for Ui {
+    fn default() -> Self {
+        Self {
+            buttons: default_buttons(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -159,6 +182,9 @@ impl Default for EngineRef {
 pub struct Paths {
     pub iso: PathBuf,
     pub saves: PathBuf,
+    /// Texture replacement folder for the Xbox button prompts.
+    #[serde(default)]
+    pub texreplace: PathBuf,
 }
 
 /// `$SLOPE3_CONFIG`, else `$XDG_CONFIG_HOME/slope3/config.toml`, else
@@ -211,6 +237,15 @@ impl Config {
                 .map(Path::to_path_buf)
                 .unwrap_or_else(|| PathBuf::from("."));
             c.paths.saves = base.join("saves");
+        }
+        if c.paths.texreplace.as_os_str().is_empty() {
+            let base = c
+                .paths
+                .saves
+                .parent()
+                .map(Path::to_path_buf)
+                .unwrap_or_else(|| PathBuf::from("."));
+            c.paths.texreplace = base.join("texreplace");
         }
         c
     }
