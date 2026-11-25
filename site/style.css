@@ -697,7 +697,6 @@ code {
 .platforms,
 .feat,
 .status-table td,
-.plat-chip,
 .shot-plate,
 .actions,
 .hud {
@@ -833,43 +832,6 @@ code {
   letter-spacing: 0.12em;
   color: #cfe2ee;
   text-align: right;
-}
-
-/* platform chip strip */
-.dl-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
-  padding-left: 8px;
-}
-
-.plat-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 14px 4px;
-  font-family: var(--pixel);
-  font-size: 8px;
-  letter-spacing: 0.1em;
-  color: var(--navy);
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 8px;
-}
-
-.plat-chip img {
-  width: 30px;
-  height: 30px;
-  margin: -3px 0 -5px -9px;
-}
-
-.plat-hot {
-  background: var(--icegrad);
-}
-
-.plat-req {
-  color: #7c1d00;
-  background: var(--orange-3);
 }
 
 /* ── Features: white rows on ice ────────────────────────────────── */
