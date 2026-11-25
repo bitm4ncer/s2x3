@@ -51,10 +51,36 @@ no engine code and no game data. You bring your own USA disc image.
 
 ## Requirements
 
-- Linux is the daily-driver. Windows alpha installers are published in [Releases](https://github.com/bitm4ncer/s2x3/releases/latest); macOS is planned. The engine itself builds on all three.
-- Your own **USA** disc image of SSX 3 for PlayStation 2 (`SLUS_207.72`).
-- Rust and Python 3 to build the engine locally, Vulkan drivers to run it.
-- A Vulkan capable GPU. Intel Iris Xe runs it at 60 fps with the heavy effects off.
+### Systems
+
+| System | Launcher | Engine |
+| --- | --- | --- |
+| **Windows 10/11 (64-bit)** | Alpha installer; WebView2 is installed by the bootstrapper. | DirectX 12 or Vulkan, with the current NVIDIA/AMD/Intel driver. |
+| **Linux x86_64** | Alpha AppImage, `.deb` or `.rpm`; WebKitGTK 4.1 is required. | Vulkan through Mesa (RADV/ANV) or the proprietary NVIDIA driver. |
+| **macOS** | Planned. | Metal (the engine builds; the launcher does not ship yet). |
+
+### GPUs
+
+The renderer is `wgpu`; it uses **DirectX 12 on Windows** or **Vulkan 1.1+ on Linux** (Vulkan is also available on Windows). The common families below run with current drivers. This is a compatibility list, not a fixed performance promise: the project is tested on Intel Iris Xe, which reaches 60 fps with the heavy effects off.
+
+| Vendor | Windows | Linux |
+| --- | --- | --- |
+| **NVIDIA** | GeForce GTX 750 Ti, GTX 900 / 10 / 16 series, RTX 20 / 30 / 40 / 50 series; equivalent Quadro | The same GPUs with the current proprietary NVIDIA driver (535 or newer). |
+| **AMD** | Radeon RX 400 / 500 / 5000 / 6000 / 7000 / 9000 series, Vega, and Ryzen APUs with Radeon graphics | Mesa RADV/AMDVLK or the AMD proprietary driver; the same families. |
+| **Intel** | Iris Xe, Arc A/B, UHD 620 / 630 / 770; older HD 530/630 may work but are not recommended | Mesa ANV; the same families. |
+
+- Install the current GPU driver; the Microsoft Basic Display Adapter has no Vulkan/DX12.
+- Linux needs the Vulkan loader and a current Mesa or NVIDIA driver. X11 and Wayland are supported.
+- WSL is not supported for the engine.
+- Integrated GPUs and older cards may need the heavy graphics effects off to hold 60 fps.
+
+### Other requirements
+
+- Your own **USA** disc image of SSX 3 for PlayStation 2 (`SLUS_207.72`). No game data is included.
+- **Rust (stable) and Python 3** to build the engine from source; about **7 GB** free disk.
+- Linux build packages: `pkg-config`, `libasound2-dev`, `libudev-dev`, plus WebKitGTK 4.1 for the launcher.
+- Windows build: the MSVC toolchain (not WSL).
+- Linux is the daily-driver. Windows and Linux alpha installers are published in [Releases](https://github.com/bitm4ncer/s2x3/releases/latest); macOS is planned.
 
 ## Quick start
 
