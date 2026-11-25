@@ -193,18 +193,20 @@ code {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 12% 18%, #fff 0 2px, transparent 3px),
-    radial-gradient(circle at 71% 41%, #fff 0 1.6px, transparent 2.6px),
-    radial-gradient(circle at 37% 76%, #fff 0 2.4px, transparent 3.4px),
-    radial-gradient(circle at 55% 12%, #fff 0 1.3px, transparent 2.2px);
-  background-size: 420px 360px, 560px 480px, 700px 600px, 820px 520px;
-  opacity: 0.95;
-  animation: snowfall 34s linear infinite;
+    radial-gradient(circle at 12% 18%, #fff 0 2.4px, transparent 3.4px),
+    radial-gradient(circle at 71% 41%, #fff 0 2px, transparent 3px),
+    radial-gradient(circle at 37% 76%, #fff 0 2.8px, transparent 3.9px),
+    radial-gradient(circle at 55% 12%, #fff 0 1.6px, transparent 2.5px),
+    radial-gradient(circle at 84% 66%, #fff 0 1.3px, transparent 2.2px),
+    radial-gradient(circle at 24% 48%, #fff 0 1.1px, transparent 2px);
+  background-size: 360px 320px, 480px 420px, 620px 540px, 760px 480px, 900px 640px, 540px 380px;
+  opacity: 1;
+  animation: snowfall 30s linear infinite;
 }
 
 @keyframes snowfall {
-  from { background-position: 0 0, 0 0, 0 0, 0 0; }
-  to { background-position: -80px 360px, 120px 480px, -160px 600px, 100px 520px; }
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to { background-position: -70px 320px, 100px 420px, -140px 540px, 90px 480px, -110px 640px, 130px 380px; }
 }
 
 /* ── Page shell ─────────────────────────────────────────────────── */
