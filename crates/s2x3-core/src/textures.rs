@@ -447,25 +447,39 @@ pub fn run_upscale(config: &crate::Config) -> Result<PathBuf> {
     }
     let pack = config.paths.textures_packs().join("hd-upscale");
     std::fs::create_dir_all(&pack).with_context(|| format!("create {}", pack.display()))?;
-    let status = std::process::Command::new(python())
-        .arg(&tool)
-        .arg("--in")
-        .arg(config.paths.textures_dump())
-        .arg("--out")
-        .arg(pack.join("textures"))
-        .arg("--esrgan")
-        .arg(config.paths.textures.join(".tools"))
-        .status();
-    match status {
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            anyhow::bail!("python not found — install Python 3 (the engine setup needs it too)")
-        }
-        Err(e) => return Err(anyhow::Error::new(e).context("start python")),
-        Ok(s) if !s.success() => {
-            anyhow::bail!("upscale-textures failed (exit code {:?}) — its log lines above say what went wrong", s.code());
-        }
-        Ok(_) => {}
+    // The tool's `--esrgan` wants the executable's path; `--setup` downloads
+    // it there when it is missing (into the launcher's own tree, never the
+    // engine checkout).
+    let exe = config
+        .paths
+        .textures
+        .join(".tools/realesrgan/realesrgan-ncnn-vulkan")
+        .with_extension(std::env::consts::EXE_SUFFIX);
+    let mut cmd = |args: &[&str]| {
+        std::process::Command::new(python())
+            .arg(&tool)
+            .args(args)
+            .status()
+    };
+    if !exe.is_file() {
+        run_tool(
+            || cmd(&["--setup", "--esrgan", exe.to_string_lossy().as_ref()]),
+            "setting up the upscale toolchain",
+        )?;
     }
+    run_tool(
+        || {
+            cmd(&[
+                "--dump",
+                config.paths.textures_dump().to_string_lossy().as_ref(),
+                "--out",
+                pack.join("textures").to_string_lossy().as_ref(),
+                "--esrgan",
+                exe.to_string_lossy().as_ref(),
+            ])
+        },
+        "upscale-textures",
+    )?;
     std::fs::write(
         pack.join(MANIFEST),
         format!(
@@ -474,6 +488,28 @@ pub fn run_upscale(config: &crate::Config) -> Result<PathBuf> {
     )
     .with_context(|| format!("write {}", pack.join(MANIFEST).display()))?;
     Ok(pack)
+}
+
+/// Run the tool (a closure that starts python) and map failures to readable
+/// errors.
+fn run_tool(
+    run: impl FnOnce() -> std::io::Result<std::process::ExitStatus>,
+    what: &str,
+) -> Result<()> {
+    match run() {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            anyhow::bail!("python not found - install Python 3 (the engine setup needs it too)")
+        }
+        Err(e) => return Err(anyhow::Error::new(e).context("start python")),
+        Ok(s) if !s.success() => {
+            anyhow::bail!(
+                "{what} failed (exit code {:?}) - its log lines above say what went wrong",
+                s.code()
+            );
+        }
+        Ok(_) => {}
+    }
+    Ok(())
 }
 
 /// A stable marker for the configured ISO: its size and sha1, streamed.
