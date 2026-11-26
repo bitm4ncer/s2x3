@@ -12,8 +12,8 @@ use std::process::{Child, Command};
 
 use anyhow::{Context, Result};
 use s2x3_core::{
-    human_size, Capabilities, Detection, EngineAdapter, LaunchConfig, SettingsField, SavesInfo,
-    Status, FieldKind,
+    human_size, Capabilities, Detection, EngineAdapter, FieldKind, LaunchConfig, SavesInfo,
+    SettingsField, Status,
 };
 
 /// A PS2 memory card image is exactly 8 MiB of card data plus its header.
@@ -299,8 +299,8 @@ impl EngineAdapter for Ps2Rust {
         if !path.exists() {
             return Ok(out);
         }
-        let text = std::fs::read_to_string(&path)
-            .with_context(|| format!("read {}", path.display()))?;
+        let text =
+            std::fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
         for line in text.lines() {
             let line = line.trim();
             if line.starts_with('#') {
@@ -343,9 +343,8 @@ impl EngineAdapter for Ps2Rust {
                 all.insert(k.clone(), v.clone());
             }
         }
-        let mut text = String::from(
-            "# Written by S2X3. Lines are KEY=VALUE; environment variables win.\n",
-        );
+        let mut text =
+            String::from("# Written by S2X3. Lines are KEY=VALUE; environment variables win.\n");
         for (k, v) in &all {
             text.push_str(&format!("{k}={v}\n"));
         }
@@ -382,8 +381,7 @@ impl EngineAdapter for Ps2Rust {
     }
 
     fn import_saves(&self, src: &Path) -> Result<PathBuf> {
-        let meta = std::fs::metadata(src)
-            .with_context(|| format!("read {}", src.display()))?;
+        let meta = std::fs::metadata(src).with_context(|| format!("read {}", src.display()))?;
         if meta.len() != CARD_BYTES {
             anyhow::bail!(
                 "{} is not a PS2 memory card: expected {} bytes, got {}",
@@ -433,7 +431,13 @@ impl EngineAdapter for Ps2Rust {
         #[cfg(target_os = "windows")]
         let mut cmd = Command::new("powershell");
         #[cfg(target_os = "windows")]
-        cmd.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script]);
+        cmd.args([
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            script,
+        ]);
         #[cfg(not(target_os = "windows"))]
         let mut cmd = Command::new("bash");
         #[cfg(not(target_os = "windows"))]

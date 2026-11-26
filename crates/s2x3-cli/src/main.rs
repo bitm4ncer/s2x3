@@ -160,12 +160,18 @@ fn saves(config: &s2x3_core::Config, action: SavesAction) -> Result<()> {
 fn install(config: &s2x3_core::Config) -> Result<()> {
     let engine = adapter(config)?;
     let mut child = engine.install()?;
-    println!("building engine, pid {} (log: {})", child.id(),
-        config.paths.saves.join("install.log").display());
+    println!(
+        "building engine, pid {} (log: {})",
+        child.id(),
+        config.paths.saves.join("install.log").display()
+    );
     let status = child.wait()?;
     println!("build exited: {status}");
     if !status.success() {
-        bail!("engine build failed; see {}", config.paths.saves.join("install.log").display());
+        bail!(
+            "engine build failed; see {}",
+            config.paths.saves.join("install.log").display()
+        );
     }
     Ok(())
 }
@@ -268,7 +274,10 @@ fn settings(config: &s2x3_core::Config, set: &[String], unset: &[String]) -> Res
             values.remove(k);
         }
         engine.write_settings(&values)?;
-        println!("wrote {}", config.paths.saves.join("ssx3-settings.cfg").display());
+        println!(
+            "wrote {}",
+            config.paths.saves.join("ssx3-settings.cfg").display()
+        );
     } else {
         let current = engine.read_settings()?;
         for field in engine.settings_schema() {

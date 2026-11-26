@@ -185,6 +185,11 @@ pub struct Paths {
     /// Texture replacement folder for the Xbox button prompts.
     #[serde(default)]
     pub texreplace: PathBuf,
+    /// Root of the launcher-managed texture pack store: `dump/` (extracted
+    /// game textures), `packs/<id>/` (installed packs), `active/` (merge
+    /// folder handed to the engine at launch).
+    #[serde(default)]
+    pub textures: PathBuf,
 }
 
 /// `$S2X3_CONFIG`, else `%APPDATA%/s2x3/config.toml` on Windows, else
@@ -201,7 +206,10 @@ pub fn config_path() -> PathBuf {
         return PathBuf::from(dir).join("s2x3").join("config.toml");
     }
     let home = std::env::var_os("HOME").unwrap_or_default();
-    PathBuf::from(home).join(".config").join("s2x3").join("config.toml")
+    PathBuf::from(home)
+        .join(".config")
+        .join("s2x3")
+        .join("config.toml")
 }
 
 /// Configuration path used before the project was renamed. Read once so an
@@ -240,8 +248,8 @@ impl Config {
         if !path.exists() {
             return Ok(Self::default());
         }
-        let text = std::fs::read_to_string(path)
-            .with_context(|| format!("read {}", path.display()))?;
+        let text =
+            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
         toml::from_str(&text).with_context(|| format!("parse {}", path.display()))
     }
 
@@ -278,7 +286,32 @@ impl Config {
                 .unwrap_or_else(|| PathBuf::from("."));
             c.paths.texreplace = base.join("texreplace");
         }
+        if c.paths.textures.as_os_str().is_empty() {
+            let base = c
+                .paths
+                .saves
+                .parent()
+                .map(Path::to_path_buf)
+                .unwrap_or_else(|| PathBuf::from("."));
+            c.paths.textures = base.join("textures");
+        }
         c
+    }
+}
+
+impl Paths {
+    /// Extracted game textures (offline dump or `SSX3_TEX_DUMP` output).
+    pub fn textures_dump(&self) -> PathBuf {
+        self.textures.join("dump")
+    }
+    /// Installed texture packs, one folder per pack.
+    pub fn textures_packs(&self) -> PathBuf {
+        self.textures.join("packs")
+    }
+    /// Merge folder of the enabled packs; handed to the engine as
+    /// `SSX3_TEX_REPLACE`.
+    pub fn textures_active(&self) -> PathBuf {
+        self.textures.join("active")
     }
 }
 
@@ -303,5 +336,31 @@ pub fn human_size(bytes: u64) -> String {
         format!("{bytes} B")
     } else {
         format!("{v:.1} {}", UNITS[u])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resolved_fills_texture_paths() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cfg_path = tmp.path().join("config.toml");
+        std::env::set_var(CONFIG_ENV, &cfg_path);
+        let base = tmp.path();
+
+        let c = Config::default().resolved();
+
+        assert_eq!(c.paths.textures, base.join("textures"));
+        assert_eq!(c.paths.textures_dump(), base.join("textures").join("dump"));
+        assert_eq!(
+            c.paths.textures_packs(),
+            base.join("textures").join("packs")
+        );
+        assert_eq!(
+            c.paths.textures_active(),
+            base.join("textures").join("active")
+        );
     }
 }
