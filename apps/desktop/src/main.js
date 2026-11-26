@@ -76,6 +76,33 @@ const mockState = {
 
 let mockBuildTicks = 0;
 
+const mockPacks = [
+  {
+    id: "xbox-buttons",
+    name: "Xbox Buttons",
+    author: "s2x3",
+    version: "1.0.0",
+    kind: "upscale",
+    texture_count: 2,
+    enabled: true,
+    error: null,
+    conflicts: 0,
+    previews: [],
+  },
+  {
+    id: "hd-upscale",
+    name: "HD Upscale",
+    author: "s2x3",
+    version: "1.0.0",
+    kind: "upscale",
+    texture_count: 0,
+    enabled: false,
+    error: null,
+    conflicts: 0,
+    previews: [],
+  },
+];
+
 const mockCards = [
   {
     name: "career",
@@ -131,6 +158,22 @@ function mockInvoke(cmd, args) {  if (cmd === "state") {
   }
   if (cmd === "save_profiles")
     return Promise.resolve(structuredClone(mockCards));
+  if (cmd === "textures_list") return Promise.resolve(structuredClone(mockPacks));
+  if (cmd === "textures_toggle") {
+    const p = mockPacks.find((x) => x.id === args.id);
+    if (p) p.enabled = args.enabled;
+    return Promise.resolve(structuredClone(mockPacks));
+  }
+  if (cmd === "textures_remove") {
+    const i = mockPacks.findIndex((x) => x.id === args.id);
+    if (i >= 0) mockPacks.splice(i, 1);
+    return Promise.resolve(structuredClone(mockPacks));
+  }
+  if (cmd === "textures_pick_import" || cmd === "textures_import")
+    return Promise.resolve(structuredClone(mockPacks));
+  if (cmd === "textures_extract" || cmd === "textures_upscale")
+    return Promise.resolve("gestartet");
+  if (cmd === "textures_open_folder") return Promise.resolve(null);
   if (cmd === "card_new" || cmd === "card_import_file" || cmd === "card_import")
     return Promise.resolve(structuredClone(mockCards));
   if (cmd === "card_export")
@@ -255,7 +298,12 @@ const TABS = [
     label: "graphics",
     keys: ["SSX3_RENDER_SCALE", "SSX3_RENDER_SIZE", "SSX3_RESOLUTION", "SSX3_FOV", "SSX3_ANISO", "SSX3_LOD_BIAS", "SSX3_AA", "SSX3_AO", "SSX3_BLOOM", "SSX3_SHADOWS", "SSX3_SNOW"],
   },
-  { id: "controls", label: "controls", keys: ["SSX3_STICK_TRICKS", "SSX3_PAD2"] },
+  {
+    id: "controls",
+    label: "controls",
+    keys: ["SSX3_STICK_TRICKS", "SSX3_PAD2"],
+  },
+  { id: "textures", label: "textures", keys: [] },
   {
     id: "advanced",
     label: "advanced",
@@ -376,9 +424,13 @@ function render(next) {
   const fields = $("fields");
   if (activeTab === "controls") fields.before(promptSet());
   fields.innerHTML = "";
-  state.schema
-    .filter((f) => keys.has(f.key) || !known.has(f.key))
-    .forEach((f) => fields.append(field(f)));
+  if (activeTab === "textures") {
+    renderPacks(fields);
+  } else {
+    state.schema
+      .filter((f) => keys.has(f.key) || !known.has(f.key))
+      .forEach((f) => fields.append(field(f)));
+  }
 
   fields.querySelectorAll("[data-key]").forEach((el) => {
     el.addEventListener("change", scheduleSave);
@@ -421,6 +473,120 @@ function render(next) {
   $("play-sub").hidden = ready;
   $("play").setAttribute("aria-label", ready ? "Play" : `Play — ${playReason}`);
   $("play").setAttribute("title", ready ? "Play" : playReason);
+}
+
+/// The „textures" tab: pack cards plus the background jobs (disc read,
+/// HD upscale). Everything visible here maps 1:1 to a `textures_*` command.
+async function renderPacks(el) {
+  el.innerHTML = '<p class="muted">loading…</p>';
+  let packs;
+  try {
+    packs = await call("textures_list");
+  } catch (e) {
+    el.innerHTML = `<p class="muted">${escapeHtml(String(e))}</p>`;
+    return;
+  }
+  el.innerHTML = "";
+
+  const actions = document.createElement("div");
+  actions.className = "pack-actions";
+  const mk = (label, cmd, args) => {
+    const b = document.createElement("button");
+    b.className = "ghost small";
+    b.textContent = label;
+    b.addEventListener("click", async () => {
+      try {
+        const res = await call(cmd, args ?? {});
+        if (cmd === "textures_extract") {
+          toast("Texturen: die Disc wird im Hintergrund gelesen");
+        } else if (cmd === "textures_upscale") {
+          toast("HD-Upscale gestartet — das dauert Minuten");
+        } else if (Array.isArray(res)) {
+          renderPacks(el);
+        }
+      } catch (e) {
+        toast(String(e), true);
+      }
+    });
+    return b;
+  };
+  actions.append(
+    mk("Import…", "textures_pick_import"),
+    mk("Texturen neu lesen", "textures_extract"),
+    mk("HD hochskalieren", "textures_upscale"),
+    mk("Dump-Ordner öffnen", "textures_open_folder", { id: "" }),
+  );
+  el.append(actions);
+
+  const hint = document.createElement("p");
+  hint.className = "muted pack-hint";
+  hint.textContent = packs.length
+    ? "Packs ersetzen Spieltexturen. „Texturen neu lesen“ läuft einmal pro Disc im Hintergrund, ohne das Spiel zu starten."
+    : "Noch keine Texture-Packs — „Import…“ nimmt ein ZIP, „Texturen neu lesen“ liest die Disc im Hintergrund.";
+  el.append(hint);
+
+  for (const p of packs) {
+    const card = document.createElement("div");
+    card.className = "pack" + (p.enabled ? " on" : "");
+
+    const head = document.createElement("div");
+    head.className = "pack-head";
+    head.innerHTML = `<b>${escapeHtml(p.name)}</b><span class="badge">${escapeHtml(p.kind)}</span>`;
+    const meta = document.createElement("small");
+    meta.textContent = [p.author, p.version, `${p.texture_count} Texturen`]
+      .filter(Boolean)
+      .join(" · ");
+    card.append(head, meta);
+
+    if (p.error) {
+      const err = document.createElement("p");
+      err.className = "pack-error";
+      err.textContent = p.error;
+      card.append(err);
+    }
+    if (p.conflicts) {
+      const c = document.createElement("p");
+      c.className = "pack-error";
+      c.textContent = `${p.conflicts} Textur(en) überlappt mit einem anderen aktiven Pack`;
+      card.append(c);
+    }
+    for (const img of p.previews ?? []) {
+      if (!hasTauri || !window.__TAURI__.core?.convertFileSrc) break;
+      const el2 = document.createElement("img");
+      el2.className = "pack-preview";
+      el2.src = window.__TAURI__.core.convertFileSrc(img);
+      el2.alt = `${p.name} preview`;
+      card.append(el2);
+    }
+
+    const row = document.createElement("div");
+    row.className = "pack-row";
+    const toggle = document.createElement("button");
+    toggle.className = "ghost small";
+    toggle.textContent = p.enabled ? "Aus" : "An";
+    toggle.addEventListener("click", async () => {
+      await call("textures_toggle", { id: p.id, enabled: !p.enabled }).catch((e) =>
+        toast(String(e), true)
+      );
+      renderPacks(el);
+    });
+    const folder = document.createElement("button");
+    folder.className = "ghost small";
+    folder.textContent = "Ordner öffnen";
+    folder.addEventListener("click", () =>
+      call("textures_open_folder", { id: p.id }).catch((e) => toast(String(e), true))
+    );
+    const del = document.createElement("button");
+    del.className = "ghost small";
+    del.textContent = "Entfernen";
+    del.addEventListener("click", async () => {
+      await call("textures_remove", { id: p.id }).catch((e) => toast(String(e), true));
+      renderPacks(el);
+    });
+    row.append(toggle, folder, del);
+    card.append(row);
+    el.append(card);
+  }
 }
 
 function scheduleSave() {
@@ -672,7 +838,7 @@ function bind() {
     await cardAction("card_delete", { name: selectedProfile() }, "Card deleted");
     cardSelection = null;
   });
-  $("card-export").addEventListener("click", async () => {
+  $("card-share").addEventListener("click", async () => {
     if (!selectedProfile()) return toast("Select a card first", true);
     try {
       const share = await call("card_export", { name: selectedProfile() });
@@ -682,25 +848,17 @@ function bind() {
       if (!String(e).includes("cancelled")) toast(String(e), true);
     }
   });
-  $("card-hash").addEventListener("click", async () => {
+  $("card-share").addEventListener("click", async () => {
     if (!selectedProfile()) return toast("Select a card first", true);
     try {
-      const payload = await call("card_hash_copy", { name: selectedProfile() });
-      await navigator.clipboard.writeText(payload).catch(() => {});
-      toast(`Hash payload copied (${human(payload.length)} chars) — paste it into Import on another device`);
-    } catch (e) {
-      toast(String(e), true);
-    }
-  });
-  $("card-import").addEventListener("click", async () => {
-    try {
-      renderCards(await call("card_import_file", { src: null, name: "" }));
-      toast("Save imported — the new profile is in the list");
+      const share = await call("card_export", { name: selectedProfile() });
+      await navigator.clipboard.writeText(share.hash).catch(() => {});
+      toast(`Exported: ${share.file} — hash ${share.hash} (copied)`);
     } catch (e) {
       if (!String(e).includes("cancelled")) toast(String(e), true);
     }
   });
-  $("card-paste").addEventListener("click", async () => {
+  $("card-import").addEventListener("click", async () => {
     const payload = prompt(
       "Paste the hash payload (n=…&h=…&d=…), a save link, or a .ps2.gz file path:"
     );
@@ -765,6 +923,18 @@ bind();
 history.scrollRestoration = "manual";
 document.querySelector("main").scrollTop = 0;
 refreshState();
+
+if (hasTauri && window.__TAURI__.event) {
+  for (const ev of ["textures-extract", "textures-upscale"]) {
+    window.__TAURI__.event.listen(ev, (e) => {
+      const st = e.payload?.state ?? "";
+      const msg = e.payload?.message ?? "";
+      if (st === "done") toast(`Textures: ${msg}`);
+      if (st === "error") toast(`Textures: ${msg}`, true);
+      if (st !== "running") refreshState();
+    });
+  }
+}
 function active() {
   return !document.hidden && document.hasFocus();
 }

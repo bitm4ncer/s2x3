@@ -652,8 +652,8 @@ pub use cards::{
     card_hash_copy, card_import, card_import_file, card_new, card_rename, save_profiles,
 };
 pub use textures::{
-    textures_extract, textures_import, textures_list, textures_open_folder, textures_remove,
-    textures_toggle, textures_upscale,
+    textures_extract, textures_import, textures_list, textures_open_folder,
+    textures_pick_import, textures_remove, textures_toggle, textures_upscale,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -699,6 +699,7 @@ pub fn run() {
             card_import,
             textures_list,
             textures_import,
+            textures_pick_import,
             textures_remove,
             textures_toggle,
             textures_extract,

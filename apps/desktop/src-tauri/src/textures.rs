@@ -168,6 +168,17 @@ fn pack_dtos(config: &s2x3_core::Config) -> Vec<TexturePackDto> {
         .collect()
 }
 
+/// Open a file dialog and import the picked pack (zip or folder).
+#[tauri::command]
+pub async fn textures_pick_import() -> Result<Vec<TexturePackDto>, String> {
+    let picked = rfd::AsyncFileDialog::new()
+        .add_filter("Texture pack", &["zip"])
+        .pick_file()
+        .await
+        .ok_or_else(|| "cancelled".to_string())?;
+    textures_import(picked.path().display().to_string())
+}
+
 #[tauri::command]
 pub fn textures_list() -> Result<Vec<TexturePackDto>, String> {
     let (config, _) = crate::load().map_err(|e| format!("{e:#}"))?;
