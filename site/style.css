@@ -219,6 +219,41 @@ code {
   to { background-position: -70px 320px, 100px 420px, -140px 540px, 90px 480px, -110px 640px, 130px 380px; }
 }
 
+/* falling flake shapes */
+.falling-flakes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ff {
+  position: absolute;
+  top: 0;
+  background: url("assets/NowFlake_fill.svg") no-repeat center / contain;
+  animation: flake-fall linear infinite;
+}
+
+.ff.f7,
+.ff.f9 {
+  background-image: url("assets/NowFlake_contour.svg");
+}
+
+@keyframes flake-fall {
+  from { transform: translate3d(0, -8vh, 0) rotate(0deg); }
+  to { transform: translate3d(var(--drift, 30px), 108vh, 0) rotate(220deg); }
+}
+
+.f1 { left: 6%;  width: 18px; height: 18px; opacity: 0.5;  --drift: 42px;  animation-duration: 15s; animation-delay: -2s; }
+.f2 { left: 19%; width: 12px; height: 12px; opacity: 0.35; --drift: -28px; animation-duration: 22s; animation-delay: -9s; }
+.f3 { left: 31%; width: 24px; height: 24px; opacity: 0.45; --drift: 56px;  animation-duration: 18s; animation-delay: -14s; }
+.f4 { left: 44%; width: 10px; height: 10px; opacity: 0.3;  --drift: -36px; animation-duration: 26s; animation-delay: -4s; }
+.f5 { left: 55%; width: 20px; height: 20px; opacity: 0.5;  --drift: 48px;  animation-duration: 16s; animation-delay: -11s; }
+.f6 { left: 67%; width: 12px; height: 12px; opacity: 0.35; --drift: -44px; animation-duration: 24s; animation-delay: -18s; }
+.f7 { left: 74%; width: 26px; height: 26px; opacity: 0.4;  --drift: 34px;  animation-duration: 20s; animation-delay: -7s; }
+.f8 { left: 84%; width: 14px; height: 14px; opacity: 0.45; --drift: -30px; animation-duration: 19s; animation-delay: -1s; }
+.f9 { left: 92%; width: 22px; height: 22px; opacity: 0.4;  --drift: 52px;  animation-duration: 23s; animation-delay: -13s; }
+.f10 { left: 96%; width: 16px; height: 16px; opacity: 0.55; --drift: -40px; animation-duration: 17s; animation-delay: -6s; }
+
 /* ── Page shell ─────────────────────────────────────────────────── */
 
 .page {
@@ -1467,6 +1502,10 @@ code {
 
   .scene-snow {
     animation: none;
+  }
+
+  .ff {
+    display: none;
   }
 
   .ticker-track {
