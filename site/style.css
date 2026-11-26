@@ -776,6 +776,12 @@ code {
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 170px 100%, 0 calc(100% - 130px));
 }
 
+/* all copy and the button row share the same full width */
+.dl-copy .btn-row .btn {
+  flex: 1 1 0;
+  justify-content: center;
+}
+
 .dl-copy h3 {
   display: inline-flex;
   align-items: center;
@@ -796,7 +802,6 @@ code {
 
 .dl-copy > p {
   margin: 0 0 16px;
-  max-width: 40ch;
   color: #dcebf5;
 }
 
@@ -890,7 +895,6 @@ code {
 }
 
 .disclaimer {
-  max-width: 46ch;
   font-size: 10px;
   line-height: 1.5;
   color: #aec9da;
