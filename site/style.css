@@ -729,11 +729,11 @@ code {
 /* orange bullet, like "Â· Select Character" */
 .sec-title::before {
   content: "";
-  width: 12px;
-  height: 12px;
-  border-radius: 4px;
-  background: var(--orangerib);
-  transform: rotate(45deg);
+  width: 22px;
+  height: 22px;
+  background: var(--midnight);
+  -webkit-mask: url("assets/NowFlake_fill.svg") center / contain no-repeat;
+  mask: url("assets/NowFlake_fill.svg") center / contain no-repeat;
 }
 
 .sec-meta {
@@ -1596,4 +1596,5 @@ code {
 .steps {
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 0 100%);
 }
+
 
