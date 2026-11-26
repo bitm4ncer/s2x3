@@ -272,6 +272,11 @@ fn set_buttons(value: String) -> Result<StateDto, String> {
     }
     let (mut config, _) = load().map_err(|e| format!("{e:#}"))?;
     config.ui.buttons = value;
+    // Re-picking Xbox prompts allows the xbox-buttons pack to be generated
+    // again (the latch exists so a deliberate removal is not undone).
+    if config.ui.buttons == "xbox" {
+        config.textures.generated_xbox = false;
+    }
     config.save().map_err(|e| format!("{e:#}"))?;
     let (config, engine) = load().map_err(|e| format!("{e:#}"))?;
     Ok(state_dto(&config, engine.as_ref()))
@@ -582,7 +587,9 @@ fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
         .textures_packs()
         .join("xbox-buttons")
         .join("textures");
-    let needs_patch = config.ui.buttons == "xbox" && !texreplace::complete(&out_dir);
+    let needs_patch = config.ui.buttons == "xbox"
+        && !config.textures.generated_xbox
+        && !texreplace::complete(&out_dir);
     let dumped = needs_patch && !texreplace::dumped(&dump_dir).is_empty();
     let run_dump = needs_patch && texreplace::dumped(&dump_dir).is_empty();
     if dumped {
@@ -653,7 +660,8 @@ pub use cards::{
 };
 pub use textures::{
     textures_extract, textures_import, textures_list, textures_open_folder,
-    textures_pick_import, textures_remove, textures_toggle, textures_upscale,
+    textures_pick_import, textures_pick_import_folder, textures_remove, textures_toggle,
+    textures_upscale,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -700,6 +708,7 @@ pub fn run() {
             textures_list,
             textures_import,
             textures_pick_import,
+            textures_pick_import_folder,
             textures_remove,
             textures_toggle,
             textures_extract,

@@ -162,6 +162,15 @@ pub struct TexturesSettings {
     /// Hash of the ISO the offline extraction ran against ("" = never).
     #[serde(default)]
     pub iso_marker: String,
+    /// The legacy texreplace migration ran once; deletions of the imported
+    /// pack stay deleted.
+    #[serde(default)]
+    pub legacy_migrated: bool,
+    /// The xbox-buttons pack was generated once from the dump; deleting the
+    /// pack is not undone by the next launch (re-enabled by re-picking Xbox
+    /// prompts, which resets this).
+    #[serde(default)]
+    pub generated_xbox: bool,
 }
 
 /// Launcher UI preferences.

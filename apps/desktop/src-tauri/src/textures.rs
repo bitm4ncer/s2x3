@@ -121,7 +121,9 @@ pub fn generate_xbox_pack(config: &mut s2x3_core::Config) -> anyhow::Result<()> 
             .entry("xbox-buttons".into())
             .or_insert(true);
     }
+    config.textures.generated_xbox = true;
     merge_active(config)?;
+    config.save()?;
     Ok(())
 }
 
@@ -152,20 +154,29 @@ fn pack_dtos(config: &s2x3_core::Config) -> Vec<TexturePackDto> {
         .iter()
         .map(|e| {
             let enabled = config.textures.enabled.get(&e.id).copied();
-            let n = conflicts.iter().filter(|h| h == &&e.id).count();
-            let _ = n;
-            let conflict_count = conflicts
-                .iter()
-                .filter(|h| {
-                    e.pack
-                        .as_ref()
-                        .map(|p| p.manifest.targets.contains_key(*h))
-                        .unwrap_or(false)
-                })
-                .count();
+            let conflict_count = conflict_hits(e, &conflicts);
             dto_from(e, enabled, conflict_count)
         })
         .collect()
+}
+
+/// How many of the pack's texture files are claimed by another enabled pack
+/// too — counted on the actual file stems, so it works for packs whose
+/// manifest lists no targets.
+fn conflict_hits(e: &PackEntry, conflicts: &[String]) -> usize {
+    let Some(p) = &e.pack else {
+        return 0;
+    };
+    std::fs::read_dir(p.dir.join("textures"))
+        .map(|rd| {
+            rd.flatten()
+                .filter_map(|f| {
+                    let stem = f.path().file_stem()?.to_str()?.to_ascii_lowercase();
+                    conflicts.iter().any(|h| h == &stem).then_some(())
+                })
+                .count()
+        })
+        .unwrap_or(0)
 }
 
 /// Open a file dialog and import the picked pack (zip or folder).
@@ -174,6 +185,16 @@ pub async fn textures_pick_import() -> Result<Vec<TexturePackDto>, String> {
     let picked = rfd::AsyncFileDialog::new()
         .add_filter("Texture pack", &["zip"])
         .pick_file()
+        .await
+        .ok_or_else(|| "cancelled".to_string())?;
+    textures_import(picked.path().display().to_string())
+}
+
+/// Open a folder dialog and import the picked folder as a pack.
+#[tauri::command]
+pub async fn textures_pick_import_folder() -> Result<Vec<TexturePackDto>, String> {
+    let picked = rfd::AsyncFileDialog::new()
+        .pick_folder()
         .await
         .ok_or_else(|| "cancelled".to_string())?;
     textures_import(picked.path().display().to_string())
@@ -285,8 +306,9 @@ pub fn textures_upscale(app: tauri::AppHandle) -> Result<String, String> {
         let r = (|| -> anyhow::Result<String> {
             let (mut config, _) = crate::load()?;
             let pack = tx::run_upscale(&config)?;
-            merge_active(&config)?;
-            config.textures.enabled.insert("hd-upscale".into(), true);
+            // Enable BEFORE merging: the merge only copies enabled packs, so
+            // merging first would ship an active set without the HD files.
+            tx::enable_and_merge(&mut config, "hd-upscale")?;
             config.save()?;
             Ok(pack.display().to_string())
         })();

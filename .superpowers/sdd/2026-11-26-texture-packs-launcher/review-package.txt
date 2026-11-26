@@ -1,0 +1,2696 @@
+﻿# Review package: texture-packs launcher plan
+BASE: e943a949e82b619df42598c6fe687727886bda71
+HEAD: ecd537dba19d2bf7a8a224f19768c3e4476c8305
+
+## Commits
+
+ecd537d Texture pack catalog metadata
+9d8cb37 Textures tab in the desktop launcher
+ee7d551 Texture packs backend with background extraction
+b8968b5 Texture pack CLI subcommand
+917d374 Always-explicit texture replacement env and legacy migration
+3e6a676 Build active texture pack merge directory
+91af369 Texture pack import with zip-slip guard
+f22285e Texture pack manifest and listing
+eee2628 Add textures paths to config
+
+## Full diff
+
+diff --git a/apps/desktop/src-tauri/src/lib.rs b/apps/desktop/src-tauri/src/lib.rs
+index 4033a03..4913a11 100644
+--- a/apps/desktop/src-tauri/src/lib.rs
++++ b/apps/desktop/src-tauri/src/lib.rs
+@@ -9,11 +9,9 @@ use std::os::windows::process::CommandExt;
+ #[cfg(target_os = "windows")]
+ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+ 
+-use serde::Serialize;
+-use s2x3_core::{
+-    Capabilities, Config, EngineAdapter, FieldKind, LaunchConfig, Status,
+-};
++use s2x3_core::{Capabilities, Config, EngineAdapter, FieldKind, LaunchConfig, Status};
+ use s2x3_engines::by_id;
++use serde::Serialize;
+ use tauri::Manager;
+ 
+ #[derive(Serialize)]
+@@ -68,7 +66,12 @@ struct StateDto {
+ }
+ 
+ fn load() -> anyhow::Result<(Config, Box<dyn EngineAdapter>)> {
+-    let config = Config::load()?.resolved();
++    let mut config = Config::load()?.resolved();
++    // One-time migration from the pre-pack texreplace mechanism; saves when
++    // it changed something.
++    if s2x3_core::textures::migrate_legacy(&mut config).unwrap_or(false) {
++        let _ = config.save();
++    }
+     let engine = by_id(&config)?;
+     Ok((config, engine))
+ }
+@@ -105,7 +108,9 @@ fn fields(engine: &dyn EngineAdapter) -> Vec<FieldDto> {
+         .map(|f| {
+             let (kind, choices, min, max) = match f.kind {
+                 FieldKind::Bool => ("bool".to_string(), vec![], None, None),
+-                FieldKind::Integer { min, max } => ("int".to_string(), vec![], Some(min), Some(max)),
++                FieldKind::Integer { min, max } => {
++                    ("int".to_string(), vec![], Some(min), Some(max))
++                }
+                 FieldKind::Choice(c) => (
+                     "choice".to_string(),
+                     c.iter().map(|s| s.to_string()).collect(),
+@@ -130,7 +135,13 @@ fn fields(engine: &dyn EngineAdapter) -> Vec<FieldDto> {
+                 .unwrap_or_else(|| {
+                     choices
+                         .iter()
+-                        .map(|c| if c.is_empty() { "Auto".to_string() } else { c.clone() })
++                        .map(|c| {
++                            if c.is_empty() {
++                                "Auto".to_string()
++                            } else {
++                                c.clone()
++                            }
++                        })
+                         .collect()
+                 });
+             FieldDto {
+@@ -484,7 +495,11 @@ fn check_engine_update() -> Result<UpdateDto, String> {
+         .map_err(|e| format!("git: {e}"))?;
+     let local_s = String::from_utf8_lossy(&local.stdout).trim().to_string();
+     let remote_line = String::from_utf8_lossy(&remote.stdout);
+-    let remote_s = remote_line.split_whitespace().next().unwrap_or("").to_string();
++    let remote_s = remote_line
++        .split_whitespace()
++        .next()
++        .unwrap_or("")
++        .to_string();
+     Ok(UpdateDto {
+         available: !remote_s.is_empty() && remote_s != local_s,
+         detail: if remote_s.is_empty() {
+@@ -552,21 +567,26 @@ fn engine_import(path: &Path) -> anyhow::Result<PathBuf> {
+ 
+ #[tauri::command]
+ fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
+-    let (config, engine) = load().map_err(|e| format!("{e:#}"))?;
++    let (mut config, engine) = load().map_err(|e| format!("{e:#}"))?;
+     let log = config.paths.saves.join("launcher.log");
+ 
+     // Xbox prompts: everything happens in the background. If the prompt
+     // atlases are not patched yet, this run doubles as the texture dump and
+-    // the patch is generated when the game quits. If the dump already has the
+-    // atlases, the patch is generated right now.
++    // the pack is generated when the game quits. If the dump already has the
++    // atlases, the pack is generated right now. The dump lives under
++    // paths.textures (launcher data ÔÇö never inside the engine checkout).
+     let mut extra_env = BTreeMap::new();
+-    let dump_dir = config.engine.root.join("textures").join("dump");
+-    let out_dir = config.paths.texreplace.clone();
++    let dump_dir = config.paths.textures_dump();
++    let out_dir = config
++        .paths
++        .textures_packs()
++        .join("xbox-buttons")
++        .join("textures");
+     let needs_patch = config.ui.buttons == "xbox" && !texreplace::complete(&out_dir);
+     let dumped = needs_patch && !texreplace::dumped(&dump_dir).is_empty();
+     let run_dump = needs_patch && texreplace::dumped(&dump_dir).is_empty();
+     if dumped {
+-        if let Err(e) = texreplace::patch(&dump_dir, &out_dir) {
++        if let Err(e) = textures::generate_xbox_pack(&mut config) {
+             eprintln!("texreplace patch failed: {e:#}");
+         }
+     } else if run_dump {
+@@ -585,9 +605,9 @@ fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
+     std::thread::spawn(move || {
+         let _ = child.wait();
+         // After the game quits: if this run wrote the dump, generate the
+-        // patch automatically so the next start shows Xbox glyphs.
++        // pack automatically so the next start shows Xbox glyphs.
+         if run_dump {
+-            if let Err(e) = texreplace::patch(&dump_dir, &out_dir) {
++            if let Err(e) = textures::generate_xbox_pack(&mut config) {
+                 eprintln!("texreplace patch failed: {e:#}");
+             }
+         }
+@@ -626,10 +646,14 @@ fn read_tail(path: &Path, lines: usize) -> anyhow::Result<String> {
+ 
+ mod cards;
+ mod texreplace;
++mod textures;
+ pub use cards::{
+-    card_activate, card_activate_default, card_delete, card_duplicate, card_export,
+-    card_hash, card_hash_copy, card_import, card_import_file, card_new, card_rename,
+-    save_profiles,
++    card_activate, card_activate_default, card_delete, card_duplicate, card_export, card_hash,
++    card_hash_copy, card_import, card_import_file, card_new, card_rename, save_profiles,
++};
++pub use textures::{
++    textures_extract, textures_import, textures_list, textures_open_folder,
++    textures_pick_import, textures_remove, textures_toggle, textures_upscale,
+ };
+ 
+ #[cfg_attr(mobile, tauri::mobile_entry_point)]
+@@ -672,7 +696,15 @@ pub fn run() {
+             card_import_file,
+             card_hash,
+             card_hash_copy,
+-            card_import
++            card_import,
++            textures_list,
++            textures_import,
++            textures_pick_import,
++            textures_remove,
++            textures_toggle,
++            textures_extract,
++            textures_upscale,
++            textures_open_folder
+         ])
+         .run(tauri::generate_context!())
+         .expect("error while running S2X3");
+diff --git a/apps/desktop/src-tauri/src/texreplace.rs b/apps/desktop/src-tauri/src/texreplace.rs
+index 864a9d3..891a8d6 100644
+--- a/apps/desktop/src-tauri/src/texreplace.rs
++++ b/apps/desktop/src-tauri/src/texreplace.rs
+@@ -100,12 +100,7 @@ fn patch_atlas(atlas: &image::RgbaImage) -> anyhow::Result<image::RgbaImage> {
+                 out.put_pixel(x, y, image::Rgba([0, 0, 0, 0]));
+             }
+         }
+-        let glyph = image::imageops::resize(
+-            &glyph_image(letter)?,
+-            w,
+-            h,
+-            FilterType::Lanczos3,
+-        );
++        let glyph = image::imageops::resize(&glyph_image(letter)?, w, h, FilterType::Lanczos3);
+         image::imageops::overlay(&mut out, &glyph, x0 as i64, y0 as i64);
+     }
+     Ok(out)
+diff --git a/apps/desktop/src-tauri/src/textures.rs b/apps/desktop/src-tauri/src/textures.rs
+new file mode 100644
+index 0000000..d27c4a1
+--- /dev/null
++++ b/apps/desktop/src-tauri/src/textures.rs
+@@ -0,0 +1,403 @@
++//! Texture pack commands for the desktop UI: list/import/toggle/remove,
++//! the background extraction against the ISO, the upscale job, and the
++//! generated `xbox-buttons` pack (spec: textures design).
++//!
++//! Packs live under `paths.textures`; the engine gets the merge folder
++//! `active/` as `SSX3_TEX_REPLACE` ÔÇö always explicit, `0` when nothing is
++//! enabled.
++
++use s2x3_core::textures::{self as tx, MergeReport, PackEntry, MANIFEST};
++use serde::Serialize;
++use std::path::{Path, PathBuf};
++use tauri::Emitter;
++
++/// One pack as the UI shows it.
++#[derive(Debug, Clone, Serialize)]
++pub struct TexturePackDto {
++    pub id: String,
++    pub name: String,
++    pub author: String,
++    pub version: String,
++    pub kind: String,
++    pub texture_count: usize,
++    pub enabled: bool,
++    pub error: Option<String>,
++    pub conflicts: usize,
++    /// 1ÔÇô2 example images from the pack's `preview/` folder, if any.
++    pub previews: Vec<String>,
++}
++
++fn dto_from(e: &PackEntry, enabled: Option<bool>, conflicts: usize) -> TexturePackDto {
++    let (name, author, version, kind, previews) = match &e.pack {
++        Some(p) => (
++            p.manifest.name.clone(),
++            p.manifest.author.clone(),
++            p.manifest.version.clone(),
++            p.manifest.kind.to_string(),
++            preview_list(&p.dir),
++        ),
++        None => (
++            e.id.clone(),
++            String::new(),
++            String::new(),
++            "?".into(),
++            Vec::new(),
++        ),
++    };
++    TexturePackDto {
++        id: e.id.clone(),
++        name,
++        author,
++        version,
++        kind,
++        texture_count: e.texture_count,
++        enabled: enabled.unwrap_or(false),
++        error: e.error.clone(),
++        conflicts,
++        previews,
++    }
++}
++
++fn preview_list(pack_dir: &Path) -> Vec<String> {
++    let mut out: Vec<String> = Vec::new();
++    if let Ok(rd) = std::fs::read_dir(pack_dir.join("preview")) {
++        for f in rd.flatten() {
++            if f.path()
++                .extension()
++                .is_some_and(|x| x.eq_ignore_ascii_case("png"))
++            {
++                out.push(f.path().display().to_string());
++                if out.len() == 2 {
++                    break;
++                }
++            }
++        }
++    }
++    out
++}
++
++/// The offline extraction has to run when it never ran (`""`) or the ISO
++/// changed since the stored marker.
++fn needs_extract(stored: &str, current: &str) -> bool {
++    stored.is_empty() || stored != current
++}
++
++/// Write the `xbox-buttons` pack manifest once; never overwrite.
++fn write_manifest_if_missing(dir: &Path) {
++    let path = dir.join(MANIFEST);
++    if path.is_file() {
++        return;
++    }
++    let _ = std::fs::create_dir_all(dir);
++    let _ = std::fs::write(
++        path,
++        "name = \"Xbox Buttons\"\n\
++         author = \"s2x3\"\n\
++         version = \"1.0.0\"\n\
++         kind = \"upscale\"\n\
++         [targets]\n\
++         \"f897162c0f661c8b\" = \"Steuerkreuz-Atlas (Frontend)\"\n\
++         \"75df99fccd7d9d0b\" = \"Steuerkreuz-Atlas (Pause/HUD)\"\n",
++    );
++}
++
++/// Generate the `xbox-buttons` pack from the texture dump: patch the two
++/// known atlases with the launcher's own glyphs (no game art in the repo ÔÇö
++/// the input atlas stays in the dump, the output stays on this machine),
++/// manifest it, enable it while the user wants Xbox prompts, merge.
++pub fn generate_xbox_pack(config: &mut s2x3_core::Config) -> anyhow::Result<()> {
++    let dir = config.paths.textures_packs().join("xbox-buttons");
++    let out = dir.join("textures");
++    let dump = config.paths.textures_dump();
++    if !dump.is_dir() {
++        return Ok(());
++    }
++    crate::texreplace::patch(&dump, &out)?;
++    write_manifest_if_missing(&dir);
++    if config.ui.buttons == "xbox" {
++        config
++            .textures
++            .enabled
++            .entry("xbox-buttons".into())
++            .or_insert(true);
++    }
++    merge_active(config)?;
++    Ok(())
++}
++
++/// Rebuild `active/` from the config state; logs conflicts to stderr.
++fn merge_active(config: &s2x3_core::Config) -> anyhow::Result<MergeReport> {
++    let report = tx::merge(
++        &config.paths.textures_packs(),
++        &config.paths.textures_active(),
++        &config.textures.enabled,
++        &config.textures.priority,
++    )?;
++    if !report.conflicts.is_empty() {
++        eprintln!(
++            "texture packs: several active packs replace the same textures: {}",
++            report.conflicts.join(", ")
++        );
++    }
++    Ok(report)
++}
++
++fn pack_dtos(config: &s2x3_core::Config) -> Vec<TexturePackDto> {
++    let conflicts = tx::conflicts(
++        &config.paths.textures_packs(),
++        &config.textures.enabled,
++        &config.textures.priority,
++    );
++    tx::list(&config.paths.textures_packs())
++        .iter()
++        .map(|e| {
++            let enabled = config.textures.enabled.get(&e.id).copied();
++            let n = conflicts.iter().filter(|h| h == &&e.id).count();
++            let _ = n;
++            let conflict_count = conflicts
++                .iter()
++                .filter(|h| {
++                    e.pack
++                        .as_ref()
++                        .map(|p| p.manifest.targets.contains_key(*h))
++                        .unwrap_or(false)
++                })
++                .count();
++            dto_from(e, enabled, conflict_count)
++        })
++        .collect()
++}
++
++/// Open a file dialog and import the picked pack (zip or folder).
++#[tauri::command]
++pub async fn textures_pick_import() -> Result<Vec<TexturePackDto>, String> {
++    let picked = rfd::AsyncFileDialog::new()
++        .add_filter("Texture pack", &["zip"])
++        .pick_file()
++        .await
++        .ok_or_else(|| "cancelled".to_string())?;
++    textures_import(picked.path().display().to_string())
++}
++
++#[tauri::command]
++pub fn textures_list() -> Result<Vec<TexturePackDto>, String> {
++    let (config, _) = crate::load().map_err(|e| format!("{e:#}"))?;
++    Ok(pack_dtos(&config))
++}
++
++#[tauri::command]
++pub fn textures_import(path: String) -> Result<Vec<TexturePackDto>, String> {
++    let (config, _) = crate::load().map_err(|e| format!("{e:#}"))?;
++    tx::import(Path::new(&path), &config.paths.textures_packs(), false)
++        .map_err(|e| format!("{e:#}"))?;
++    merge_active(&config).map_err(|e| format!("{e:#}"))?;
++    config.save().map_err(|e| format!("{e:#}"))?;
++    Ok(pack_dtos(&config))
++}
++
++#[tauri::command]
++pub fn textures_remove(id: String) -> Result<Vec<TexturePackDto>, String> {
++    let (mut config, _) = crate::load().map_err(|e| format!("{e:#}"))?;
++    tx::remove(&config.paths.textures_packs(), &id).map_err(|e| format!("{e:#}"))?;
++    config.textures.enabled.remove(&id);
++    config.textures.priority.retain(|p| p != &id);
++    merge_active(&config).map_err(|e| format!("{e:#}"))?;
++    config.save().map_err(|e| format!("{e:#}"))?;
++    Ok(pack_dtos(&config))
++}
++
++#[tauri::command]
++pub fn textures_toggle(id: String, enabled: bool) -> Result<Vec<TexturePackDto>, String> {
++    let (mut config, _) = crate::load().map_err(|e| format!("{e:#}"))?;
++    config.textures.enabled.insert(id.clone(), enabled);
++    merge_active(&config).map_err(|e| format!("{e:#}"))?;
++    config.save().map_err(|e| format!("{e:#}"))?;
++    Ok(pack_dtos(&config))
++}
++
++/// Background job marker so a second call does not start a second run.
++static EXTRACT_RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
++
++/// Run the offline extraction in the background: on ISO change, read every
++/// texture from the disc into `paths.textures/dump` (no game start), then
++/// (re)generate the xbox-buttons pack. Emits `textures-extract` events.
++#[tauri::command]
++pub fn textures_extract(app: tauri::AppHandle) -> Result<String, String> {
++    use std::sync::atomic::Ordering;
++    if EXTRACT_RUNNING.swap(true, Ordering::SeqCst) {
++        return Ok("l├ñuft schon".into());
++    }
++    let app = app.clone();
++    std::thread::spawn(move || {
++        let emit = |state: &str, message: &str| {
++            let _ = app.emit(
++                "textures-extract",
++                serde_json::json!({ "state": state, "message": message }),
++            );
++        };
++        emit("running", "Texturen werden aus der Disc gelesen ÔÇª");
++        let r = (|| -> anyhow::Result<bool> {
++            let (mut config, _) = crate::load()?;
++            if !config.paths.iso.is_file() {
++                anyhow::bail!(
++                    "disc image not found: {} ÔÇö set the disc image first",
++                    config.paths.iso.display()
++                );
++            }
++            let current = tx::iso_marker(&config)?;
++            if !needs_extract(&config.textures.iso_marker, &current) {
++                return Ok(false);
++            }
++            let summary = tx::run_extract(&config)?;
++            config.textures.iso_marker = current;
++            generate_xbox_pack(&mut config)?;
++            config.save()?;
++            emit("done", &summary);
++            Ok(true)
++        })();
++        match r {
++            Ok(false) => emit("current", "Texturen sind aktuell"),
++            Ok(true) => {}
++            Err(e) => emit("error", &format!("{e:#}")),
++        }
++        EXTRACT_RUNNING.store(false, Ordering::SeqCst);
++    });
++    Ok("gestartet".into())
++}
++
++/// Run the ESRGAN upscale in the background; emits `textures-upscale`.
++#[tauri::command]
++pub fn textures_upscale(app: tauri::AppHandle) -> Result<String, String> {
++    static RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
++    use std::sync::atomic::Ordering;
++    if RUNNING.swap(true, Ordering::SeqCst) {
++        return Ok("l├ñuft schon".into());
++    }
++    let app = app.clone();
++    std::thread::spawn(move || {
++        let emit = |state: &str, message: &str| {
++            let _ = app.emit(
++                "textures-upscale",
++                serde_json::json!({ "state": state, "message": message }),
++            );
++        };
++        emit("running", "Texturen werden hochskaliert (dauert Minuten) ÔÇª");
++        let r = (|| -> anyhow::Result<String> {
++            let (mut config, _) = crate::load()?;
++            let pack = tx::run_upscale(&config)?;
++            merge_active(&config)?;
++            config.textures.enabled.insert("hd-upscale".into(), true);
++            config.save()?;
++            Ok(pack.display().to_string())
++        })();
++        match r {
++            Ok(p) => emit("done", &p),
++            Err(e) => emit("error", &format!("{e:#}")),
++        }
++        RUNNING.store(false, Ordering::SeqCst);
++    });
++    Ok("gestartet".into())
++}
++
++/// Open a pack's folder (or the dump when the id is empty) in the system
++/// file manager.
++#[tauri::command]
++pub fn textures_open_folder(id: String) -> Result<(), String> {
++    let (config, _) = crate::load().map_err(|e| format!("{e:#}"))?;
++    let dir: PathBuf = if id.is_empty() {
++        config.paths.textures_dump()
++    } else {
++        config.paths.textures_packs().join(&id)
++    };
++    std::fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
++    #[cfg(target_os = "windows")]
++    let mut cmd = {
++        let mut c = std::process::Command::new("explorer");
++        c.arg(&dir);
++        c
++    };
++    #[cfg(target_os = "macos")]
++    let mut cmd = {
++        let mut c = std::process::Command::new("open");
++        c.arg(&dir);
++        c
++    };
++    #[cfg(target_os = "linux")]
++    let mut cmd = {
++        let mut c = std::process::Command::new("xdg-open");
++        c.arg(&dir);
++        c
++    };
++    cmd.spawn()
++        .map_err(|e| format!("open {}: {e}", dir.display()))?;
++    Ok(())
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::fs;
++    use tempfile::TempDir;
++
++    const MANIFEST: &str = "\
++name = \"Xbox Buttons\"
++author = \"s2x3\"
++version = \"1.0.0\"
++kind = \"own-art\"
++";
++
++    fn entry_with(id: &str, err: Option<&str>, count: usize) -> s2x3_core::textures::PackEntry {
++        let manifest = s2x3_core::textures::read_manifest;
++        let _ = manifest;
++        s2x3_core::textures::PackEntry {
++            id: id.to_string(),
++            pack: None,
++            error: err.map(|e| e.to_string()),
++            texture_count: count,
++        }
++    }
++
++    #[test]
++    fn dto_carries_state_and_errors() {
++        let e = entry_with("xbox-buttons", None, 2);
++        let d = dto_from(&e, Some(true), 0);
++        assert_eq!(d.id, "xbox-buttons");
++        assert!(d.enabled);
++        assert_eq!(d.texture_count, 2);
++        assert_eq!(d.name, "xbox-buttons", "fallback label without a pack");
++
++        let e = entry_with("broken", Some("kaputt"), 0);
++        let d = dto_from(&e, None, 1);
++        assert_eq!(d.error.as_deref(), Some("kaputt"));
++        assert!(!d.enabled);
++        assert_eq!(d.conflicts, 1);
++    }
++
++    #[test]
++    fn extract_needed_only_when_the_marker_moved() {
++        assert!(needs_extract("", "abc"));
++        assert!(needs_extract("abc", "def"));
++        assert!(!needs_extract("abc", "abc"));
++    }
++
++    #[test]
++    fn xbox_pack_manifest_is_written_once() {
++        let tmp = TempDir::new().unwrap();
++        let dir = tmp.path().join("xbox-buttons");
++        fs::create_dir_all(&dir).unwrap();
++
++        write_manifest_if_missing(&dir);
++        let m = s2x3_core::textures::read_manifest(&dir).unwrap();
++        assert_eq!(m.name, "Xbox Buttons");
++        assert_eq!(m.kind, s2x3_core::textures::PackKind::Upscale);
++
++        fs::write(
++            &dir.join(s2x3_core::textures::MANIFEST),
++            "name = \"x\"\nauthor = \"a\"\nversion = \"1\"\nkind = \"upscale\"\n",
++        )
++        .unwrap();
++        write_manifest_if_missing(&dir);
++        let m = s2x3_core::textures::read_manifest(&dir).unwrap();
++        assert_eq!(m.name, "x", "an existing manifest is not overwritten");
++    }
++}
+diff --git a/apps/desktop/src/main.js b/apps/desktop/src/main.js
+index 9f7f526..6ff569f 100644
+--- a/apps/desktop/src/main.js
++++ b/apps/desktop/src/main.js
+@@ -76,6 +76,33 @@ const mockState = {
+ 
+ let mockBuildTicks = 0;
+ 
++const mockPacks = [
++  {
++    id: "xbox-buttons",
++    name: "Xbox Buttons",
++    author: "s2x3",
++    version: "1.0.0",
++    kind: "upscale",
++    texture_count: 2,
++    enabled: true,
++    error: null,
++    conflicts: 0,
++    previews: [],
++  },
++  {
++    id: "hd-upscale",
++    name: "HD Upscale",
++    author: "s2x3",
++    version: "1.0.0",
++    kind: "upscale",
++    texture_count: 0,
++    enabled: false,
++    error: null,
++    conflicts: 0,
++    previews: [],
++  },
++];
++
+ const mockCards = [
+   {
+     name: "career",
+@@ -131,6 +158,22 @@ function mockInvoke(cmd, args) {  if (cmd === "state") {
+   }
+   if (cmd === "save_profiles")
+     return Promise.resolve(structuredClone(mockCards));
++  if (cmd === "textures_list") return Promise.resolve(structuredClone(mockPacks));
++  if (cmd === "textures_toggle") {
++    const p = mockPacks.find((x) => x.id === args.id);
++    if (p) p.enabled = args.enabled;
++    return Promise.resolve(structuredClone(mockPacks));
++  }
++  if (cmd === "textures_remove") {
++    const i = mockPacks.findIndex((x) => x.id === args.id);
++    if (i >= 0) mockPacks.splice(i, 1);
++    return Promise.resolve(structuredClone(mockPacks));
++  }
++  if (cmd === "textures_pick_import" || cmd === "textures_import")
++    return Promise.resolve(structuredClone(mockPacks));
++  if (cmd === "textures_extract" || cmd === "textures_upscale")
++    return Promise.resolve("gestartet");
++  if (cmd === "textures_open_folder") return Promise.resolve(null);
+   if (cmd === "card_new" || cmd === "card_import_file" || cmd === "card_import")
+     return Promise.resolve(structuredClone(mockCards));
+   if (cmd === "card_export")
+@@ -255,7 +298,12 @@ const TABS = [
+     label: "graphics",
+     keys: ["SSX3_RENDER_SCALE", "SSX3_RENDER_SIZE", "SSX3_RESOLUTION", "SSX3_FOV", "SSX3_ANISO", "SSX3_LOD_BIAS", "SSX3_AA", "SSX3_AO", "SSX3_BLOOM", "SSX3_SHADOWS", "SSX3_SNOW"],
+   },
+-  { id: "controls", label: "controls", keys: ["SSX3_STICK_TRICKS", "SSX3_PAD2"] },
++  {
++    id: "controls",
++    label: "controls",
++    keys: ["SSX3_STICK_TRICKS", "SSX3_PAD2"],
++  },
++  { id: "textures", label: "textures", keys: [] },
+   {
+     id: "advanced",
+     label: "advanced",
+@@ -376,9 +424,13 @@ function render(next) {
+   const fields = $("fields");
+   if (activeTab === "controls") fields.before(promptSet());
+   fields.innerHTML = "";
+-  state.schema
+-    .filter((f) => keys.has(f.key) || !known.has(f.key))
+-    .forEach((f) => fields.append(field(f)));
++  if (activeTab === "textures") {
++    renderPacks(fields);
++  } else {
++    state.schema
++      .filter((f) => keys.has(f.key) || !known.has(f.key))
++      .forEach((f) => fields.append(field(f)));
++  }
+ 
+   fields.querySelectorAll("[data-key]").forEach((el) => {
+     el.addEventListener("change", scheduleSave);
+@@ -423,6 +475,120 @@ function render(next) {
+   $("play").setAttribute("title", ready ? "Play" : playReason);
+ }
+ 
++/// The ÔÇ×textures" tab: pack cards plus the background jobs (disc read,
++/// HD upscale). Everything visible here maps 1:1 to a `textures_*` command.
++async function renderPacks(el) {
++  el.innerHTML = '<p class="muted">loadingÔÇª</p>';
++  let packs;
++  try {
++    packs = await call("textures_list");
++  } catch (e) {
++    el.innerHTML = `<p class="muted">${escapeHtml(String(e))}</p>`;
++    return;
++  }
++  el.innerHTML = "";
++
++  const actions = document.createElement("div");
++  actions.className = "pack-actions";
++  const mk = (label, cmd, args) => {
++    const b = document.createElement("button");
++    b.className = "ghost small";
++    b.textContent = label;
++    b.addEventListener("click", async () => {
++      try {
++        const res = await call(cmd, args ?? {});
++        if (cmd === "textures_extract") {
++          toast("Texturen: die Disc wird im Hintergrund gelesen");
++        } else if (cmd === "textures_upscale") {
++          toast("HD-Upscale gestartet ÔÇö das dauert Minuten");
++        } else if (Array.isArray(res)) {
++          renderPacks(el);
++        }
++      } catch (e) {
++        toast(String(e), true);
++      }
++    });
++    return b;
++  };
++  actions.append(
++    mk("ImportÔÇª", "textures_pick_import"),
++    mk("Texturen neu lesen", "textures_extract"),
++    mk("HD hochskalieren", "textures_upscale"),
++    mk("Dump-Ordner ├Âffnen", "textures_open_folder", { id: "" }),
++  );
++  el.append(actions);
++
++  const hint = document.createElement("p");
++  hint.className = "muted pack-hint";
++  hint.textContent = packs.length
++    ? "Packs ersetzen Spieltexturen. ÔÇ×Texturen neu lesenÔÇ£ l├ñuft einmal pro Disc im Hintergrund, ohne das Spiel zu starten."
++    : "Noch keine Texture-Packs ÔÇö ÔÇ×ImportÔÇªÔÇ£ nimmt ein ZIP, ÔÇ×Texturen neu lesenÔÇ£ liest die Disc im Hintergrund.";
++  el.append(hint);
++
++  for (const p of packs) {
++    const card = document.createElement("div");
++    card.className = "pack" + (p.enabled ? " on" : "");
++
++    const head = document.createElement("div");
++    head.className = "pack-head";
++    head.innerHTML = `<b>${escapeHtml(p.name)}</b><span class="badge">${escapeHtml(p.kind)}</span>`;
++    const meta = document.createElement("small");
++    meta.textContent = [p.author, p.version, `${p.texture_count} Texturen`]
++      .filter(Boolean)
++      .join(" ┬À ");
++    card.append(head, meta);
++
++    if (p.error) {
++      const err = document.createElement("p");
++      err.className = "pack-error";
++      err.textContent = p.error;
++      card.append(err);
++    }
++    if (p.conflicts) {
++      const c = document.createElement("p");
++      c.className = "pack-error";
++      c.textContent = `${p.conflicts} Textur(en) ├╝berlappt mit einem anderen aktiven Pack`;
++      card.append(c);
++    }
++    for (const img of p.previews ?? []) {
++      if (!hasTauri || !window.__TAURI__.core?.convertFileSrc) break;
++      const el2 = document.createElement("img");
++      el2.className = "pack-preview";
++      el2.src = window.__TAURI__.core.convertFileSrc(img);
++      el2.alt = `${p.name} preview`;
++      card.append(el2);
++    }
++
++    const row = document.createElement("div");
++    row.className = "pack-row";
++    const toggle = document.createElement("button");
++    toggle.className = "ghost small";
++    toggle.textContent = p.enabled ? "Aus" : "An";
++    toggle.addEventListener("click", async () => {
++      await call("textures_toggle", { id: p.id, enabled: !p.enabled }).catch((e) =>
++        toast(String(e), true)
++      );
++      renderPacks(el);
++    });
++    const folder = document.createElement("button");
++    folder.className = "ghost small";
++    folder.textContent = "Ordner ├Âffnen";
++    folder.addEventListener("click", () =>
++      call("textures_open_folder", { id: p.id }).catch((e) => toast(String(e), true))
++    );
++    const del = document.createElement("button");
++    del.className = "ghost small";
++    del.textContent = "Entfernen";
++    del.addEventListener("click", async () => {
++      await call("textures_remove", { id: p.id }).catch((e) => toast(String(e), true));
++      renderPacks(el);
++    });
++    row.append(toggle, folder, del);
++    card.append(row);
++    el.append(card);
++  }
++}
++
+ function scheduleSave() {
+   clearTimeout(saveTimer);
+   saveTimer = setTimeout(saveSettings, 350);
+@@ -672,7 +838,7 @@ function bind() {
+     await cardAction("card_delete", { name: selectedProfile() }, "Card deleted");
+     cardSelection = null;
+   });
+-  $("card-export").addEventListener("click", async () => {
++  $("card-share").addEventListener("click", async () => {
+     if (!selectedProfile()) return toast("Select a card first", true);
+     try {
+       const share = await call("card_export", { name: selectedProfile() });
+@@ -682,25 +848,17 @@ function bind() {
+       if (!String(e).includes("cancelled")) toast(String(e), true);
+     }
+   });
+-  $("card-hash").addEventListener("click", async () => {
++  $("card-share").addEventListener("click", async () => {
+     if (!selectedProfile()) return toast("Select a card first", true);
+     try {
+-      const payload = await call("card_hash_copy", { name: selectedProfile() });
+-      await navigator.clipboard.writeText(payload).catch(() => {});
+-      toast(`Hash payload copied (${human(payload.length)} chars) ÔÇö paste it into Import on another device`);
+-    } catch (e) {
+-      toast(String(e), true);
+-    }
+-  });
+-  $("card-import").addEventListener("click", async () => {
+-    try {
+-      renderCards(await call("card_import_file", { src: null, name: "" }));
+-      toast("Save imported ÔÇö the new profile is in the list");
++      const share = await call("card_export", { name: selectedProfile() });
++      await navigator.clipboard.writeText(share.hash).catch(() => {});
++      toast(`Exported: ${share.file} ÔÇö hash ${share.hash} (copied)`);
+     } catch (e) {
+       if (!String(e).includes("cancelled")) toast(String(e), true);
+     }
+   });
+-  $("card-paste").addEventListener("click", async () => {
++  $("card-import").addEventListener("click", async () => {
+     const payload = prompt(
+       "Paste the hash payload (n=ÔÇª&h=ÔÇª&d=ÔÇª), a save link, or a .ps2.gz file path:"
+     );
+@@ -765,6 +923,18 @@ bind();
+ history.scrollRestoration = "manual";
+ document.querySelector("main").scrollTop = 0;
+ refreshState();
++
++if (hasTauri && window.__TAURI__.event) {
++  for (const ev of ["textures-extract", "textures-upscale"]) {
++    window.__TAURI__.event.listen(ev, (e) => {
++      const st = e.payload?.state ?? "";
++      const msg = e.payload?.message ?? "";
++      if (st === "done") toast(`Textures: ${msg}`);
++      if (st === "error") toast(`Textures: ${msg}`, true);
++      if (st !== "running") refreshState();
++    });
++  }
++}
+ function active() {
+   return !document.hidden && document.hasFocus();
+ }
+diff --git a/apps/desktop/src/style.css b/apps/desktop/src/style.css
+index 7182103..fb638d6 100644
+--- a/apps/desktop/src/style.css
++++ b/apps/desktop/src/style.css
+@@ -1324,3 +1324,89 @@ details[open] > summary::before {
+   font-size: 10px;
+   color: var(--muted);
+ }
++
++/* --- textures tab ---------------------------------------------------- */
++
++.pack-actions {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 8px;
++  margin-bottom: 10px;
++}
++
++.pack-hint {
++  margin: 0 0 12px;
++  font-size: 12px;
++}
++
++.pack {
++  border: 0;
++  border-radius: 14px;
++  background: var(--panel);
++  box-shadow: 0 10px 24px rgba(3, 22, 43, 0.14);
++  padding: 12px 14px;
++  margin-bottom: 10px;
++  position: relative;
++  overflow: hidden;
++}
++
++.pack::before {
++  content: "";
++  position: absolute;
++  inset: 0 auto 0 0;
++  width: 4px;
++  background: rgba(11, 44, 75, 0.16);
++}
++
++.pack.on::before {
++  background: linear-gradient(180deg, var(--orange-2), var(--orange));
++}
++
++.pack-head {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++}
++
++.pack-head b {
++  font-style: italic;
++  letter-spacing: 0.02em;
++}
++
++.badge {
++  font-size: 10px;
++  text-transform: uppercase;
++  letter-spacing: 0.08em;
++  padding: 2px 8px;
++  border-radius: 999px;
++  background: rgba(47, 143, 212, 0.16);
++  color: var(--navy);
++}
++
++.pack.on .badge {
++  background: rgba(238, 106, 17, 0.18);
++  color: var(--orange-dark);
++}
++
++.pack > small {
++  color: var(--steel);
++}
++
++.pack-error {
++  color: var(--red);
++  font-size: 12px;
++  margin: 6px 0 0;
++}
++
++.pack-preview {
++  width: 128px;
++  border-radius: 8px;
++  margin-top: 8px;
++  display: block;
++}
++
++.pack-row {
++  display: flex;
++  gap: 8px;
++  margin-top: 10px;
++}
+diff --git a/catalog/textures.json b/catalog/textures.json
+new file mode 100644
+index 0000000..d45c852
+--- /dev/null
++++ b/catalog/textures.json
+@@ -0,0 +1,12 @@
++[
++  {
++    "id": "xbox-buttons",
++    "name": "Xbox Buttons",
++    "author": "s2x3",
++    "version": "1.0.0",
++    "kind": "upscale",
++    "description": "Shows A/B/X/Y instead of the PlayStation glyphs in menus and the HUD. Generated locally from your own disc's texture dump ÔÇö the launcher ships only its own glyph art.",
++    "bundled": true,
++    "source_note": "im Launcher geb├╝ndelt (Own-Art-Glyphen); das Pack selbst entsteht lokal aus dem Dump"
++  }
++]
+diff --git a/crates/s2x3-cli/Cargo.toml b/crates/s2x3-cli/Cargo.toml
+index 60b550a..b454ae7 100644
+--- a/crates/s2x3-cli/Cargo.toml
++++ b/crates/s2x3-cli/Cargo.toml
+@@ -13,3 +13,6 @@ anyhow.workspace = true
+ clap.workspace = true
+ s2x3-core = { path = "../s2x3-core" }
+ s2x3-engines = { path = "../s2x3-engines" }
++
++[dev-dependencies]
++tempfile.workspace = true
+diff --git a/crates/s2x3-cli/src/main.rs b/crates/s2x3-cli/src/main.rs
+index 24fa63b..2e52fb8 100644
+--- a/crates/s2x3-cli/src/main.rs
++++ b/crates/s2x3-cli/src/main.rs
+@@ -32,6 +32,24 @@ enum SavesAction {
+     Import { path: PathBuf },
+ }
+ 
++#[derive(Subcommand)]
++enum TexturesAction {
++    /// List the installed packs and their state.
++    List,
++    /// Install a pack from a zip or folder.
++    Import { path: PathBuf },
++    /// Delete an installed pack.
++    Remove { id: String },
++    /// Turn a pack on (rebuilds the active set).
++    Enable { id: String },
++    /// Turn a pack off (rebuilds the active set).
++    Disable { id: String },
++    /// Extract the disc's textures offline (no game start).
++    Extract,
++    /// Upscale the extracted textures into an HD pack (needs a Vulkan GPU).
++    Upscale,
++}
++
+ #[derive(Subcommand)]
+ enum Command {
+     /// Write the launcher config.
+@@ -64,6 +82,11 @@ enum Command {
+         #[command(subcommand)]
+         action: SavesAction,
+     },
++    /// Install, manage and build texture packs.
++    Textures {
++        #[command(subcommand)]
++        action: TexturesAction,
++    },
+     /// Build the engine from its sources (setup + cargo build).
+     Install,
+     /// Start the engine.
+@@ -87,6 +110,102 @@ fn main() {
+     }
+ }
+ 
++/// The `textures` subcommand: thin CLI over `s2x3_core::textures`. Mutating
++/// actions rebuild the active set and save the config.
++fn textures_cmd(config: &mut s2x3_core::Config, action: &TexturesAction) -> Result<()> {
++    use s2x3_core::textures as tx;
++    match action {
++        TexturesAction::List => {
++            let entries = tx::list(&config.paths.textures_packs());
++            if entries.is_empty() {
++                println!("no texture packs installed");
++            }
++            for e in entries {
++                let state = match config.textures.enabled.get(&e.id) {
++                    Some(true) => "on",
++                    Some(false) => "off",
++                    None => "-",
++                };
++                let kind = e
++                    .pack
++                    .as_ref()
++                    .map(|p| p.manifest.kind.to_string())
++                    .unwrap_or_else(|| "?".into());
++                println!(
++                    "{:>4}  {:<20} {:<9} {:>4}",
++                    state, e.id, kind, e.texture_count
++                );
++                if let Some(err) = &e.error {
++                    println!("       ! {err}");
++                }
++            }
++        }
++        TexturesAction::Import { path } => {
++            let id = tx::import(path, &config.paths.textures_packs(), false)?;
++            textures_apply(config)?;
++            println!("installed: {id}");
++        }
++        TexturesAction::Remove { id } => {
++            tx::remove(&config.paths.textures_packs(), id)?;
++            config.textures.enabled.remove(id);
++            config.textures.priority.retain(|p| p != id);
++            textures_apply(config)?;
++            println!("removed: {id}");
++        }
++        TexturesAction::Enable { id } => {
++            textures_ensure_installed(config, id)?;
++            config.textures.enabled.insert(id.clone(), true);
++            textures_apply(config)?;
++            println!("enabled: {id}");
++        }
++        TexturesAction::Disable { id } => {
++            config.textures.enabled.insert(id.clone(), false);
++            textures_apply(config)?;
++            println!("disabled: {id}");
++        }
++        TexturesAction::Extract => {
++            let summary = tx::run_extract(config)?;
++            println!("{summary}");
++        }
++        TexturesAction::Upscale => {
++            let pack = tx::run_upscale(config)?;
++            textures_apply(config)?;
++            println!("pack created: {}", pack.display());
++        }
++    }
++    config.save()?;
++    Ok(())
++}
++
++/// Rebuild the active merge folder from the config state.
++fn textures_apply(config: &s2x3_core::Config) -> Result<()> {
++    use s2x3_core::textures as tx;
++    let report = tx::merge(
++        &config.paths.textures_packs(),
++        &config.paths.textures_active(),
++        &config.textures.enabled,
++        &config.textures.priority,
++    )?;
++    if !report.conflicts.is_empty() {
++        eprintln!(
++            "note: several active packs replace the same textures: {}",
++            report.conflicts.join(", ")
++        );
++    }
++    Ok(())
++}
++
++fn textures_ensure_installed(config: &s2x3_core::Config, id: &str) -> Result<()> {
++    use s2x3_core::textures as tx;
++    if !tx::list(&config.paths.textures_packs())
++        .iter()
++        .any(|e| e.id == id && e.pack.is_some())
++    {
++        bail!("pack `{id}` is not installed");
++    }
++    Ok(())
++}
++
+ fn run() -> Result<()> {
+     let cli = Cli::parse();
+     if let Some(path) = &cli.config {
+@@ -121,6 +240,9 @@ fn run() -> Result<()> {
+             }
+         }
+         Command::Saves { action } => saves(&config, action)?,
++        Command::Textures { action } => {
++            textures_cmd(&mut config, &action)?;
++        }
+         Command::Install => install(&config)?,
+         Command::Detect => detect(&config)?,
+         Command::Doctor => doctor(&config)?,
+@@ -160,12 +282,18 @@ fn saves(config: &s2x3_core::Config, action: SavesAction) -> Result<()> {
+ fn install(config: &s2x3_core::Config) -> Result<()> {
+     let engine = adapter(config)?;
+     let mut child = engine.install()?;
+-    println!("building engine, pid {} (log: {})", child.id(),
+-        config.paths.saves.join("install.log").display());
++    println!(
++        "building engine, pid {} (log: {})",
++        child.id(),
++        config.paths.saves.join("install.log").display()
++    );
+     let status = child.wait()?;
+     println!("build exited: {status}");
+     if !status.success() {
+-        bail!("engine build failed; see {}", config.paths.saves.join("install.log").display());
++        bail!(
++            "engine build failed; see {}",
++            config.paths.saves.join("install.log").display()
++        );
+     }
+     Ok(())
+ }
+@@ -268,7 +396,10 @@ fn settings(config: &s2x3_core::Config, set: &[String], unset: &[String]) -> Res
+             values.remove(k);
+         }
+         engine.write_settings(&values)?;
+-        println!("wrote {}", config.paths.saves.join("ssx3-settings.cfg").display());
++        println!(
++            "wrote {}",
++            config.paths.saves.join("ssx3-settings.cfg").display()
++        );
+     } else {
+         let current = engine.read_settings()?;
+         for field in engine.settings_schema() {
+@@ -302,3 +433,104 @@ fn launch(
+     println!("engine exited: {status}");
+     Ok(())
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use s2x3_core::textures as tx;
++
++    const MANIFEST: &str = "\
++name = \"Xbox Buttons\"
++author = \"s2x3\"
++version = \"1.0.0\"
++kind = \"own-art\"
++";
++
++    #[test]
++    fn textures_actions_round_trip() {
++        let tmp = tempfile::tempdir().unwrap();
++        std::env::set_var(s2x3_core::CONFIG_ENV, tmp.path().join("config.toml"));
++
++        // install a pack from a folder, via the CLI surface
++        let src = tmp.path().join("Xbox Buttons");
++        std::fs::create_dir_all(src.join("textures")).unwrap();
++        std::fs::write(src.join(tx::MANIFEST), MANIFEST).unwrap();
++        std::fs::write(src.join("textures").join("f897162c0f661c8b.png"), b"png").unwrap();
++
++        let mut config = s2x3_core::Config::load().unwrap().resolved();
++        textures_cmd(&mut config, &TexturesAction::Import { path: src.clone() }).unwrap();
++
++        textures_cmd(
++            &mut config,
++            &TexturesAction::Enable {
++                id: "xbox-buttons".into(),
++            },
++        )
++        .unwrap();
++        assert_eq!(
++            config.textures.enabled.get("xbox-buttons"),
++            Some(&true),
++            "enable writes the config state"
++        );
++        assert!(config
++            .paths
++            .textures_active()
++            .join("f897162c0f661c8b.png")
++            .is_file());
++
++        // unknown id: readable error, config unchanged
++        let err = format!(
++            "{:#}",
++            textures_cmd(&mut config, &TexturesAction::Enable { id: "ghost".into() },).unwrap_err()
++        );
++        assert!(err.contains("ghost"), "got: {err}");
++
++        textures_cmd(
++            &mut config,
++            &TexturesAction::Disable {
++                id: "xbox-buttons".into(),
++            },
++        )
++        .unwrap();
++        assert_eq!(config.textures.enabled.get("xbox-buttons"), Some(&false));
++        assert!(!config
++            .paths
++            .textures_active()
++            .join("f897162c0f661c8b.png")
++            .is_file());
++
++        textures_cmd(
++            &mut config,
++            &TexturesAction::Remove {
++                id: "xbox-buttons".into(),
++            },
++        )
++        .unwrap();
++        assert!(!config.paths.textures_packs().join("xbox-buttons").exists());
++    }
++
++    #[test]
++    fn extract_and_upscale_fail_readable_without_tooling() {
++        let tmp = tempfile::tempdir().unwrap();
++        std::env::set_var(s2x3_core::CONFIG_ENV, tmp.path().join("config.toml"));
++        let mut config = s2x3_core::Config::load().unwrap().resolved();
++        config.engine.root = tmp.path().join("no-engine");
++
++        let err = format!(
++            "{:#}",
++            textures_cmd(&mut config, &TexturesAction::Extract).unwrap_err()
++        );
++        assert!(
++            err.contains("dump-textures") && err.contains("engine"),
++            "got: {err}"
++        );
++        let err = format!(
++            "{:#}",
++            textures_cmd(&mut config, &TexturesAction::Upscale).unwrap_err()
++        );
++        assert!(
++            err.contains("upscale-textures") || err.contains("python"),
++            "got: {err}"
++        );
++    }
++}
+diff --git a/crates/s2x3-core/Cargo.toml b/crates/s2x3-core/Cargo.toml
+index 921f819..7a77800 100644
+--- a/crates/s2x3-core/Cargo.toml
++++ b/crates/s2x3-core/Cargo.toml
+@@ -7,4 +7,10 @@ license.workspace = true
+ [dependencies]
+ anyhow.workspace = true
+ serde.workspace = true
++sha1 = "0.11.0"
+ toml.workspace = true
++zip = { version = "9.8.2", default-features = false, features = ["deflate"] }
++
++[dev-dependencies]
++tempfile.workspace = true
++serde_json = "1"
+diff --git a/crates/s2x3-core/src/lib.rs b/crates/s2x3-core/src/lib.rs
+index 3a417aa..09b87d4 100644
+--- a/crates/s2x3-core/src/lib.rs
++++ b/crates/s2x3-core/src/lib.rs
+@@ -12,6 +12,9 @@ use std::process::Child;
+ use anyhow::{Context, Result};
+ use serde::{Deserialize, Serialize};
+ 
++pub mod card;
++pub mod textures;
++
+ pub const CONFIG_ENV: &str = "S2X3_CONFIG";
+ 
+ /// What an engine can do. The UI shows fields and buttons from this, so a
+@@ -141,6 +144,24 @@ pub struct Config {
+     /// Launcher behaviour that is not an engine setting.
+     #[serde(default)]
+     pub ui: Ui,
++    /// Texture pack state: which packs are on, their order, and whether the
++    /// offline extraction has run for the current ISO.
++    #[serde(default)]
++    pub textures: TexturesSettings,
++}
++
++/// Texture pack state kept in the config (spec: textures design).
++#[derive(Debug, Clone, Default, Serialize, Deserialize)]
++pub struct TexturesSettings {
++    /// Pack id ÔåÆ enabled. Absent = not installed.
++    #[serde(default)]
++    pub enabled: BTreeMap<String, bool>,
++    /// Pack ids first-in-list wins a shared texture hash.
++    #[serde(default)]
++    pub priority: Vec<String>,
++    /// Hash of the ISO the offline extraction ran against ("" = never).
++    #[serde(default)]
++    pub iso_marker: String,
+ }
+ 
+ /// Launcher UI preferences.
+@@ -185,6 +206,16 @@ pub struct Paths {
+     /// Texture replacement folder for the Xbox button prompts.
+     #[serde(default)]
+     pub texreplace: PathBuf,
++    /// The active memory card image (save profile). Empty means the classic
++    /// `saves/ssx3-mc0.ps2`. [carried uncommitted from the parallel agent's
++    /// in-flight save-manager work; base commit e943a94 needs it]
++    #[serde(default)]
++    pub memcard: PathBuf,
++    /// Root of the launcher-managed texture pack store: `dump/` (extracted
++    /// game textures), `packs/<id>/` (installed packs), `active/` (merge
++    /// folder handed to the engine at launch).
++    #[serde(default)]
++    pub textures: PathBuf,
+ }
+ 
+ /// `$S2X3_CONFIG`, else `%APPDATA%/s2x3/config.toml` on Windows, else
+@@ -201,7 +232,10 @@ pub fn config_path() -> PathBuf {
+         return PathBuf::from(dir).join("s2x3").join("config.toml");
+     }
+     let home = std::env::var_os("HOME").unwrap_or_default();
+-    PathBuf::from(home).join(".config").join("s2x3").join("config.toml")
++    PathBuf::from(home)
++        .join(".config")
++        .join("s2x3")
++        .join("config.toml")
+ }
+ 
+ /// Configuration path used before the project was renamed. Read once so an
+@@ -240,8 +274,8 @@ impl Config {
+         if !path.exists() {
+             return Ok(Self::default());
+         }
+-        let text = std::fs::read_to_string(path)
+-            .with_context(|| format!("read {}", path.display()))?;
++        let text =
++            std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+         toml::from_str(&text).with_context(|| format!("parse {}", path.display()))
+     }
+ 
+@@ -278,10 +312,44 @@ impl Config {
+                 .unwrap_or_else(|| PathBuf::from("."));
+             c.paths.texreplace = base.join("texreplace");
+         }
++        if c.paths.textures.as_os_str().is_empty() {
++            let base = c
++                .paths
++                .saves
++                .parent()
++                .map(Path::to_path_buf)
++                .unwrap_or_else(|| PathBuf::from("."));
++            c.paths.textures = base.join("textures");
++        }
+         c
+     }
+ }
+ 
++impl Paths {
++    /// The memory card the game plays on; `memcard` when set, else the
++    /// classic `ssx3-mc0.ps2` next to the saves.
++    pub fn active_memcard(&self) -> PathBuf {
++        if self.memcard.as_os_str().is_empty() {
++            self.saves.join("ssx3-mc0.ps2")
++        } else {
++            self.memcard.clone()
++        }
++    }
++    /// Extracted game textures (offline dump or `SSX3_TEX_DUMP` output).
++    pub fn textures_dump(&self) -> PathBuf {
++        self.textures.join("dump")
++    }
++    /// Installed texture packs, one folder per pack.
++    pub fn textures_packs(&self) -> PathBuf {
++        self.textures.join("packs")
++    }
++    /// Merge folder of the enabled packs; handed to the engine as
++    /// `SSX3_TEX_REPLACE`.
++    pub fn textures_active(&self) -> PathBuf {
++        self.textures.join("active")
++    }
++}
++
+ /// A save file the launcher can back up or restore.
+ #[derive(Debug, Clone, Serialize, Deserialize)]
+ pub struct SavesInfo {
+@@ -305,3 +373,29 @@ pub fn human_size(bytes: u64) -> String {
+         format!("{v:.1} {}", UNITS[u])
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn resolved_fills_texture_paths() {
++        let tmp = tempfile::tempdir().unwrap();
++        let cfg_path = tmp.path().join("config.toml");
++        std::env::set_var(CONFIG_ENV, &cfg_path);
++        let base = tmp.path();
++
++        let c = Config::default().resolved();
++
++        assert_eq!(c.paths.textures, base.join("textures"));
++        assert_eq!(c.paths.textures_dump(), base.join("textures").join("dump"));
++        assert_eq!(
++            c.paths.textures_packs(),
++            base.join("textures").join("packs")
++        );
++        assert_eq!(
++            c.paths.textures_active(),
++            base.join("textures").join("active")
++        );
++    }
++}
+diff --git a/crates/s2x3-core/src/textures.rs b/crates/s2x3-core/src/textures.rs
+new file mode 100644
+index 0000000..943f9a4
+--- /dev/null
++++ b/crates/s2x3-core/src/textures.rs
+@@ -0,0 +1,1157 @@
++//! Texture packs: manifest parsing and listing.
++//!
++//! Spec: docs/superpowers/specs/2026-11-26-texture-packs-design.md ├óÔé¼ÔÇØ a pack
++//! is a folder with `manifest.toml` and `textures/<hash>.png` files. Hash
++//! names are 16 lowercase hex digits (the engine's `pack::name` output).
++
++use anyhow::{Context, Result};
++use std::collections::BTreeMap;
++use std::fmt;
++use std::io::Read;
++use std::path::{Path, PathBuf};
++
++/// The manifest file name inside a pack folder.
++pub const MANIFEST: &str = "manifest.toml";
++
++/// What a pack's textures are. `OwnArt` packs are distributable; `Upscale`
++/// packs are derived from the user's own disc and never leave the machine.
++#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
++#[serde(rename_all = "kebab-case")]
++pub enum PackKind {
++    OwnArt,
++    Upscale,
++}
++
++impl fmt::Display for PackKind {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        match self {
++            PackKind::OwnArt => f.write_str("own-art"),
++            PackKind::Upscale => f.write_str("upscale"),
++        }
++    }
++}
++
++/// `manifest.toml` of a pack.
++#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
++pub struct PackManifest {
++    pub name: String,
++    pub author: String,
++    pub version: String,
++    pub kind: PackKind,
++    /// Engine commit the pack was built against (staleness check).
++    #[serde(default)]
++    pub engine_commit: Option<String>,
++    /// Hash (16 hex digits) ├óÔÇáÔÇÖ human label of what the texture shows.
++    #[serde(default)]
++    pub targets: BTreeMap<String, String>,
++}
++
++/// A parsed pack: an id (folder name), its folder and manifest.
++#[derive(Debug, Clone)]
++pub struct Pack {
++    pub id: String,
++    pub dir: PathBuf,
++    pub manifest: PackManifest,
++}
++
++/// One folder in the packs directory, valid or not.
++#[derive(Debug, Clone)]
++pub struct PackEntry {
++    pub id: String,
++    pub pack: Option<Pack>,
++    /// Why the folder is not a usable pack (or has suspicious contents), if
++    /// it is not.
++    pub error: Option<String>,
++    /// Number of `textures/*.png` files in the folder.
++    pub texture_count: usize,
++}
++
++/// Read and validate `manifest.toml` inside `dir`.
++pub fn read_manifest(dir: &Path) -> Result<PackManifest> {
++    let path = dir.join(MANIFEST);
++    let text =
++        std::fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
++    toml::from_str(&text).with_context(|| format!("parse {}", path.display()))
++}
++
++/// True when `stem` looks like an engine texture name: 16 hex digits.
++fn valid_hash(stem: &str) -> bool {
++    stem.len() == 16 && stem.chars().all(|c| c.is_ascii_hexdigit())
++}
++
++fn png_count(textures_dir: &Path) -> usize {
++    std::fs::read_dir(textures_dir)
++        .map(|rd| {
++            rd.flatten()
++                .filter(|f| {
++                    f.path()
++                        .extension()
++                        .is_some_and(|x| x.eq_ignore_ascii_case("png"))
++                })
++                .count()
++        })
++        .unwrap_or(0)
++}
++
++/// Stems of the pack's `textures/*.png` that are not valid engine hashes.
++fn bad_hash_names(dir: &Path) -> Vec<String> {
++    std::fs::read_dir(dir.join("textures"))
++        .map(|rd| {
++            rd.flatten()
++                .filter_map(|f| {
++                    let p = f.path();
++                    let stem = p.file_stem()?.to_str()?.to_string();
++                    (!valid_hash(&stem)).then_some(stem)
++                })
++                .collect()
++        })
++        .unwrap_or_default()
++}
++
++/// List the packs in `packs_dir`, sorted by id. Folders that are not usable
++/// packs come back with `error` set and `pack: None` ├óÔé¼ÔÇØ they are shown, never
++/// hidden, and never modified by listing.
++pub fn list(packs_dir: &Path) -> Vec<PackEntry> {
++    let mut out = Vec::new();
++    let Ok(read) = std::fs::read_dir(packs_dir) else {
++        return out;
++    };
++    for e in read.flatten() {
++        let dir = e.path();
++        if !dir.is_dir() {
++            continue;
++        }
++        let id = dir
++            .file_name()
++            .and_then(|n| n.to_str())
++            .unwrap_or_default()
++            .to_string();
++        let texture_count = png_count(&dir.join("textures"));
++        match read_manifest(&dir) {
++            Ok(manifest) => {
++                let bad = bad_hash_names(&dir);
++                let error = if bad.is_empty() {
++                    None
++                } else {
++                    Some(format!(
++                        "texture names are not engine hashes: {}",
++                        bad.join(", ")
++                    ))
++                };
++                out.push(PackEntry {
++                    pack: Some(Pack {
++                        id: id.clone(),
++                        dir,
++                        manifest,
++                    }),
++                    id,
++                    error,
++                    texture_count,
++                });
++            }
++            Err(e) => out.push(PackEntry {
++                id,
++                pack: None,
++                error: Some(format!("{e:#}")),
++                texture_count,
++            }),
++        }
++    }
++    out.sort_by(|a, b| a.id.cmp(&b.id));
++    out
++}
++
++/// Turn a folder name into a pack id: lowercase, only `[a-z0-9._-]`.
++fn sanitize_id(raw: &str) -> String {
++    let mut id: String = raw
++        .chars()
++        .map(|c| {
++            if c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.') {
++                c.to_ascii_lowercase()
++            } else {
++                '-'
++            }
++        })
++        .collect();
++    while id.starts_with('.') {
++        id.remove(0);
++    }
++    id
++}
++
++/// Unpack the zip in `src` (or copy the folder `src`) into `packs_dir`.
++/// Returns the new pack's id. With `overwrite = false` an existing pack id
++/// is an error; the existing folder is never touched by a failed import.
++pub fn import(src: &Path, packs_dir: &Path, overwrite: bool) -> Result<String> {
++    std::fs::create_dir_all(packs_dir)
++        .with_context(|| format!("create {}", packs_dir.display()))?;
++    let staging = packs_dir.join(format!(".import-{}", std::process::id()));
++    let _ = std::fs::remove_dir_all(&staging);
++    std::fs::create_dir_all(&staging).with_context(|| format!("create {}", staging.display()))?;
++    let result = extract_into(src, &staging).and_then(|id| {
++        read_manifest(&staging)
++            .with_context(|| format!("no usable {MANIFEST} in the imported pack"))?;
++        install(&staging, packs_dir, &id, overwrite)?;
++        Ok(id)
++    });
++    if result.is_err() {
++        let _ = std::fs::remove_dir_all(&staging);
++    }
++    result
++}
++
++/// Move the staged pack into place: existing folder aside, staging in, old
++/// folder gone (rolled back on error).
++fn install(staging: &Path, packs_dir: &Path, id: &str, overwrite: bool) -> Result<()> {
++    let target = packs_dir.join(id);
++    if target.exists() {
++        if !overwrite {
++            anyhow::bail!("pack `{id}` exists already; overwrite is off");
++        }
++        let old = packs_dir.join(format!(".old-{id}"));
++        let _ = std::fs::remove_dir_all(&old);
++        std::fs::rename(&target, &old)
++            .with_context(|| format!("move aside {}", target.display()))?;
++        match std::fs::rename(&staging, &target) {
++            Ok(()) => {
++                let _ = std::fs::remove_dir_all(&old);
++                Ok(())
++            }
++            Err(e) => {
++                let _ = std::fs::rename(&old, &target);
++                Err(anyhow::Error::new(e).context(format!("swap in {}", target.display())))
++            }
++        }
++    } else {
++        std::fs::rename(&staging, &target).with_context(|| format!("install {}", target.display()))
++    }
++}
++
++/// Extract a zip file or copy a folder into `staging`; returns the pack id.
++fn extract_into(src: &Path, staging: &Path) -> Result<String> {
++    if src.is_dir() {
++        let raw = src
++            .file_name()
++            .and_then(|n| n.to_str())
++            .context("import path has no file name")?;
++        let id = sanitize_id(raw);
++        copy_tree(src, staging).with_context(|| format!("copy {}", src.display()))?;
++        return Ok(id);
++    }
++    let file = std::fs::File::open(src).with_context(|| format!("read {}", src.display()))?;
++    let mut archive =
++        zip::ZipArchive::new(file).with_context(|| format!("open zip {}", src.display()))?;
++    if archive.len() == 0 {
++        anyhow::bail!("zip {} is empty", src.display());
++    }
++    // One root folder holding the pack; its name is the id.
++    let mut root: Option<String> = None;
++    let mut total: u64 = 0;
++    for i in 0..archive.len() {
++        let mut f = archive
++            .by_index(i)
++            .with_context(|| format!("zip entry {i} of {}", src.display()))?;
++        let Some(rel) = f.enclosed_name().map(|p| p.to_path_buf()) else {
++            let name = f
++                .name()
++                .map(|n| n.to_string())
++                .unwrap_or_else(|_| format!("entry {i}"));
++            anyhow::bail!("zip entry {name} escapes the pack folder");
++        };
++        let top = rel
++            .components()
++            .next()
++            .map(|c| c.as_os_str().to_string_lossy().to_string())
++            .unwrap_or_default();
++        match &root {
++            None => root = Some(top.clone()),
++            Some(r) if *r != top => anyhow::bail!(
++                "zip {} holds more than one root folder (`{r}` vs `{top}`)",
++                src.display()
++            ),
++            _ => {}
++        }
++        if top.is_empty() || rel.as_os_str().is_empty() {
++            anyhow::bail!("zip {} has entries outside a pack folder", src.display());
++        }
++        // Staging receives the pack contents directly; the root folder only
++        // names the pack.
++        let rel_noroot: PathBuf = rel.components().skip(1).collect();
++        if f.is_dir() {
++            std::fs::create_dir_all(staging.join(&rel_noroot))
++                .with_context(|| format!("create {}", rel.display()))?;
++            continue;
++        }
++        total += f.size();
++        if total > 512 * 1024 * 1024 {
++            anyhow::bail!("zip {} is larger than the 512 MB pack limit", src.display());
++        }
++        let dst = staging.join(&rel_noroot);
++        if let Some(parent) = dst.parent() {
++            std::fs::create_dir_all(parent)
++                .with_context(|| format!("create {}", parent.display()))?;
++        }
++        let mut out =
++            std::fs::File::create(&dst).with_context(|| format!("create {}", dst.display()))?;
++        std::io::copy(&mut f, &mut out).with_context(|| format!("extract {}", dst.display()))?;
++    }
++    let root = root.unwrap_or_default();
++    let id = sanitize_id(&root);
++    if id.is_empty() {
++        anyhow::bail!("zip {} has no usable pack folder name", src.display());
++    }
++    Ok(id)
++}
++
++/// Copy a folder tree recursively (files and empty folders).
++fn copy_tree(src: &Path, dst: &Path) -> Result<()> {
++    std::fs::create_dir_all(dst).with_context(|| format!("create {}", dst.display()))?;
++    for e in std::fs::read_dir(src).with_context(|| format!("read {}", src.display()))? {
++        let e = e?;
++        let from = e.path();
++        let to = dst.join(e.file_name());
++        if from.is_dir() {
++            copy_tree(&from, &to)?;
++        } else {
++            std::fs::copy(&from, &to).with_context(|| format!("copy {}", from.display()))?;
++        }
++    }
++    Ok(())
++}
++
++/// Delete the pack `id` from `packs_dir`.
++pub fn remove(packs_dir: &Path, id: &str) -> Result<()> {
++    if sanitize_id(id) != id || id.is_empty() {
++        anyhow::bail!("`{id}` is not a pack name");
++    }
++    let target = packs_dir.join(id);
++    if !target.is_dir() {
++        anyhow::bail!("pack `{id}` is not installed in {}", packs_dir.display());
++    }
++    std::fs::remove_dir_all(&target).with_context(|| format!("remove {}", target.display()))
++}
++
++/// The engine binary, same resolution as the adapters: a built binary wins
++/// over the dist fallback.
++pub fn engine_binary(config: &crate::Config) -> PathBuf {
++    let exe = format!("ssx3{}", std::env::consts::EXE_SUFFIX);
++    let built = config.engine.root.join("target/game").join(&exe);
++    if built.exists() {
++        return built;
++    }
++    config.engine.root.join("dist").join(exe)
++}
++
++/// Run the offline extraction (`ssx3 dump-textures`) against the configured
++/// ISO into `paths.textures/dump`. Needs an engine with `dump-textures`
++/// support; the error names the binary when it is missing.
++pub fn run_extract(config: &crate::Config) -> Result<String> {
++    let bin = engine_binary(config);
++    if !bin.exists() {
++        anyhow::bail!(
++            "engine binary missing: {} ÔÇö build it first; the offline \
++             extraction needs an engine with `dump-textures` support",
++            bin.display()
++        );
++    }
++    let out = config.paths.textures_dump();
++    std::fs::create_dir_all(&out).with_context(|| format!("create {}", out.display()))?;
++    let res = std::process::Command::new(&bin)
++        .arg("dump-textures")
++        .arg("--iso")
++        .arg(&config.paths.iso)
++        .arg("--out")
++        .arg(&out)
++        .output()
++        .with_context(|| format!("run {} dump-textures", bin.display()))?;
++    if !res.status.success() {
++        let tail = String::from_utf8_lossy(&res.stderr);
++        let mut tail = tail
++            .lines()
++            .rev()
++            .take(3)
++            .collect::<Vec<_>>()
++            .iter()
++            .map(|s| s.to_string())
++            .collect::<Vec<_>>();
++        tail.reverse();
++        anyhow::bail!(
++            "dump-textures failed: {}",
++            if tail.is_empty() {
++                format!("exit code {:?}", res.status.code())
++            } else {
++                tail.join(" | ")
++            }
++        );
++    }
++    let summary = String::from_utf8_lossy(&res.stdout);
++    Ok(summary
++        .lines()
++        .last()
++        .unwrap_or("extraction finished")
++        .to_string())
++}
++
++/// Texture hashes that more than one *enabled* pack claims ÔÇö read-only (the
++/// merge itself is what resolves them; this is for the UI's warning).
++pub fn conflicts(
++    packs_dir: &Path,
++    enabled: &BTreeMap<String, bool>,
++    priority: &[String],
++) -> Vec<String> {
++    let _ = priority;
++    let mut claim: BTreeMap<String, usize> = BTreeMap::new();
++    for e in list(packs_dir) {
++        if !enabled.get(&e.id).copied().unwrap_or(false) {
++            continue;
++        }
++        let tex_dir = packs_dir.join(&e.id).join("textures");
++        if let Ok(rd) = std::fs::read_dir(tex_dir) {
++            for f in rd.flatten() {
++                let p = f.path();
++                if p.extension().is_some_and(|x| x.eq_ignore_ascii_case("png")) {
++                    if let Some(stem) = p.file_stem().and_then(|s| s.to_str()) {
++                        *claim.entry(stem.to_ascii_lowercase()).or_default() += 1;
++                    }
++                }
++            }
++        }
++    }
++    claim
++        .into_iter()
++        .filter(|(_, n)| *n > 1)
++        .map(|(h, _)| h)
++        .collect()
++}
++
++/// The python launcher for the current platform (checked, not spawned).
++fn python() -> &'static str {
++    if cfg!(windows) {
++        "python"
++    } else {
++        "python3"
++    }
++}
++
++/// Run the ESRGAN upscale over the extracted dump into the `hd-upscale`
++/// pack folder, then manifest it as a pack. Needs Python and a
++/// Vulkan-capable GPU; errors name what is missing.
++pub fn run_upscale(config: &crate::Config) -> Result<PathBuf> {
++    let tool = config.engine.root.join("tools").join("upscale-textures.py");
++    if !tool.is_file() {
++        anyhow::bail!(
++            "upscale-textures tool missing in the engine checkout: {} ÔÇö \
++             update the engine",
++            tool.display()
++        );
++    }
++    let pack = config.paths.textures_packs().join("hd-upscale");
++    std::fs::create_dir_all(&pack).with_context(|| format!("create {}", pack.display()))?;
++    let status = std::process::Command::new(python())
++        .arg(&tool)
++        .arg("--in")
++        .arg(config.paths.textures_dump())
++        .arg("--out")
++        .arg(pack.join("textures"))
++        .arg("--esrgan")
++        .arg(config.paths.textures.join(".tools"))
++        .status();
++    match status {
++        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
++            anyhow::bail!("python not found ÔÇö install Python 3 (the engine setup needs it too)")
++        }
++        Err(e) => return Err(anyhow::Error::new(e).context("start python")),
++        Ok(s) if !s.success() => {
++            anyhow::bail!("upscale-textures failed (exit code {:?}) ÔÇö its log lines above say what went wrong", s.code());
++        }
++        Ok(_) => {}
++    }
++    std::fs::write(
++        pack.join(MANIFEST),
++        format!(
++            "name = \"HD Upscale\"\nauthor = \"s2x3\"\nversion = \"1.0.0\"\nkind = \"upscale\"\n"
++        ),
++    )
++    .with_context(|| format!("write {}", pack.join(MANIFEST).display()))?;
++    Ok(pack)
++}
++
++/// A stable marker for the configured ISO: its size and sha1, streamed.
++/// Used to decide whether the offline extraction has to run again.
++pub fn iso_marker(config: &crate::Config) -> Result<String> {
++    use sha1::{Digest, Sha1};
++    let path = &config.paths.iso;
++    let mut f = std::fs::File::open(path).with_context(|| format!("read {}", path.display()))?;
++    let mut hasher = Sha1::new();
++    let mut buf = [0u8; 1024 * 1024];
++    let mut len: u64 = 0;
++    loop {
++        let n = f
++            .read(&mut buf)
++            .with_context(|| format!("read {}", path.display()))?;
++        if n == 0 {
++            break;
++        }
++        len += n as u64;
++        hasher.update(&buf[..n]);
++    }
++    Ok(format!(
++        "{}-{}",
++        len,
++        hasher
++            .finalize()
++            .iter()
++            .map(|b| format!("{b:02x}"))
++            .collect::<String>()
++    ))
++}
++
++/// Outcome of a merge: how many replacement files are active, and which
++/// texture hashes more than one enabled pack claims (first in priority
++/// wins; the conflict is surfaced, never hidden).
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct MergeReport {
++    pub files: u32,
++    pub conflicts: Vec<String>,
++}
++
++/// Rebuild the `active` merge folder from the enabled packs: copied files of
++/// every enabled pack, in `priority` order (earlier wins a hash), remaining
++/// ids after that in sort order. The folder is rebuilt from scratch each
++/// time, so a stale or corrupted `active` heals on the next merge.
++pub fn merge(
++    packs_dir: &Path,
++    active_dir: &Path,
++    enabled: &BTreeMap<String, bool>,
++    priority: &[String],
++) -> Result<MergeReport> {
++    // Enabled, installed packs in application order.
++    let entries = list(packs_dir);
++    let mut order: Vec<&PackEntry> = Vec::new();
++    for id in priority {
++        if enabled.get(id).copied().unwrap_or(false) {
++            if let Some(e) = entries.iter().filter(|e| e.id == *id).next() {
++                order.push(e);
++            }
++        }
++    }
++    for e in &entries {
++        if enabled.get(&e.id).copied().unwrap_or(false) && !priority.iter().any(|p| p == &e.id) {
++            order.push(e);
++        }
++    }
++
++    let staging = active_dir.with_file_name(format!(
++        "{}.tmp",
++        active_dir
++            .file_name()
++            .and_then(|n| n.to_str())
++            .unwrap_or("active")
++    ));
++    let _ = std::fs::remove_dir_all(&staging);
++    std::fs::create_dir_all(&staging).with_context(|| format!("create {}", staging.display()))?;
++    let mut seen: Vec<String> = Vec::new();
++    let mut conflicts: Vec<String> = Vec::new();
++    let mut files: u32 = 0;
++    for entry in &order {
++        let pack = match &entry.pack {
++            Some(p) => p,
++            None => continue, // broken folder: listed in the UI, skipped here
++        };
++        let tex_dir = pack.dir.join("textures");
++        let Ok(rd) = std::fs::read_dir(&tex_dir) else {
++            continue;
++        };
++        for f in rd.flatten() {
++            let path = f.path();
++            if !path
++                .extension()
++                .is_some_and(|x| x.eq_ignore_ascii_case("png"))
++            {
++                continue;
++            }
++            let stem = match path.file_stem().and_then(|s| s.to_str()) {
++                Some(s) => s.to_ascii_lowercase(),
++                None => continue,
++            };
++            if seen.iter().any(|h| h == &stem) {
++                conflicts.push(stem.clone());
++                continue;
++            }
++            seen.push(stem.clone());
++            let dst = staging.join(format!("{stem}.png"));
++            std::fs::copy(&path, &dst)
++                .with_context(|| format!("copy {} into the active set", path.display()))?;
++            files += 1;
++        }
++    }
++    conflicts.sort();
++    conflicts.dedup();
++
++    // Atomic swap: old folder aside, staging in, old gone; roll back on error.
++    if active_dir.exists() {
++        let old = active_dir.with_file_name(format!(
++            "{}.old",
++            active_dir
++                .file_name()
++                .and_then(|n| n.to_str())
++                .unwrap_or("active")
++        ));
++        let _ = std::fs::remove_dir_all(&old);
++        std::fs::rename(active_dir, &old)
++            .with_context(|| format!("move aside {}", active_dir.display()))?;
++        match std::fs::rename(&staging, active_dir) {
++            Ok(()) => {
++                let _ = std::fs::remove_dir_all(&old);
++            }
++            Err(e) => {
++                let _ = std::fs::rename(&old, active_dir);
++                let _ = std::fs::remove_dir_all(&staging);
++                return Err(
++                    anyhow::Error::new(e).context(format!("swap in {}", active_dir.display()))
++                );
++            }
++        }
++    } else {
++        std::fs::rename(&staging, active_dir)
++            .with_context(|| format!("activate {}", active_dir.display()))?;
++    }
++    Ok(MergeReport { files, conflicts })
++}
++
++/// Value for `SSX3_TEX_REPLACE`: the active merge folder when it holds at
++/// least one replacement, else `"0"` (explicitly off ├óÔé¼ÔÇØ the engine's default
++/// `textures/replace` folder must never apply behind the launcher's back).
++pub fn launch_replace_env(config: &crate::Config) -> String {
++    let active = config.paths.textures_active();
++    let any = png_count(&active) > 0;
++    if any {
++        active.display().to_string()
++    } else {
++        "0".to_string()
++    }
++}
++
++const LEGACY_MANIFEST: &str = "\
++name = \"Xbox prompts (imported)\"
++author = \"s2x3\"
++version = \"1.0.0\"
++kind = \"upscale\"
++";
++
++/// One-time migration from the pre-pack mechanism: `ui.buttons = "xbox"`
++/// becomes the `xbox-buttons` pack toggle, and a filled legacy
++/// `paths.texreplace` folder is imported as the `texreplace-import` pack
++/// (derived content: local-only, kind `upscale`). Returns `Ok(true)` when
++/// the config changed; idempotent ├óÔé¼ÔÇØ a second run changes nothing.
++pub fn migrate_legacy(config: &mut crate::Config) -> Result<bool> {
++    let mut changed = false;
++    if config.ui.buttons == "xbox" && config.textures.enabled.get("xbox-buttons") != Some(&true) {
++        config.textures.enabled.insert("xbox-buttons".into(), true);
++        changed = true;
++    }
++    let src = config.paths.texreplace.clone();
++    let has_pngs = png_count(&src) > 0;
++    let dst = config.paths.textures_packs().join("texreplace-import");
++    if has_pngs && !dst.exists() {
++        std::fs::create_dir_all(dst.join("textures"))
++            .with_context(|| format!("create {}", dst.display()))?;
++        for e in std::fs::read_dir(&src).with_context(|| format!("read {}", src.display()))? {
++            let e = e.with_context(|| format!("read {}", src.display()))?;
++            let p = e.path();
++            if !p.extension().is_some_and(|x| x.eq_ignore_ascii_case("png")) {
++                continue;
++            }
++            std::fs::copy(&p, dst.join("textures").join(e.file_name()))
++                .with_context(|| format!("copy {}", p.display()))?;
++        }
++        std::fs::write(dst.join(MANIFEST), LEGACY_MANIFEST)
++            .with_context(|| format!("write {}", dst.join(MANIFEST).display()))?;
++        config
++            .textures
++            .enabled
++            .insert("texreplace-import".into(), true);
++        changed = true;
++    }
++    Ok(changed)
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::fs;
++    use tempfile::TempDir;
++
++    const VALID: &str = "\
++name = \"Xbox Buttons\"
++author = \"s2x3\"
++version = \"1.0.0\"
++kind = \"own-art\"
++
++[targets]
++\"f897162c0f661c8b\" = \"Steuerkreuz-Atlas\"
++";
++
++    fn pack(dir: &Path, id: &str, manifest: &str, textures: &[&str]) -> PathBuf {
++        let p = dir.join(id);
++        fs::create_dir_all(p.join("textures")).unwrap();
++        fs::write(p.join(MANIFEST), manifest).unwrap();
++        for t in textures {
++            fs::write(p.join("textures").join(t), b"png").unwrap();
++        }
++        p
++    }
++
++    #[test]
++    fn parses_a_valid_manifest() {
++        let tmp = TempDir::new().unwrap();
++        let dir = pack(tmp.path(), "xbox-buttons", VALID, &[]);
++        let m = read_manifest(&dir).unwrap();
++        assert_eq!(m.name, "Xbox Buttons");
++        assert_eq!(m.author, "s2x3");
++        assert_eq!(m.version, "1.0.0");
++        assert_eq!(m.kind, PackKind::OwnArt);
++        assert_eq!(m.engine_commit, None);
++        assert_eq!(m.targets.len(), 1);
++    }
++
++    #[test]
++    fn missing_field_is_an_error() {
++        let tmp = TempDir::new().unwrap();
++        let no_name = "author = \"a\"\nversion = \"1\"\nkind = \"upscale\"\n";
++        let dir = pack(tmp.path(), "broken", no_name, &[]);
++        let err = format!("{:#}", read_manifest(&dir).unwrap_err());
++        assert!(err.contains("missing field `name`"), "got: {err}");
++        assert!(err.contains("manifest.toml"), "got: {err}");
++    }
++
++    #[test]
++    fn unknown_kind_is_an_error() {
++        let tmp = TempDir::new().unwrap();
++        let bad = "name = \"n\"\nauthor = \"a\"\nversion = \"1\"\nkind = \"wallpaper\"\n";
++        let dir = pack(tmp.path(), "weird", bad, &[]);
++        let err = format!("{:#}", read_manifest(&dir).unwrap_err());
++        assert!(err.contains("wallpaper"), "got: {err}");
++    }
++
++    #[test]
++    fn list_sorts_and_flags_broken_and_bad_hashes() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path();
++        pack(packs, "b-valid", VALID, &["f897162c0f661c8b.png"]);
++        pack(
++            packs,
++            "a-badname",
++            VALID,
++            &["notahash.png", "0123456789abcdef.png"],
++        );
++        fs::create_dir_all(packs.join("c-empty")).unwrap();
++
++        let entries = list(packs);
++        let ids: Vec<&str> = entries.iter().map(|e| e.id.as_str()).collect();
++        assert_eq!(ids, vec!["a-badname", "b-valid", "c-empty"]);
++
++        let bad = &entries[0];
++        assert!(bad.pack.is_some());
++        assert!(
++            bad.error.as_deref().unwrap_or("").contains("notahash"),
++            "got: {:?}",
++            bad.error
++        );
++        assert_eq!(bad.texture_count, 2);
++
++        assert!(entries[1].pack.is_some());
++        assert!(entries[1].error.is_none());
++        assert_eq!(entries[1].texture_count, 1);
++
++        assert!(entries[2].pack.is_none());
++        assert!(entries[2].error.is_some());
++        assert_eq!(entries[2].texture_count, 0);
++    }
++
++    #[test]
++    fn list_is_empty_without_the_folder() {
++        let tmp = TempDir::new().unwrap();
++        assert!(list(&tmp.path().join("missing")).is_empty());
++    }
++
++    // --- import / remove -------------------------------------------------
++
++    use std::io::Cursor;
++    use std::io::Write as _;
++
++    /// Build a zip file in memory from (name, content) entries.
++    fn zip_bytes(entries: &[(&str, &[u8])]) -> Vec<u8> {
++        let mut w = Cursor::new(Vec::new());
++        let mut z = zip::ZipWriter::new(&mut w);
++        for (name, data) in entries {
++            z.start_file(*name, zip::write::SimpleFileOptions::default())
++                .unwrap();
++            z.write_all(data).unwrap();
++        }
++        z.finish().unwrap();
++        w.into_inner()
++    }
++
++    fn valid_zip() -> Vec<u8> {
++        zip_bytes(&[
++            ("xbox-buttons/manifest.toml", VALID.as_bytes()),
++            (
++                "xbox-buttons/textures/f897162c0f661c8b.png",
++                b"png".as_slice(),
++            ),
++        ])
++    }
++
++    #[test]
++    fn import_unzips_a_valid_pack() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        let src = tmp.path().join("pack.zip");
++        fs::write(&src, valid_zip()).unwrap();
++
++        let id = import(&src, &packs, false).unwrap();
++        assert_eq!(id, "xbox-buttons");
++        let entries = list(&packs);
++        assert_eq!(entries.len(), 1);
++        assert_eq!(entries[0].id, "xbox-buttons");
++        assert!(entries[0].pack.is_some());
++        assert_eq!(entries[0].texture_count, 1);
++    }
++
++    #[test]
++    fn import_rejects_zip_slip() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        let src = tmp.path().join("evil.zip");
++        fs::write(
++            &src,
++            zip_bytes(&[
++                ("p/manifest.toml", VALID.as_bytes()),
++                ("p/../evil.txt", b"x".as_slice()),
++            ]),
++        )
++        .unwrap();
++
++        let err = format!("{:#}", import(&src, &packs, false).unwrap_err());
++        assert!(err.contains("evil.txt"), "got: {err}");
++        assert!(!tmp.path().join("evil.txt").exists());
++        assert!(!packs.join("p").exists());
++    }
++
++    #[test]
++    fn import_rejects_missing_manifest() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        let src = tmp.path().join("nomani.zip");
++        fs::write(
++            &src,
++            zip_bytes(&[("p/textures/f897162c0f661c8b.png", b"png".as_slice())]),
++        )
++        .unwrap();
++
++        let err = format!("{:#}", import(&src, &packs, false).unwrap_err());
++        assert!(err.contains("manifest.toml"), "got: {err}");
++    }
++
++    #[test]
++    fn import_over_existing_id_needs_overwrite() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        let src = tmp.path().join("pack.zip");
++        fs::write(&src, valid_zip()).unwrap();
++        import(&src, &packs, false).unwrap();
++        fs::write(
++            packs
++                .join("xbox-buttons")
++                .join("textures")
++                .join("0123456789abcdef.png"),
++            b"old",
++        )
++        .unwrap();
++
++        let err = format!("{:#}", import(&src, &packs, false).unwrap_err());
++        assert!(err.contains("xbox-buttons"), "got: {err}");
++        // the old folder is untouched by the failed import
++        assert!(packs
++            .join("xbox-buttons")
++            .join("textures")
++            .join("0123456789abcdef.png")
++            .is_file());
++
++        import(&src, &packs, true).unwrap();
++        assert!(!packs
++            .join("xbox-buttons")
++            .join("textures")
++            .join("0123456789abcdef.png")
++            .is_file());
++    }
++
++    #[test]
++    fn import_accepts_uppercase_names_and_imports_folders() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        let src_dir = tmp.path().join("My Pack");
++        fs::create_dir_all(src_dir.join("textures")).unwrap();
++        fs::write(src_dir.join(MANIFEST), VALID).unwrap();
++        fs::write(
++            src_dir.join("textures").join("F897162C0F661C8B.PNG"),
++            b"png",
++        )
++        .unwrap();
++
++        let id = import(&src_dir, &packs, false).unwrap();
++        assert_eq!(id, "my-pack");
++        let entries = list(&packs);
++        assert_eq!(entries[0].id, "my-pack");
++        assert_eq!(entries[0].texture_count, 1);
++        assert!(entries[0].error.is_none());
++    }
++
++    #[test]
++    fn remove_deletes_only_the_named_pack() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        fs::create_dir_all(packs.join("a").join("textures")).unwrap();
++        fs::create_dir_all(packs.join("b")).unwrap();
++
++        remove(&packs, "a").unwrap();
++        assert!(!packs.join("a").exists());
++        assert!(packs.join("b").exists());
++
++        let err = format!("{:#}", remove(&packs, "gone").unwrap_err());
++        assert!(err.contains("gone"), "got: {err}");
++        // traversal is rejected, not followed
++        let err = format!("{:#}", remove(&packs, "../b").unwrap_err());
++        assert!(err.contains("b") || err.contains("name"), "got: {err}");
++        assert!(packs.join("b").exists());
++    }
++
++    // --- merge -----------------------------------------------------------
++
++    const HASH1: &str = "f897162c0f661c8b";
++    const HASH2: &str = "75df99fccd7d9d0b";
++
++    fn enabled(ids: &[&str]) -> BTreeMap<String, bool> {
++        ids.iter().map(|id| (id.to_string(), true)).collect()
++    }
++
++    #[test]
++    fn merge_picks_priority_order_and_reports_conflicts() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        pack(packs.as_path(), "a", VALID, &[&format!("{HASH1}.png")]);
++        pack(
++            packs.as_path(),
++            "b",
++            VALID,
++            &[&format!("{HASH1}.png"), &format!("{HASH2}.png")],
++        );
++        // distinct content so the winner is identifiable
++        fs::write(
++            packs
++                .join("a")
++                .join("textures")
++                .join(format!("{HASH1}.png")),
++            b"png-1",
++        )
++        .unwrap();
++
++        let active = tmp.path().join("active");
++        let report = merge(
++            &packs,
++            &active,
++            &enabled(&["b", "a"]),
++            &["a".into(), "b".into()],
++        )
++        .unwrap();
++
++        let win1 = fs::read(active.join(format!("{HASH1}.png"))).unwrap();
++        assert_eq!(win1, b"png-1".to_vec(), "priority `a` must win HASH1");
++        assert!(active.join(format!("{HASH2}.png")).is_file());
++        assert_eq!(report.files, 2);
++        assert_eq!(report.conflicts, vec![HASH1.to_string()]);
++    }
++
++    #[test]
++    fn merge_skips_disabled_and_rebuilds_clean() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        pack(packs.as_path(), "a", VALID, &[&format!("{HASH1}.png")]);
++        pack(packs.as_path(), "b", VALID, &[&format!("{HASH2}.png")]);
++        let active = tmp.path().join("active");
++        fs::create_dir_all(&active).unwrap();
++        fs::write(active.join("stale.png"), b"stale").unwrap();
++
++        let mut on = enabled(&["a", "b"]);
++        on.insert("b".into(), false);
++        merge(&packs, &active, &on, &[]).unwrap();
++
++        assert!(active.join(format!("{HASH1}.png")).is_file());
++        assert!(!active.join(format!("{HASH2}.png")).is_file());
++        assert!(!active.join("stale.png").is_file(), "rebuild starts clean");
++    }
++
++    #[test]
++    fn merge_ignores_missing_enabled_packs() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        pack(packs.as_path(), "a", VALID, &[&format!("{HASH1}.png")]);
++        let active = tmp.path().join("active");
++
++        let mut on = enabled(&["a", "ghost"]);
++        on.insert("ghost".into(), true);
++        let report = merge(&packs, &active, &on, &["ghost".into(), "a".into()]).unwrap();
++        assert_eq!(report.files, 1);
++        assert!(active.join(format!("{HASH1}.png")).is_file());
++    }
++
++    // --- launch env / legacy migration -----------------------------------
++
++    use crate::Config;
++
++    #[test]
++    fn launch_env_is_zero_without_active_packs() {
++        let tmp = TempDir::new().unwrap();
++        let mut cfg = Config::default();
++        cfg.paths.textures = tmp.path().join("textures");
++        assert_eq!(launch_replace_env(&cfg), "0");
++    }
++
++    #[test]
++    fn launch_env_names_active_when_packs_are_merged() {
++        let tmp = TempDir::new().unwrap();
++        let mut cfg = Config::default();
++        cfg.paths.textures = tmp.path().join("textures");
++        std::fs::create_dir_all(cfg.paths.textures_active()).unwrap();
++        std::fs::write(
++            cfg.paths.textures_active().join("f897162c0f661c8b.png"),
++            b"png",
++        )
++        .unwrap();
++        // a non-png file does not count as an active pack
++        std::fs::write(cfg.paths.textures_active().join("readme.txt"), b"n").unwrap();
++        let env = launch_replace_env(&cfg);
++        assert!(env.ends_with("active"), "got: {env}");
++        assert_ne!(env, "0");
++    }
++
++    #[test]
++    fn migration_is_idempotent_and_imports_texreplace() {
++        let tmp = TempDir::new().unwrap();
++        let mut cfg = Config::default();
++        cfg.paths.textures = tmp.path().join("textures");
++        cfg.paths.texreplace = tmp.path().join("texreplace");
++        std::fs::create_dir_all(&cfg.paths.texreplace).unwrap();
++        std::fs::write(cfg.paths.texreplace.join("f897162c0f661c8b.png"), b"png").unwrap();
++        cfg.ui.buttons = "xbox".into();
++
++        assert!(migrate_legacy(&mut cfg).unwrap());
++        assert_eq!(cfg.textures.enabled.get("xbox-buttons"), Some(&true));
++        // the legacy folder stays in place (it still works until the next
++        // config save swaps the mechanism) and a copy became a pack
++        assert!(cfg.paths.texreplace.join("f897162c0f661c8b.png").is_file());
++        let entries = list(&cfg.paths.textures_packs());
++        assert!(
++            entries
++                .iter()
++                .any(|e| e.id == "texreplace-import" && e.pack.is_some()),
++            "got: {entries:?}"
++        );
++        assert_eq!(cfg.textures.enabled.get("texreplace-import"), Some(&true));
++
++        assert!(!migrate_legacy(&mut cfg).unwrap());
++    }
++
++    #[test]
++    fn conflicts_reports_shared_hashes_of_enabled_packs() {
++        let tmp = TempDir::new().unwrap();
++        let packs = tmp.path().join("packs");
++        pack(
++            packs.as_path(),
++            "a",
++            VALID,
++            &[&format!("{HASH1}.png"), &format!("{HASH2}.png")],
++        );
++        pack(packs.as_path(), "b", VALID, &[&format!("{HASH1}.png")]);
++
++        let mut on = enabled(&["a", "b"]);
++        assert_eq!(conflicts(&packs, &on, &[]), vec![HASH1.to_string()]);
++        on.insert("b".into(), false);
++        assert!(conflicts(&packs, &on, &[]).is_empty());
++    }
++
++    // --- engine tooling ---------------------------------------------------
++
++    #[test]
++    fn engine_binary_prefers_the_built_over_the_dist_one() {
++        let tmp = TempDir::new().unwrap();
++        let mut cfg = Config::default();
++        cfg.engine.root = tmp.path().to_path_buf();
++        let exe = format!("ssx3{}", std::env::consts::EXE_SUFFIX);
++        std::fs::create_dir_all(tmp.path().join("dist")).unwrap();
++        std::fs::write(tmp.path().join("dist").join(&exe), b"x").unwrap();
++        assert_eq!(engine_binary(&cfg), tmp.path().join("dist").join(&exe));
++        std::fs::create_dir_all(tmp.path().join("target/game")).unwrap();
++        std::fs::write(tmp.path().join("target/game").join(&exe), b"x").unwrap();
++        assert_eq!(
++            engine_binary(&cfg),
++            tmp.path().join("target/game").join(&exe)
++        );
++    }
++
++    #[test]
++    fn extract_fails_readable_without_an_engine_binary() {
++        let tmp = TempDir::new().unwrap();
++        let mut cfg = Config::default();
++        cfg.engine.root = tmp.path().join("no-engine");
++        cfg.paths.iso = tmp.path().join("iso");
++        cfg.paths.textures = tmp.path().join("textures");
++        let err = format!("{:#}", run_extract(&cfg).unwrap_err());
++        assert!(err.contains("dump-textures"), "got: {err}");
++        assert!(err.contains("engine binary missing"), "got: {err}");
++    }
++
++    #[test]
++    fn upscale_fails_readable_without_the_tool() {
++        let tmp = TempDir::new().unwrap();
++        let mut cfg = Config::default();
++        cfg.engine.root = tmp.path().to_path_buf();
++        cfg.paths.textures = tmp.path().join("textures");
++        let err = format!("{:#}", run_upscale(&cfg).unwrap_err());
++        assert!(err.contains("upscale-textures"), "got: {err}");
++    }
++
++    #[test]
++    fn catalog_metadata_is_valid() {
++        // The catalog is metadata only (hard rule 1): every entry needs id,
++        // name, author, version, kind ÔÇö no url when the pack is bundled.
++        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../catalog/textures.json");
++        let text = std::fs::read_to_string(&path)
++            .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
++        let v: serde_json::Value =
++            serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {}: {e}", path.display()));
++        let items = v.as_array().expect("catalog is a json array");
++        assert!(!items.is_empty(), "catalog lists the bundled packs");
++        for it in items {
++            for key in ["id", "name", "author", "version", "kind"] {
++                assert!(
++                    it.get(key)
++                        .and_then(|x| x.as_str())
++                        .map(|s| !s.is_empty())
++                        .unwrap_or(false),
++                    "entry missing `{key}`: {it}"
++                );
++            }
++            assert!(
++                matches!(it["kind"].as_str(), Some("own-art") | Some("upscale")),
++                "unknown kind: {it}"
++            );
++        }
++        let xbox = items
++            .iter()
++            .find(|it| it["id"] == "xbox-buttons")
++            .expect("xbox-buttons in catalog");
++        assert_eq!(xbox["bundled"], serde_json::Value::Bool(true));
++    }
++}
+diff --git a/crates/s2x3-engines/src/ps2.rs b/crates/s2x3-engines/src/ps2.rs
+index 20d5ab4..b69f700 100644
+--- a/crates/s2x3-engines/src/ps2.rs
++++ b/crates/s2x3-engines/src/ps2.rs
+@@ -12,8 +12,8 @@ use std::process::{Child, Command};
+ 
+ use anyhow::{Context, Result};
+ use s2x3_core::{
+-    human_size, Capabilities, Detection, EngineAdapter, LaunchConfig, SettingsField, SavesInfo,
+-    Status, FieldKind,
++    human_size, Capabilities, Detection, EngineAdapter, FieldKind, LaunchConfig, SavesInfo,
++    SettingsField, Status,
+ };
+ 
+ /// A PS2 memory card image is exactly 8 MiB of card data plus its header.
+@@ -299,8 +299,8 @@ impl EngineAdapter for Ps2Rust {
+         if !path.exists() {
+             return Ok(out);
+         }
+-        let text = std::fs::read_to_string(&path)
+-            .with_context(|| format!("read {}", path.display()))?;
++        let text =
++            std::fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
+         for line in text.lines() {
+             let line = line.trim();
+             if line.starts_with('#') {
+@@ -343,9 +343,8 @@ impl EngineAdapter for Ps2Rust {
+                 all.insert(k.clone(), v.clone());
+             }
+         }
+-        let mut text = String::from(
+-            "# Written by S2X3. Lines are KEY=VALUE; environment variables win.\n",
+-        );
++        let mut text =
++            String::from("# Written by S2X3. Lines are KEY=VALUE; environment variables win.\n");
+         for (k, v) in &all {
+             text.push_str(&format!("{k}={v}\n"));
+         }
+@@ -382,8 +381,7 @@ impl EngineAdapter for Ps2Rust {
+     }
+ 
+     fn import_saves(&self, src: &Path) -> Result<PathBuf> {
+-        let meta = std::fs::metadata(src)
+-            .with_context(|| format!("read {}", src.display()))?;
++        let meta = std::fs::metadata(src).with_context(|| format!("read {}", src.display()))?;
+         if meta.len() != CARD_BYTES {
+             anyhow::bail!(
+                 "{} is not a PS2 memory card: expected {} bytes, got {}",
+@@ -433,7 +431,13 @@ impl EngineAdapter for Ps2Rust {
+         #[cfg(target_os = "windows")]
+         let mut cmd = Command::new("powershell");
+         #[cfg(target_os = "windows")]
+-        cmd.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script]);
++        cmd.args([
++            "-NoProfile",
++            "-ExecutionPolicy",
++            "Bypass",
++            "-Command",
++            script,
++        ]);
+         #[cfg(not(target_os = "windows"))]
+         let mut cmd = Command::new("bash");
+         #[cfg(not(target_os = "windows"))]
+@@ -470,9 +474,13 @@ impl EngineAdapter for Ps2Rust {
+             .env("SSX3_ISO", &self.config.paths.iso)
+             .env("SSX3_MEMCARD", self.memcard_path())
+             .env("SSX3_SETTINGS", self.settings_path());
+-        if self.config.ui.buttons == "xbox" && self.config.paths.texreplace.is_dir() {
+-            cmd.env("SSX3_TEX_REPLACE", &self.config.paths.texreplace);
+-        }
++        // Always explicit: the engine's default `textures/replace` folder
++        // must never apply behind the launcher's back (toggle off = original
++        // look).
++        cmd.env(
++            "SSX3_TEX_REPLACE",
++            s2x3_core::textures::launch_replace_env(&self.config),
++        );
+ 
+         for (k, v) in &self.config.settings {
+             cmd.env(k, v);

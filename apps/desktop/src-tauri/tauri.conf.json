@@ -22,7 +22,15 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPDATA/s2x3/textures/**",
+          "$CONFIG/s2x3/textures/**",
+          "$XDG_CONFIG_HOME/s2x3/textures/**"
+        ]
+      }
     }
   },
   "bundle": {

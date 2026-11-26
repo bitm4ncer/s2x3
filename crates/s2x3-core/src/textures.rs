@@ -619,6 +619,23 @@ pub fn merge(
     Ok(MergeReport { files, conflicts })
 }
 
+/// Enable the pack `id` and rebuild the active set — the pack's order entry
+/// („first activated wins a shared hash") is recorded once. Thin over
+/// `merge`, but the one place UI and CLI must share so the enable semantics
+/// cannot drift.
+pub fn enable_and_merge(config: &mut crate::Config, id: &str) -> Result<MergeReport> {
+    if !config.textures.priority.iter().any(|p| p == id) {
+        config.textures.priority.push(id.to_string());
+    }
+    config.textures.enabled.insert(id.to_string(), true);
+    merge(
+        &config.paths.textures_packs(),
+        &config.paths.textures_active(),
+        &config.textures.enabled,
+        &config.textures.priority,
+    )
+}
+
 /// Value for `SSX3_TEX_REPLACE`: the active merge folder when it holds at
 /// least one replacement, else `"0"` (explicitly off â€” the engine's default
 /// `textures/replace` folder must never apply behind the launcher's back).
@@ -645,6 +662,9 @@ kind = \"upscale\"
 /// (derived content: local-only, kind `upscale`). Returns `Ok(true)` when
 /// the config changed; idempotent â€” a second run changes nothing.
 pub fn migrate_legacy(config: &mut crate::Config) -> Result<bool> {
+    if config.textures.legacy_migrated {
+        return Ok(false);
+    }
     let mut changed = false;
     if config.ui.buttons == "xbox" && config.textures.enabled.get("xbox-buttons") != Some(&true) {
         config.textures.enabled.insert("xbox-buttons".into(), true);
@@ -672,6 +692,9 @@ pub fn migrate_legacy(config: &mut crate::Config) -> Result<bool> {
             .enabled
             .insert("texreplace-import".into(), true);
         changed = true;
+    }
+    if changed {
+        config.textures.legacy_migrated = true;
     }
     Ok(changed)
 }
@@ -1120,6 +1143,54 @@ kind = \"own-art\"
         cfg.paths.textures = tmp.path().join("textures");
         let err = format!("{:#}", run_upscale(&cfg).unwrap_err());
         assert!(err.contains("upscale-textures"), "got: {err}");
+    }
+
+    // --- fix pass: enable-and-merge, migration latch ----------------------
+
+    #[test]
+    fn enable_and_merge_activates_and_records_priority() {
+        let tmp = TempDir::new().unwrap();
+        let mut cfg = Config::default();
+        cfg.paths.textures = tmp.path().join("textures");
+        let packs = cfg.paths.textures_packs();
+        pack(&packs, "a", VALID, &[&format!("{HASH1}.png")]);
+        cfg.textures.enabled.insert("a".into(), false);
+
+        let report = enable_and_merge(&mut cfg, "a").unwrap();
+        assert_eq!(report.files, 1);
+        assert_eq!(cfg.textures.enabled.get("a"), Some(&true));
+        assert_eq!(cfg.textures.priority, vec!["a".to_string()]);
+        assert!(cfg
+            .paths
+            .textures_active()
+            .join(format!("{HASH1}.png"))
+            .is_file());
+
+        // re-enabling does not duplicate the priority entry
+        enable_and_merge(&mut cfg, "a").unwrap();
+        assert_eq!(cfg.textures.priority, vec!["a".to_string()]);
+    }
+
+    #[test]
+    fn migration_latch_prevents_resurrection() {
+        let tmp = TempDir::new().unwrap();
+        let mut cfg = Config::default();
+        cfg.paths.textures = tmp.path().join("textures");
+        cfg.paths.texreplace = tmp.path().join("texreplace");
+        std::fs::create_dir_all(&cfg.paths.texreplace).unwrap();
+        std::fs::write(cfg.paths.texreplace.join("f897162c0f661c8b.png"), b"png").unwrap();
+
+        assert!(migrate_legacy(&mut cfg).unwrap());
+        // the user deletes the imported pack afterwards
+        std::fs::remove_dir_all(cfg.paths.textures_packs().join("texreplace-import")).unwrap();
+
+        // …but the latch keeps it deleted
+        assert!(!migrate_legacy(&mut cfg).unwrap());
+        assert!(!cfg
+            .paths
+            .textures_packs()
+            .join("texreplace-import")
+            .exists());
     }
 
     #[test]

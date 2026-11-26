@@ -169,7 +169,7 @@ function mockInvoke(cmd, args) {  if (cmd === "state") {
     if (i >= 0) mockPacks.splice(i, 1);
     return Promise.resolve(structuredClone(mockPacks));
   }
-  if (cmd === "textures_pick_import" || cmd === "textures_import")
+  if (cmd === "textures_pick_import" || cmd === "textures_pick_import_folder" || cmd === "textures_import")
     return Promise.resolve(structuredClone(mockPacks));
   if (cmd === "textures_extract" || cmd === "textures_upscale")
     return Promise.resolve("gestartet");
@@ -512,6 +512,7 @@ async function renderPacks(el) {
   };
   actions.append(
     mk("Import…", "textures_pick_import"),
+    mk("Ordner importieren…", "textures_pick_import_folder"),
     mk("Texturen neu lesen", "textures_extract"),
     mk("HD hochskalieren", "textures_upscale"),
     mk("Dump-Ordner öffnen", "textures_open_folder", { id: "" }),
