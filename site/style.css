@@ -342,6 +342,10 @@ code {
 }
 
 .tab-ext {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   background: var(--steelgrad);
   color: #cfe9f8;
   box-shadow: none;
@@ -352,7 +356,6 @@ code {
   width: 16px;
   height: 16px;
   fill: currentColor;
-  margin: 0 4px 0 -2px;
 }
 
 .tab-ext:hover,
