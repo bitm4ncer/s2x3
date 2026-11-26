@@ -330,6 +330,119 @@ pub fn remove(packs_dir: &Path, id: &str) -> Result<()> {
     std::fs::remove_dir_all(&target).with_context(|| format!("remove {}", target.display()))
 }
 
+/// Outcome of a merge: how many replacement files are active, and which
+/// texture hashes more than one enabled pack claims (first in priority
+/// wins; the conflict is surfaced, never hidden).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MergeReport {
+    pub files: u32,
+    pub conflicts: Vec<String>,
+}
+
+/// Rebuild the `active` merge folder from the enabled packs: copied files of
+/// every enabled pack, in `priority` order (earlier wins a hash), remaining
+/// ids after that in sort order. The folder is rebuilt from scratch each
+/// time, so a stale or corrupted `active` heals on the next merge.
+pub fn merge(
+    packs_dir: &Path,
+    active_dir: &Path,
+    enabled: &BTreeMap<String, bool>,
+    priority: &[String],
+) -> Result<MergeReport> {
+    // Enabled, installed packs in application order.
+    let entries = list(packs_dir);
+    let mut order: Vec<&PackEntry> = Vec::new();
+    for id in priority {
+        if enabled.get(id).copied().unwrap_or(false) {
+            if let Some(e) = entries.iter().filter(|e| e.id == *id).next() {
+                order.push(e);
+            }
+        }
+    }
+    for e in &entries {
+        if enabled.get(&e.id).copied().unwrap_or(false) && !priority.iter().any(|p| p == &e.id) {
+            order.push(e);
+        }
+    }
+
+    let staging = active_dir.with_file_name(format!(
+        "{}.tmp",
+        active_dir
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("active")
+    ));
+    let _ = std::fs::remove_dir_all(&staging);
+    std::fs::create_dir_all(&staging).with_context(|| format!("create {}", staging.display()))?;
+    let mut seen: Vec<String> = Vec::new();
+    let mut conflicts: Vec<String> = Vec::new();
+    let mut files: u32 = 0;
+    for entry in &order {
+        let pack = match &entry.pack {
+            Some(p) => p,
+            None => continue, // broken folder: listed in the UI, skipped here
+        };
+        let tex_dir = pack.dir.join("textures");
+        let Ok(rd) = std::fs::read_dir(&tex_dir) else {
+            continue;
+        };
+        for f in rd.flatten() {
+            let path = f.path();
+            if !path
+                .extension()
+                .is_some_and(|x| x.eq_ignore_ascii_case("png"))
+            {
+                continue;
+            }
+            let stem = match path.file_stem().and_then(|s| s.to_str()) {
+                Some(s) => s.to_ascii_lowercase(),
+                None => continue,
+            };
+            if seen.iter().any(|h| h == &stem) {
+                conflicts.push(stem.clone());
+                continue;
+            }
+            seen.push(stem.clone());
+            let dst = staging.join(format!("{stem}.png"));
+            std::fs::copy(&path, &dst)
+                .with_context(|| format!("copy {} into the active set", path.display()))?;
+            files += 1;
+        }
+    }
+    conflicts.sort();
+    conflicts.dedup();
+
+    // Atomic swap: old folder aside, staging in, old gone; roll back on error.
+    if active_dir.exists() {
+        let old = active_dir.with_file_name(format!(
+            "{}.old",
+            active_dir
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("active")
+        ));
+        let _ = std::fs::remove_dir_all(&old);
+        std::fs::rename(active_dir, &old)
+            .with_context(|| format!("move aside {}", active_dir.display()))?;
+        match std::fs::rename(&staging, active_dir) {
+            Ok(()) => {
+                let _ = std::fs::remove_dir_all(&old);
+            }
+            Err(e) => {
+                let _ = std::fs::rename(&old, active_dir);
+                let _ = std::fs::remove_dir_all(&staging);
+                return Err(
+                    anyhow::Error::new(e).context(format!("swap in {}", active_dir.display()))
+                );
+            }
+        }
+    } else {
+        std::fs::rename(&staging, active_dir)
+            .with_context(|| format!("activate {}", active_dir.display()))?;
+    }
+    Ok(MergeReport { files, conflicts })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -579,5 +692,84 @@ kind = \"own-art\"
         let err = format!("{:#}", remove(&packs, "../b").unwrap_err());
         assert!(err.contains("b") || err.contains("name"), "got: {err}");
         assert!(packs.join("b").exists());
+    }
+
+    // --- merge -----------------------------------------------------------
+
+    const HASH1: &str = "f897162c0f661c8b";
+    const HASH2: &str = "75df99fccd7d9d0b";
+
+    fn enabled(ids: &[&str]) -> BTreeMap<String, bool> {
+        ids.iter().map(|id| (id.to_string(), true)).collect()
+    }
+
+    #[test]
+    fn merge_picks_priority_order_and_reports_conflicts() {
+        let tmp = TempDir::new().unwrap();
+        let packs = tmp.path().join("packs");
+        pack(packs.as_path(), "a", VALID, &[&format!("{HASH1}.png")]);
+        pack(
+            packs.as_path(),
+            "b",
+            VALID,
+            &[&format!("{HASH1}.png"), &format!("{HASH2}.png")],
+        );
+        // distinct content so the winner is identifiable
+        fs::write(
+            packs
+                .join("a")
+                .join("textures")
+                .join(format!("{HASH1}.png")),
+            b"png-1",
+        )
+        .unwrap();
+
+        let active = tmp.path().join("active");
+        let report = merge(
+            &packs,
+            &active,
+            &enabled(&["b", "a"]),
+            &["a".into(), "b".into()],
+        )
+        .unwrap();
+
+        let win1 = fs::read(active.join(format!("{HASH1}.png"))).unwrap();
+        assert_eq!(win1, b"png-1".to_vec(), "priority `a` must win HASH1");
+        assert!(active.join(format!("{HASH2}.png")).is_file());
+        assert_eq!(report.files, 2);
+        assert_eq!(report.conflicts, vec![HASH1.to_string()]);
+    }
+
+    #[test]
+    fn merge_skips_disabled_and_rebuilds_clean() {
+        let tmp = TempDir::new().unwrap();
+        let packs = tmp.path().join("packs");
+        pack(packs.as_path(), "a", VALID, &[&format!("{HASH1}.png")]);
+        pack(packs.as_path(), "b", VALID, &[&format!("{HASH2}.png")]);
+        let active = tmp.path().join("active");
+        fs::create_dir_all(&active).unwrap();
+        fs::write(active.join("stale.png"), b"stale").unwrap();
+
+        let mut on = enabled(&["a", "b"]);
+        on.insert("b".into(), false);
+        merge(&packs, &active, &on, &[]).unwrap();
+
+        assert!(active.join(format!("{HASH1}.png")).is_file());
+        assert!(!active.join(format!("{HASH2}.png")).is_file());
+        assert!(!active.join("stale.png").is_file(), "rebuild starts clean");
+    }
+
+    #[test]
+    fn merge_ignores_missing_enabled_packs() {
+        let tmp = TempDir::new().unwrap();
+        let packs = tmp.path().join("packs");
+        pack(packs.as_path(), "a", VALID, &[&format!("{HASH1}.png")]);
+        let active = tmp.path().join("active");
+
+        let mut on = enabled(&["a", "ghost"]);
+        on.insert("ghost".into(), true);
+        let report = merge(&packs, &active, &on, &["ghost".into(), "a".into()]).unwrap();
+        assert_eq!(report.files, 1);
+        assert!(active.join(format!("{HASH1}.png")).is_file());
     }
 }
