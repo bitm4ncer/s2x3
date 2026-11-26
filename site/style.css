@@ -373,7 +373,7 @@ code {
 .tab-cta:hover,
 .tab-cta:focus-visible {
   color: #fff;
-  filter: brightness(1.08) saturate(1.15);
+  background: linear-gradient(150deg, #d94f04 0%, #a63e00 100%);
 }
 
 /* ── Hero: photo above, frosted steel panel below ───────────────── */
@@ -798,6 +798,29 @@ code {
   margin: 10px 0 0;
   font-size: 11px;
   color: #cfe2ee;
+}
+
+/* grayed-out soon button */
+.btn.is-soon {
+  background: linear-gradient(180deg, #f2f8fc 0%, #ddeaf3 100%);
+  color: #5a7891;
+  box-shadow: inset 0 0 0 1px rgba(11, 44, 75, 0.12);
+  pointer-events: none;
+}
+
+.btn.is-soon svg {
+  fill: #5a7891;
+}
+
+.soon-tag {
+  padding: 2px 8px 1px;
+  font-family: var(--pixel);
+  font-style: normal;
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  color: var(--navy);
+  background: var(--cyan);
+  border-radius: 5px;
 }
 
 .disclaimer {
