@@ -1,0 +1,12 @@
+[
+  {
+    "id": "xbox-buttons",
+    "name": "Xbox Buttons",
+    "author": "s2x3",
+    "version": "1.0.0",
+    "kind": "upscale",
+    "description": "Shows A/B/X/Y instead of the PlayStation glyphs in menus and the HUD. Generated locally from your own disc's texture dump — the launcher ships only its own glyph art.",
+    "bundled": true,
+    "source_note": "im Launcher gebündelt (Own-Art-Glyphen); das Pack selbst entsteht lokal aus dem Dump"
+  }
+]

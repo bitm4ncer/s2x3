@@ -1121,4 +1121,37 @@ kind = \"own-art\"
         let err = format!("{:#}", run_upscale(&cfg).unwrap_err());
         assert!(err.contains("upscale-textures"), "got: {err}");
     }
+
+    #[test]
+    fn catalog_metadata_is_valid() {
+        // The catalog is metadata only (hard rule 1): every entry needs id,
+        // name, author, version, kind — no url when the pack is bundled.
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../catalog/textures.json");
+        let text = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
+        let v: serde_json::Value =
+            serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {}: {e}", path.display()));
+        let items = v.as_array().expect("catalog is a json array");
+        assert!(!items.is_empty(), "catalog lists the bundled packs");
+        for it in items {
+            for key in ["id", "name", "author", "version", "kind"] {
+                assert!(
+                    it.get(key)
+                        .and_then(|x| x.as_str())
+                        .map(|s| !s.is_empty())
+                        .unwrap_or(false),
+                    "entry missing `{key}`: {it}"
+                );
+            }
+            assert!(
+                matches!(it["kind"].as_str(), Some("own-art") | Some("upscale")),
+                "unknown kind: {it}"
+            );
+        }
+        let xbox = items
+            .iter()
+            .find(|it| it["id"] == "xbox-buttons")
+            .expect("xbox-buttons in catalog");
+        assert_eq!(xbox["bundled"], serde_json::Value::Bool(true));
+    }
 }
