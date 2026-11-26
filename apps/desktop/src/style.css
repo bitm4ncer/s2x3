@@ -677,7 +677,25 @@ main::-webkit-scrollbar-thumb:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.saves-title h4 {
+  margin: 0;
+  flex: none;
+}
+
+.saves-title .menu-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.saves-title .ghost.has-icon {
+  padding: 6px 8px;
+  font-size: 9px;
+  gap: 5px;
+  letter-spacing: 0.08em;
 }
 
 /* small orange plus button in the Save game title */
