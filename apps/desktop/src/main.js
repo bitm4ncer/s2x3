@@ -218,7 +218,7 @@ function promptSet() {
     </div>
     <div class="prompt-cards">
       <button class="prompt-card ${ps2 ? "active" : ""}" data-set="ps2">
-        <span class="glyphs">${psGlyph("triangle")}${psGlyph("circle")}${psGlyph("cross")}${psGlyph("square")}</span>
+        <span class="glyphs">${psGlyph("cross")}${psGlyph("circle")}${psGlyph("square")}${psGlyph("triangle")}</span>
         <b>PlayStation 2</b>
         <small>original glyphs</small>
       </button>
