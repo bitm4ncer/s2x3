@@ -11,9 +11,9 @@ use base64::Engine as _;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use s2x3_core::card::card_contents;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use s2x3_core::card::card_contents;
 
 use crate::{load, Config};
 
@@ -178,12 +178,17 @@ fn resolve_card(config: &Config, name: &str) -> Result<PathBuf, String> {
     if in_cards.exists() {
         return Ok(in_cards);
     }
-    let classic = config.paths.saves.join(format!("{}.ps2", sanitize_name(name)));
+    let classic = config
+        .paths
+        .saves
+        .join(format!("{}.ps2", sanitize_name(name)));
     if classic.exists() {
         return Ok(classic);
     }
     let active = config.paths.active_memcard();
-    if active.exists() && active.file_stem().and_then(|s| s.to_str()) == Some(sanitize_name(name).as_str()) {
+    if active.exists()
+        && active.file_stem().and_then(|s| s.to_str()) == Some(sanitize_name(name).as_str())
+    {
         return Ok(active);
     }
     Err(format!("card not found: {name}"))
@@ -301,13 +306,9 @@ pub struct CardShare {
 
 /// Export a card as a small `.ps2.gz` the user can send over a messenger.
 #[tauri::command]
-pub async fn card_export(
-    name: String,
-    dest: Option<String>,
-) -> Result<CardShare, String> {
+pub async fn card_export(name: String, dest: Option<String>) -> Result<CardShare, String> {
     let path = resolve_card(&load_config()?, &name)?;
-    let bytes =
-        std::fs::read(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
+    let bytes = std::fs::read(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
     let packed = gzip(&bytes).map_err(|e| format!("{e:#}"))?;
     let hash = sha8(&packed);
     let target = match dest {
@@ -320,8 +321,7 @@ pub async fn card_export(
             .path()
             .to_path_buf(),
     };
-    std::fs::write(&target, &packed)
-        .map_err(|e| format!("write {}: {e}", target.display()))?;
+    std::fs::write(&target, &packed).map_err(|e| format!("write {}: {e}", target.display()))?;
     Ok(CardShare {
         file: target.display().to_string(),
         hash,
@@ -344,8 +344,7 @@ pub async fn card_import_file(
             .path()
             .to_path_buf(),
     };
-    let packed =
-        std::fs::read(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
+    let packed = std::fs::read(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
     let data = if packed.starts_with(b"\x1f\x8b") {
         gunzip(&packed).map_err(|e| format!("{e:#}"))?
     } else {
@@ -417,7 +416,10 @@ pub fn card_import(payload: String, name: Option<String>) -> Result<Vec<CardProf
     );
     let path = card_path(&config, &target_name)?;
     if path.exists() {
-        return Err(format!("profile exists: {} — pick another name", path.display()));
+        return Err(format!(
+            "profile exists: {} — pick another name",
+            path.display()
+        ));
     }
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(|e| format!("create {}: {e}", dir.display()))?;

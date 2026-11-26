@@ -587,9 +587,9 @@ fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
         .textures_packs()
         .join("xbox-buttons")
         .join("textures");
-    let needs_patch = config.ui.buttons == "xbox" && !texreplace::complete(&out_dir);
-    let dumped = needs_patch && !texreplace::dumped(&dump_dir).is_empty();
-    let run_dump = needs_patch && texreplace::dumped(&dump_dir).is_empty();
+    let needs_patch = config.ui.buttons == "xbox" && !texreplace::complete(&dump_dir, &out_dir);
+    let dumped = needs_patch && texreplace::dumped(&dump_dir);
+    let run_dump = needs_patch && !texreplace::dumped(&dump_dir);
     if dumped {
         if let Err(e) = textures::generate_xbox_pack(&mut config) {
             eprintln!("texreplace patch failed: {e:#}");
@@ -657,9 +657,8 @@ pub use cards::{
     card_hash_copy, card_import, card_import_file, card_new, card_rename, save_profiles,
 };
 pub use textures::{
-    textures_extract, textures_import, textures_list, textures_open_folder,
-    textures_pick_import, textures_pick_import_folder, textures_remove, textures_toggle,
-    textures_upscale,
+    textures_extract, textures_import, textures_list, textures_open_folder, textures_pick_import,
+    textures_pick_import_folder, textures_remove, textures_toggle, textures_upscale,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

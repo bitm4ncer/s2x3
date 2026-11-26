@@ -18,9 +18,14 @@ use std::path::Path;
 
 use image::imageops::FilterType;
 
-/// The controls sheet is shipped under two texture ids: the front end uses the
-/// first, the in-game pause/HUD path the second.
-pub const ATLASES: [&str; 2] = ["f897162c0f661c8b.png", "75df99fccd7d9d0b.png"];
+/// The PS2 glyph art every sheet shares, one sprite per face slot — the
+/// fingerprint that says "this sheet carries button prompts".
+const PS2_SLOTS: [&[u8]; 4] = [
+    include_bytes!("../assets/glyphs/ps2-slot1.png"),
+    include_bytes!("../assets/glyphs/ps2-slot2.png"),
+    include_bytes!("../assets/glyphs/ps2-slot3.png"),
+    include_bytes!("../assets/glyphs/ps2-slot4.png"),
+];
 
 /// Glyph slots in the 256x256 atlas: (x0, y0, x1, y1, letter) — 20x20 each.
 /// Mapping is positional, like the engine's pad mapping:
@@ -41,10 +46,26 @@ const GLYPH_Y: &[u8] = include_bytes!("../assets/glyphs/y.png");
 /// (x0, y0, x1, y1) and the Xbox box art replacing them (RB/LB/RT/LT —
 /// PS2 R1 = Xbox RB, L1 = LB, R2 = RT, L2 = LT).
 const SHOULDERS: [((u32, u32, u32, u32), char, &[u8]); 4] = [
-    ((121, 158, 149, 172), 'r', include_bytes!("../assets/glyphs/rb.png")), // R1 -> RB
-    ((152, 158, 180, 172), 'l', include_bytes!("../assets/glyphs/lb.png")), // L1 -> LB
-    ((121, 175, 149, 189), 'r', include_bytes!("../assets/glyphs/rt.png")), // R2 -> RT
-    ((152, 175, 180, 189), 'l', include_bytes!("../assets/glyphs/lt.png")), // L2 -> LT
+    (
+        (121, 158, 149, 172),
+        'r',
+        include_bytes!("../assets/glyphs/rb.png"),
+    ), // R1 -> RB
+    (
+        (152, 158, 180, 172),
+        'l',
+        include_bytes!("../assets/glyphs/lb.png"),
+    ), // L1 -> LB
+    (
+        (121, 175, 149, 189),
+        'r',
+        include_bytes!("../assets/glyphs/rt.png"),
+    ), // R2 -> RT
+    (
+        (152, 175, 180, 189),
+        'l',
+        include_bytes!("../assets/glyphs/lt.png"),
+    ), // L2 -> LT
 ];
 
 /// The controller drawing at the sheet's top (its opaque bounds): the PS2
@@ -63,44 +84,107 @@ fn glyph_image(letter: char) -> anyhow::Result<image::RgbaImage> {
     Ok(image::load_from_memory(bytes)?.to_rgba8())
 }
 
-/// Atlases that are in the texreplace folder already.
-pub fn patched(out_dir: &Path) -> usize {
-    ATLASES
-        .iter()
-        .filter(|name| out_dir.join(name).is_file())
-        .count()
+/// True when nothing is left to do: every dump texture has been seen by a
+/// patch run (the marker holds the dump's file count at patch time).
+pub fn complete(dump_dir: &Path, out_dir: &Path) -> bool {
+    let stored = std::fs::read_to_string(out_dir.join(".patched")).unwrap_or_default();
+    let now = std::fs::read_dir(dump_dir)
+        .map(|d| d.count())
+        .unwrap_or(usize::MAX);
+    stored
+        .trim()
+        .parse::<usize>()
+        .map(|n| n >= now)
+        .unwrap_or(false)
 }
 
-/// Atlases available in the dump (the raw input for the patch).
-pub fn dumped(dump_dir: &Path) -> Vec<&'static str> {
-    ATLASES
-        .iter()
-        .filter(|name| dump_dir.join(name).is_file())
-        .copied()
-        .collect()
+/// True when the dump has texture sheets at all.
+pub fn dumped(dump_dir: &Path) -> bool {
+    std::fs::read_dir(dump_dir)
+        .map(|d| {
+            d.flatten().any(|e| {
+                e.path()
+                    .extension()
+                    .is_some_and(|x| x.eq_ignore_ascii_case("png"))
+            })
+        })
+        .unwrap_or(false)
 }
 
-/// True when nothing is left to do: every known atlas is patched.
-pub fn complete(out_dir: &Path) -> bool {
-    patched(out_dir) == ATLASES.len()
+/// True when the sheet's four face slots still carry the shared PS2 glyph
+/// art (exact match): only those sheets get patched.
+fn has_the_ps2_glyphs(atlas: &image::RgbaImage) -> bool {
+    for (i, &(x0, y0, x1, y1, _)) in SLOTS.iter().enumerate() {
+        let Ok(reference) = image::load_from_memory(PS2_SLOTS[i]) else {
+            return false;
+        };
+        let reference = reference.to_rgba8();
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                if atlas.get_pixel(x, y) != reference.get_pixel((x - x0) as u32, (y - y0) as u32) {
+                    return false;
+                }
+            }
+        }
+    }
+    true
 }
 
-/// Patch every atlas that exists in the dump and is not patched yet.
-/// Returns how many atlases were written.
+/// Is the controller rect holding the dark pad photo (only then is it
+/// replaced)? The HUD variants of the sheet carry HUD art there instead.
+fn controller_rect_is_a_photo(atlas: &image::RgbaImage) -> bool {
+    let (x0, y0, x1, y1) = CONTROLLER;
+    let mut opaque = 0u32;
+    let mut dark = 0u32;
+    let mut total = 0u32;
+    for y in y0..=y1 {
+        for x in x0..=x1 {
+            let c = atlas.get_pixel(x, y);
+            total += 1;
+            if c[3] > 128 {
+                opaque += 1;
+                if (c[0] as u32 + c[1] as u32 + c[2] as u32) < 300 {
+                    dark += 1;
+                }
+            }
+        }
+    }
+    opaque * 10 > total * 8 && dark * 10 > opaque * 6
+}
+
+/// Patch every dump texture that carries the shared PS2 prompts: the face
+/// slots, the shoulder boxes and — where the sheet shows the pad photo — the
+/// controller drawing. Returns how many sheets were written.
 pub fn patch(dump_dir: &Path, out_dir: &Path) -> anyhow::Result<usize> {
     std::fs::create_dir_all(out_dir)?;
     let mut written = 0;
-    for name in ATLASES {
-        let src = dump_dir.join(name);
-        let dst = out_dir.join(name);
-        if dst.is_file() || !src.is_file() {
+    for entry in std::fs::read_dir(dump_dir)?.flatten() {
+        let src = entry.path();
+        if !src
+            .extension()
+            .is_some_and(|x| x.eq_ignore_ascii_case("png"))
+        {
             continue;
         }
-        let atlas = image::open(&src)?.to_rgba8();
+        let dst = out_dir.join(src.file_name().unwrap());
+        if dst.is_file() {
+            continue;
+        }
+        let Ok(atlas) = image::open(&src) else {
+            continue;
+        };
+        let atlas = atlas.to_rgba8();
+        if atlas.dimensions() != (256, 256) || !has_the_ps2_glyphs(&atlas) {
+            continue;
+        }
         let patched_atlas = patch_atlas(&atlas)?;
         patched_atlas.save_with_format(&dst, image::ImageFormat::Png)?;
         written += 1;
     }
+    // Mark the dump's size at patch time: the pack regenerates when the
+    // dump has grown since.
+    let count = std::fs::read_dir(dump_dir)?.count();
+    let _ = std::fs::write(out_dir.join(".patched"), count.to_string());
     Ok(written)
 }
 
@@ -128,12 +212,7 @@ fn patch_atlas(atlas: &image::RgbaImage) -> anyhow::Result<image::RgbaImage> {
             }
         }
         let box_img = image::load_from_memory(art)?.to_rgba8();
-        let box_img = image::imageops::resize(
-            &box_img,
-            w as u32,
-            h as u32,
-            FilterType::Lanczos3,
-        );
+        let box_img = image::imageops::resize(&box_img, w as u32, h as u32, FilterType::Lanczos3);
         image::imageops::overlay(&mut out, &box_img, x0 as i64, y0 as i64);
     }
     // The controller drawing: the Xbox pad, contained and centred in the
