@@ -66,6 +66,43 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body id="top">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="g-chrome-y2k" x1="0" y1="0" x2="0.35" y2="1">
+          <stop offset="0" stop-color="#ffffff" />
+          <stop offset="0.4" stop-color="#dceefb" />
+          <stop offset="0.62" stop-color="#9cc9e8" />
+          <stop offset="0.82" stop-color="#cfe9fa" />
+          <stop offset="1" stop-color="#ffffff" />
+        </linearGradient>
+        <linearGradient id="g-orb-a" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#c9f2d4" />
+          <stop offset="0.55" stop-color="#3fbf5f" />
+          <stop offset="1" stop-color="#1e7a35" />
+        </linearGradient>
+        <linearGradient id="g-orb-b" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#ffd3cf" />
+          <stop offset="0.55" stop-color="#e5484d" />
+          <stop offset="1" stop-color="#91201f" />
+        </linearGradient>
+        <linearGradient id="g-orb-x" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#cfe3ff" />
+          <stop offset="0.55" stop-color="#3b82f6" />
+          <stop offset="1" stop-color="#1c4fa0" />
+        </linearGradient>
+        <linearGradient id="g-orb-y" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#fff3cf" />
+          <stop offset="0.55" stop-color="#f2c744" />
+          <stop offset="1" stop-color="#a8790f" />
+        </linearGradient>
+        <linearGradient id="g-orb-orange" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0" stop-color="#ffd9a8" />
+          <stop offset="0.55" stop-color="#f2761b" />
+          <stop offset="1" stop-color="#c74a00" />
+        </linearGradient>
+      </defs>
+    </svg>
+
     <div class="scene" aria-hidden="true">
       <div class="scene-photo"></div>
       <div class="scene-streaks"></div>
@@ -183,7 +220,15 @@
           <div class="feat-flow">
             <article class="feat">
               <div class="feat-ico" aria-hidden="true">
-                <svg viewBox="0 0 48 48"><rect x="7" y="10" width="34" height="28" rx="2" /><path d="M7 19h34M14 26h8M14 31h5" /></svg>
+                <svg viewBox="0 0 48 48">
+                  <clipPath id="clip-disc"><circle cx="24" cy="24" r="16.5" /></clipPath>
+                  <circle cx="24" cy="24" r="16.5" fill="url(#g-chrome-y2k)" stroke="#0b2c4b" stroke-width="2.4" />
+                  <circle cx="24" cy="24" r="10.5" fill="none" stroke="#0b2c4b" stroke-width="1.2" opacity="0.3" />
+                  <ellipse cx="19" cy="15" rx="10" ry="3.4" fill="#ffffff" opacity="0.8" clip-path="url(#clip-disc)" />
+                  <circle cx="24" cy="24" r="4.2" fill="#eef7fd" stroke="#0b2c4b" stroke-width="2" />
+                  <path d="M9.5 30A15.5 15.5 0 0 0 21 39.4" fill="none" stroke="#f2761b" stroke-width="2.6" stroke-linecap="round" />
+                  <path d="M38.5 18A15.5 15.5 0 0 0 27 8.6" fill="none" stroke="#f2761b" stroke-width="2.6" stroke-linecap="round" />
+                </svg>
               </div>
               <h3>Disc detection</h3>
               <p>Finds the USA disc image, checks <code>SLUS_207.72</code> and keeps the path for the next start.</p>
@@ -191,7 +236,14 @@
 
             <article class="feat">
               <div class="feat-ico" aria-hidden="true">
-                <svg viewBox="0 0 48 48"><path d="M10 14h28M10 24h28M10 34h28" /><circle cx="18" cy="14" r="4" /><circle cx="30" cy="24" r="4" /><circle cx="22" cy="34" r="4" /></svg>
+                <svg viewBox="0 0 48 48">
+                  <rect x="7" y="12" width="34" height="10" rx="5" fill="url(#g-chrome-y2k)" stroke="#0b2c4b" stroke-width="2.4" />
+                  <circle cx="16" cy="17" r="5.2" fill="url(#g-orb-orange)" stroke="#0b2c4b" stroke-width="2.2" />
+                  <ellipse cx="14.6" cy="15.2" rx="2.4" ry="1.4" fill="#ffffff" opacity="0.85" />
+                  <rect x="7" y="26" width="34" height="10" rx="5" fill="url(#g-chrome-y2k)" stroke="#0b2c4b" stroke-width="2.4" />
+                  <circle cx="32" cy="31" r="5.2" fill="url(#g-orb-orange)" stroke="#0b2c4b" stroke-width="2.2" />
+                  <ellipse cx="30.6" cy="29.2" rx="2.4" ry="1.4" fill="#ffffff" opacity="0.85" />
+                </svg>
               </div>
               <h3>Settings that stay</h3>
               <p>Every engine option is generated from a schema. Changes from the F10 overlay are merged, never wiped.</p>
@@ -199,7 +251,12 @@
 
             <article class="feat">
               <div class="feat-ico" aria-hidden="true">
-                <svg viewBox="0 0 48 48"><path d="M24 8v22M16 22l8 8 8-8" /><rect x="8" y="34" width="32" height="6" rx="2" /></svg>
+                <svg viewBox="0 0 48 48">
+                  <path d="M19.5 10h9v12h7.5L24 34 11.5 22H19.5z" fill="url(#g-chrome-y2k)" stroke="#0b2c4b" stroke-width="2.4" stroke-linejoin="round" />
+                  <rect x="10" y="36" width="28" height="6" rx="3" fill="url(#g-chrome-y2k)" stroke="#0b2c4b" stroke-width="2.4" />
+                  <circle cx="38" cy="9" r="4.5" fill="url(#g-orb-orange)" stroke="#0b2c4b" stroke-width="2" />
+                  <ellipse cx="36.8" cy="7.6" rx="2" ry="1.2" fill="#ffffff" opacity="0.85" />
+                </svg>
               </div>
               <h3>Engine setup</h3>
               <p>Download and build <a href="https://github.com/andersfischernielsen/ssx3-decomp">ssx3-decomp</a> from the app, with an update check when the repository moves.</p>
@@ -207,7 +264,13 @@
 
             <article class="feat">
               <div class="feat-ico" aria-hidden="true">
-                <svg viewBox="0 0 48 48"><path d="M10 10h28v28H10z" /><path d="M16 10v10h16V10M16 38v-8h16v8" /></svg>
+                <svg viewBox="0 0 48 48">
+                  <rect x="12" y="6" width="24" height="36" rx="4.5" fill="url(#g-chrome-y2k)" stroke="#0b2c4b" stroke-width="2.4" />
+                  <rect x="17" y="11" width="9" height="5.5" rx="1.8" fill="#f2761b" stroke="#0b2c4b" stroke-width="1.8" />
+                  <circle cx="30.5" cy="13.5" r="2.8" fill="url(#g-orb-orange)" stroke="#0b2c4b" stroke-width="1.6" />
+                  <path d="M17 36v4M22 36v4M27 36v4M32 36v4" stroke="#0b2c4b" stroke-width="1.8" stroke-linecap="round" opacity="0.55" />
+                  <rect x="16" y="18" width="16" height="14" rx="2" fill="none" stroke="#0b2c4b" stroke-width="1.6" opacity="0.35" />
+                </svg>
               </div>
               <h3>Saves</h3>
               <p>Export and import the PS2 memory card with timestamped backups before anything is replaced.</p>
@@ -215,7 +278,15 @@
 
             <article class="feat">
               <div class="feat-ico" aria-hidden="true">
-                <svg viewBox="0 0 48 48"><path d="M10 30h28M14 30V18h20v12" /><circle cx="17" cy="36" r="4" /><circle cx="31" cy="36" r="4" /></svg>
+                <svg viewBox="0 0 48 48">
+                  <clipPath id="clip-pad"><path d="M13 9h22a9 9 0 0 1 9 9c0 8-2.5 20-8.5 20-4 0-4.5-6-8-6h-7c-3.5 0-4.5 6-8.5 6-6 0-8.5-12-8.5-20a9 9 0 0 1 9-9z" /></clipPath>
+                  <path d="M13 9h22a9 9 0 0 1 9 9c0 8-2.5 20-8.5 20-4 0-4.5-6-8-6h-7c-3.5 0-4.5 6-8.5 6-6 0-8.5-12-8.5-20a9 9 0 0 1 9-9z" fill="url(#g-chrome-y2k)" stroke="#0b2c4b" stroke-width="2.4" stroke-linejoin="round" />
+                  <ellipse cx="22" cy="13" rx="16" ry="3.4" fill="#ffffff" opacity="0.6" clip-path="url(#clip-pad)" />
+                  <path d="M15.5 16h4.5v4.5H24.5v4.5H20v4.5h-4.5v-4.5H11v-4.5h4.5z" fill="#0b2c4b" opacity="0.85" stroke="#0b2c4b" stroke-width="1.2" stroke-linejoin="round" />
+                  <circle cx="32.5" cy="20" r="3.4" fill="url(#g-orb-a)" stroke="#0b2c4b" stroke-width="1.6" />
+                  <circle cx="37" cy="25.5" r="3.4" fill="url(#g-orb-b)" stroke="#0b2c4b" stroke-width="1.6" />
+                  <ellipse cx="20" cy="12" rx="6" ry="1.6" fill="#ffffff" opacity="0.7" clip-path="url(#clip-pad)" />
+                </svg>
               </div>
               <h3>Trick spin controls</h3>
               <p>Cross pad, left stick or right stick, with air gating so acceleration never flips by accident.</p>
@@ -223,7 +294,16 @@
 
             <article class="feat">
               <div class="feat-ico" aria-hidden="true">
-                <svg viewBox="0 0 48 48"><circle cx="15" cy="15" r="6" /><circle cx="33" cy="15" r="6" /><circle cx="15" cy="33" r="6" /><circle cx="33" cy="33" r="6" /></svg>
+                <svg viewBox="0 0 48 48">
+                  <circle cx="15" cy="15" r="7" fill="url(#g-orb-y)" stroke="#0b2c4b" stroke-width="2.2" />
+                  <circle cx="33" cy="15" r="7" fill="url(#g-orb-b)" stroke="#0b2c4b" stroke-width="2.2" />
+                  <circle cx="15" cy="33" r="7" fill="url(#g-orb-a)" stroke="#0b2c4b" stroke-width="2.2" />
+                  <circle cx="33" cy="33" r="7" fill="url(#g-orb-x)" stroke="#0b2c4b" stroke-width="2.2" />
+                  <ellipse cx="12.6" cy="12.6" rx="2.6" ry="1.5" fill="#ffffff" opacity="0.85" />
+                  <ellipse cx="30.6" cy="12.6" rx="2.6" ry="1.5" fill="#ffffff" opacity="0.85" />
+                  <ellipse cx="12.6" cy="30.6" rx="2.6" ry="1.5" fill="#ffffff" opacity="0.85" />
+                  <ellipse cx="30.6" cy="30.6" rx="2.6" ry="1.5" fill="#ffffff" opacity="0.85" />
+                </svg>
               </div>
               <h3>Xbox and PlayStation 2 controller buttons</h3>
               <p>Button prompts follow the connected pad type, so every hint reads like the console original.</p>
@@ -236,7 +316,11 @@
           <div class="dl-panel">
             <div class="dl-copy">
               <h3 class="dl-title" id="downloads-title">
-                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10 3.5 5.5 5 4l2 2V1h2v5l2-2 1.5 1.5zM1 11h2v2h10v-2h2v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z"/></svg>
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                  <path d="M19.5 6h9v12h7.5L24 30 11.5 18h8z" fill="url(#g-chrome-y2k)" stroke="#0b2c4b" stroke-width="2.6" stroke-linejoin="round" />
+                  <rect x="10" y="32" width="28" height="8" rx="3" fill="url(#g-chrome-y2k)" stroke="#0b2c4b" stroke-width="2.6" />
+                  <ellipse cx="24" cy="9" rx="5" ry="1.6" fill="#ffffff" opacity="0.8" />
+                </svg>
                 Download
               </h3>
               <div class="btn-row">
