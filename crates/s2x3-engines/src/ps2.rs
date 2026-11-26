@@ -44,6 +44,13 @@ static SCHEMA: &[SettingsField] = &[
         default: "",
     },
     SettingsField {
+        key: "SSX3_HUD_EDGE",
+        label: "HUD edge slide",
+        help: "How far the race HUD's anchored elements slide toward the frame edges (0-160, HUD pixels; the game's own transform squeezes the HUD, so ~96 moves an element by ~11% of the window). 0: as authored.",
+        kind: FieldKind::Integer { min: 0, max: 160 },
+        default: "0",
+    },
+    SettingsField {
         key: "SSX3_RENDER_SIZE",
         label: "Render size",
         help: "Fixed output size, e.g. 2560x1080. Empty: follow the window.",
@@ -220,7 +227,7 @@ impl Ps2Rust {
     }
 
     pub fn memcard_path(&self) -> PathBuf {
-        self.config.paths.saves.join("ssx3-mc0.ps2")
+        self.config.paths.active_memcard()
     }
 }
 
@@ -466,6 +473,13 @@ impl EngineAdapter for Ps2Rust {
         self.write_settings(&values)?;
 
         let mut cmd = Command::new(&binary);
+        // The engine binary is a console program: hide the console window
+        // that Windows would otherwise attach for a GUI parent.
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+        }
         cmd.current_dir(&self.config.engine.root)
             .env("SSX3_ISO", &self.config.paths.iso)
             .env("SSX3_MEMCARD", self.memcard_path())
