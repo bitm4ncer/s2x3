@@ -777,11 +777,21 @@ code {
 }
 
 .dl-copy h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   margin: 0 0 10px;
   font-family: var(--ui);
   font-weight: 600;
   font-size: 26px;
   color: #fff;
+}
+
+.dl-copy h3 svg {
+  width: 0.85em;
+  height: 0.85em;
+  fill: var(--orange-2);
+  filter: drop-shadow(0 2px 0 rgba(3, 22, 43, 0.35));
 }
 
 .dl-copy > p {
