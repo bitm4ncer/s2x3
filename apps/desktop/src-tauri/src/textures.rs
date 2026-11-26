@@ -240,7 +240,7 @@ static EXTRACT_RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::Atomi
 pub fn textures_extract(app: tauri::AppHandle) -> Result<String, String> {
     use std::sync::atomic::Ordering;
     if EXTRACT_RUNNING.swap(true, Ordering::SeqCst) {
-        return Ok("läuft schon".into());
+        return Ok("already running".into());
     }
     let app = app.clone();
     std::thread::spawn(move || {
@@ -250,7 +250,7 @@ pub fn textures_extract(app: tauri::AppHandle) -> Result<String, String> {
                 serde_json::json!({ "state": state, "message": message }),
             );
         };
-        emit("running", "Texturen werden aus der Disc gelesen …");
+        emit("running", "Reading textures from the disc …");
         let r = (|| -> anyhow::Result<()> {
             let (mut config, _) = crate::load()?;
             if !config.paths.iso.is_file() {
@@ -275,7 +275,7 @@ pub fn textures_extract(app: tauri::AppHandle) -> Result<String, String> {
         }
         EXTRACT_RUNNING.store(false, Ordering::SeqCst);
     });
-    Ok("gestartet".into())
+    Ok("started".into())
 }
 
 /// Run the ESRGAN upscale in the background; emits `textures-upscale`.
@@ -284,7 +284,7 @@ pub fn textures_upscale(app: tauri::AppHandle) -> Result<String, String> {
     static RUNNING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
     use std::sync::atomic::Ordering;
     if RUNNING.swap(true, Ordering::SeqCst) {
-        return Ok("läuft schon".into());
+        return Ok("already running".into());
     }
     let app = app.clone();
     std::thread::spawn(move || {
@@ -294,7 +294,7 @@ pub fn textures_upscale(app: tauri::AppHandle) -> Result<String, String> {
                 serde_json::json!({ "state": state, "message": message }),
             );
         };
-        emit("running", "Texturen werden hochskaliert (dauert Minuten) …");
+        emit("running", "Upscaling textures (this takes minutes) …");
         let r = (|| -> anyhow::Result<String> {
             let (mut config, _) = crate::load()?;
             let pack = tx::run_upscale(&config)?;
@@ -310,7 +310,7 @@ pub fn textures_upscale(app: tauri::AppHandle) -> Result<String, String> {
         }
         RUNNING.store(false, Ordering::SeqCst);
     });
-    Ok("gestartet".into())
+    Ok("started".into())
 }
 
 /// Open a pack's folder (or the dump when the id is empty) in the system

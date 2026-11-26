@@ -172,7 +172,7 @@ function mockInvoke(cmd, args) {  if (cmd === "state") {
   if (cmd === "textures_pick_import" || cmd === "textures_pick_import_folder" || cmd === "textures_import")
     return Promise.resolve(structuredClone(mockPacks));
   if (cmd === "textures_extract" || cmd === "textures_upscale")
-    return Promise.resolve("gestartet");
+    return Promise.resolve("started");
   if (cmd === "textures_open_folder") return Promise.resolve(null);
   if (cmd === "card_new" || cmd === "card_import_file" || cmd === "card_import")
     return Promise.resolve(structuredClone(mockCards));
@@ -260,7 +260,7 @@ function promptSet() {
       <small>${
         state.texreplace_present
           ? "Xbox uses the texture patch in the texreplace folder."
-          : "The Xbox prompt patch is generated from the texture dump. \"Texturen neu lesen\" reads the disc up front; one session adds the last menus — after that, every start shows Xbox prompts."
+          : "The Xbox prompt patch is generated from the texture dump. \"Re-read textures\" reads the disc up front; one session adds the last menus - after that, every start shows Xbox prompts."
       }</small>
     </div>
     <div class="prompt-cards">
@@ -492,9 +492,9 @@ async function renderPacks(el) {
       try {
         const res = await call(cmd, args ?? {});
         if (cmd === "textures_extract") {
-          toast("Texturen: die Disc wird im Hintergrund gelesen");
+          toast("Textures: reading the disc in the background");
         } else if (cmd === "textures_upscale") {
-          toast("HD-Upscale gestartet — das dauert Minuten");
+          toast("HD upscale started - this takes minutes");
         } else if (Array.isArray(res)) {
           renderPacks(el);
         }
@@ -506,18 +506,18 @@ async function renderPacks(el) {
   };
   actions.append(
     mk("Import…", "textures_pick_import"),
-    mk("Ordner importieren…", "textures_pick_import_folder"),
-    mk("Texturen neu lesen", "textures_extract"),
-    mk("HD hochskalieren", "textures_upscale"),
-    mk("Dump-Ordner öffnen", "textures_open_folder", { id: "" }),
+    mk("Import folder…", "textures_pick_import_folder"),
+    mk("Re-read textures", "textures_extract"),
+    mk("HD upscale", "textures_upscale"),
+    mk("Open dump folder", "textures_open_folder", { id: "" }),
   );
   el.append(actions);
 
   const hint = document.createElement("p");
   hint.className = "muted pack-hint";
   hint.textContent = packs.length
-    ? "Packs ersetzen Spieltexturen. „Texturen neu lesen“ läuft einmal pro Disc im Hintergrund, ohne das Spiel zu starten."
-    : "Noch keine Texture-Packs — „Import…“ nimmt ein ZIP, „Texturen neu lesen“ liest die Disc im Hintergrund.";
+    ? "Packs replace game textures. \"Re-read textures\" reads the disc once, in the background, without starting the game."
+    : "No texture packs yet — \"Import…\" takes a ZIP, \"Re-read textures\" reads the disc in the background.";
   el.append(hint);
 
   for (const pack of packs) {
@@ -528,7 +528,7 @@ async function renderPacks(el) {
     head.className = "pack-head";
     head.innerHTML = `<b>${escapeHtml(pack.name)}</b><span class="badge">${escapeHtml(pack.kind)}</span>`;
     const meta = document.createElement("small");
-    meta.textContent = [pack.author, pack.version, `${pack.texture_count} Texturen`]
+    meta.textContent = [pack.author, pack.version, `${pack.texture_count} textures`]
       .filter(Boolean)
       .join(" · ");
     card.append(head, meta);
@@ -542,7 +542,7 @@ async function renderPacks(el) {
     if (pack.conflicts) {
       const c2 = document.createElement("p");
       c2.className = "pack-error";
-      c2.textContent = `${pack.conflicts} Textur(en) überlappt mit einem anderen aktiven Pack`;
+      c2.textContent = `${pack.conflicts} texture(s) overlap another active pack`;
       card.append(c2);
     }
     for (const img of pack.previews ?? []) {
@@ -558,7 +558,7 @@ async function renderPacks(el) {
     row.className = "pack-row";
     const toggle = document.createElement("button");
     toggle.className = "ghost small";
-    toggle.textContent = pack.enabled ? "Aus" : "An";
+    toggle.textContent = pack.enabled ? "Off" : "On";
     toggle.addEventListener("click", async () => {
       await call("textures_toggle", { id: pack.id, enabled: !pack.enabled }).catch((e) =>
         toast(String(e), true)
@@ -567,13 +567,13 @@ async function renderPacks(el) {
     });
     const folder = document.createElement("button");
     folder.className = "ghost small";
-    folder.textContent = "Ordner öffnen";
+    folder.textContent = "Open folder";
     folder.addEventListener("click", () =>
       call("textures_open_folder", { id: pack.id }).catch((e) => toast(String(e), true))
     );
     const del = document.createElement("button");
     del.className = "ghost small";
-    del.textContent = "Entfernen";
+    del.textContent = "Remove";
     del.addEventListener("click", async () => {
       await call("textures_remove", { id: pack.id }).catch((e) => toast(String(e), true));
       renderPacks(el);
