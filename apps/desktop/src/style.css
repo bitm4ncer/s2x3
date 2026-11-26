@@ -783,6 +783,20 @@ main::-webkit-scrollbar-thumb:hover {
   margin-top: 0;
 }
 
+.ghost.has-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ghost.has-icon svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+}
+
 .menu {
   position: absolute;
   top: calc(100% + 6px);
@@ -820,6 +834,7 @@ main::-webkit-scrollbar-thumb:hover {
 
 .saves-actions {
   display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
