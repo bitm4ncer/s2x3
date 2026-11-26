@@ -74,8 +74,34 @@ const mockState = {
   log_path: "…/saves/launcher.log",
 };
 
-function mockInvoke(cmd, args) {
-  if (cmd === "state") {
+let mockBuildTicks = 0;
+
+const mockCards = [
+  {
+    name: "career",
+    path: "/home/player/Games/SSX3-ps2/cards/career.ps2",
+    size: 8650752,
+    modified: Math.floor(Date.now() / 1000) - 3600,
+    active: true,
+    exists: true,
+    saves: [
+      { name: "BASLUS-20772-SET0001", files: 3, bytes: 74420 },
+    ],
+    data_bytes: 74420,
+  },
+  {
+    name: "party",
+    path: "/home/player/Games/SSX3-ps2/cards/party.ps2",
+    size: 0,
+    modified: 0,
+    active: false,
+    exists: false,
+    saves: [],
+    data_bytes: 0,
+  },
+];
+
+function mockInvoke(cmd, args) {  if (cmd === "state") {
     if (location.search.includes("setup")) {
       return Promise.resolve({
         ...structuredClone(mockState),
@@ -98,6 +124,19 @@ function mockInvoke(cmd, args) {
       local: "321776e",
       remote: "9f31c20",
       detail: "a newer engine commit is available",
+    });
+  if (cmd === "build_running") {
+    mockBuildTicks += 1;
+    return Promise.resolve(mockBuildTicks < 3);
+  }
+  if (cmd === "save_profiles")
+    return Promise.resolve(structuredClone(mockCards));
+  if (cmd === "card_new" || cmd === "card_import")
+    return Promise.resolve(structuredClone(mockCards));
+  if (cmd === "card_share")
+    return Promise.resolve({
+      link: "https://s2x3.dev/save#n=career&h=450fc302&d=…",
+      file: "/home/player/Games/SSX3-ps2/cards/career.ps2.gz",
     });
   if (cmd === "install_log_tail")
     return Promise.resolve("[setup] cloning ssx3-decomp…\n[setup] cargo build --profile game -p ssx3\n");
@@ -132,31 +171,14 @@ async function call(cmd, args) {
   }
 }
 
-/* Xbox glyphs: original inline SVG, no third-party button art. */
-const XBOX_COLORS = {
-  A: "#3fbf5f",
-  B: "#e5484d",
-  X: "#3f7fd6",
-  Y: "#e8b52b",
-};
+/* Button glyphs: "PlayStation Buttons" by Medevenx, cropped sprite art. */
 
 function glyph(button) {
-  const color = XBOX_COLORS[button] ?? XBOX_COLORS.A;
-  return `<svg class="btn-glyph" viewBox="0 0 20 20" role="img" aria-label="${button}">
-    <circle cx="10" cy="10" r="8.4" fill="${color}" />
-    <text x="10" y="14" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif"
-      font-size="11" font-weight="800" fill="#fff">${button}</text>
-  </svg>`;
+  return `<img class="btn-glyph" src="assets/buttons/xbox-${button.toLowerCase()}.png" alt="${button}" />`;
 }
 
 function psGlyph(kind) {
-  const shapes = {
-    triangle: '<path d="M10 3.2 17 16H3z" fill="#3fbf5f" />',
-    circle: '<circle cx="10" cy="10" r="6.6" fill="none" stroke="#e5484d" stroke-width="2.8" />',
-    cross: '<path d="M4.2 4.2 15.8 15.8M15.8 4.2 4.2 15.8" stroke="#5b8fd6" stroke-width="3" />',
-    square: '<rect x="3.6" y="3.6" width="12.8" height="12.8" rx="1.5" fill="none" stroke="#e88bb0" stroke-width="2.8" />',
-  };
-  return `<svg class="ps-glyph" viewBox="0 0 20 20" aria-hidden="true">${shapes[kind]}</svg>`;
+  return `<img class="ps-glyph" src="assets/buttons/ps2-${kind}.png" alt="" />`;
 }
 
 function dpadGlyph() {
@@ -202,7 +224,7 @@ function promptSet() {
       </button>
       <button class="prompt-card ${ps2 ? "" : "active"}" data-set="xbox">
         <span class="glyphs">
-          ${glyph("X")}${glyph("B")}${glyph("A")}${glyph("Y")}
+          ${glyph("A")}${glyph("B")}${glyph("X")}${glyph("Y")}
         </span>
         <b>Xbox</b>
         <small>texture patch</small>
@@ -370,10 +392,18 @@ function render(next) {
     $("update-engine").hidden = true;
     $("update-note").hidden = true;
   }
+  const dropEl = $("drop");
+  dropEl.classList.toggle("has-disc", discReady);
+  $("drop-badge").textContent = discReady ? "✓" : "ISO";
+  $("drop-title").textContent = discReady
+    ? state.disc.detail
+    : "Drop your SSX 3 disc image";
+  $("drop-sub").hidden = discReady;
+  $("browse-iso").hidden = discReady;
   $("drop-note").textContent = discReady
-    ? "disc image selected"
+    ? "click or drop another file to replace it"
     : "or drag the file anywhere into this window";
-  $("drop").classList.toggle("has-disc", discReady);
+  $("drop-search").hidden = discReady;
 
   hints();
   $("play").disabled = !ready;
@@ -425,13 +455,75 @@ function human(bytes) {
 }
 
 async function refreshSaves() {
+  renderCards(await call("save_profiles"));
+}
+
+let cardSelection = null; // selected profile name
+
+function humanDate(unixSecs) {
+  if (!unixSecs) return "never";
+  const d = new Date(unixSecs * 1000);
+  return d.toLocaleString([], {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function renderCards(profiles) {
+  const list = $("card-list");
+  if (!profiles?.length) {
+    list.innerHTML = `<p class="muted">no save profiles yet</p>`;
+    return;
+  }
+  list.innerHTML = profiles
+    .map((p) => {
+      const saves = p.saves.length
+        ? p.saves
+            .map((s) => `<small>${escapeHtml(s.name)} · ${human(s.bytes)}</small>`)
+            .join("")
+        : `<small class="muted">${p.exists ? "empty card" : "blank — the game formats it on first play"}</small>`;
+      return `<div class="card-row ${p.active ? "active" : ""} ${cardSelection === p.name ? "selected" : ""}" data-name="${escapeAttr(p.name)}">
+        <button class="card-activate" title="Play on this card">
+          <b>${escapeHtml(p.name)}</b>
+          <small>${p.active ? "▶ active" : "activate"}</small>
+        </button>
+        <div class="card-meta">
+          <small>${p.exists ? human(p.size) : "not created"}</small>
+          <small>${humanDate(p.modified)}</small>
+          <small>${p.data_bytes ? human(p.data_bytes) + " save data" : ""}</small>
+        </div>
+        <div class="card-saves">${saves}</div>
+      </div>`;
+    })
+    .join("");
+  list.querySelectorAll(".card-row").forEach((row) => {
+    row.querySelector(".card-activate").addEventListener("click", async () => {
+      try {
+        renderCards(await call("card_activate", { name: row.dataset.name }));
+        toast(`Active card: ${row.dataset.name}`);
+      } catch (e) {
+        toast(String(e), true);
+      }
+    });
+    row.addEventListener("click", () => {
+      cardSelection = row.dataset.name;
+      renderCards(profiles);
+    });
+  });
+}
+
+function selectedProfile() {
+  return cardSelection;
+}
+
+async function cardAction(cmd, args = {}, note = "") {
   try {
-    const info = await call("saves_info");
-    $("saves-info").textContent = info.exists
-      ? `${human(info.size)} · ${info.path}`
-      : `no memory card yet · ${info.path}`;
+    renderCards(await call(cmd, args));
+    if (note) toast(note);
   } catch (e) {
-    $("saves-info").textContent = "save info unavailable";
+    toast(String(e), true);
   }
 }
 
@@ -447,18 +539,24 @@ async function setIso(path) {
 
 async function pollBuild() {
   $("setup-log").hidden = false;
-  const timer = setInterval(async () => {
+  $("build-progress").hidden = false;
+  const tick = setInterval(async () => {
     try {
-      const text = await call("install_log_tail", { lines: 40 });
+      const [text, alive] = await Promise.all([
+        call("install_log_tail", { lines: 40 }),
+        call("build_running"),
+      ]);
       $("setup-log").textContent = text || "starting…";
       $("setup-log").scrollTop = $("setup-log").scrollHeight;
+      if (!alive) {
+        clearInterval(tick);
+        $("build-progress").hidden = true;
+        await refreshState();
+        if ($("setup").hidden) toast("Engine ready");
+        else toast("Install stopped — check the engine log");
+      }
     } catch (e) {}
   }, 2000);
-  setTimeout(async () => {
-    clearInterval(timer);
-    await refreshState();
-    if ($("setup").hidden) toast("Engine ready");
-  }, 30000);
 }
 
 async function checkEngineUpdate() {
@@ -493,13 +591,19 @@ function bind() {
     });
   });
 
-  $("browse-iso").addEventListener("click", async () => {
+  const chooseIsoFlow = async () => {
     try {
       render(await call("choose_iso"));
       toast("Disc image set");
     } catch (e) {
       if (!String(e).includes("cancelled")) toast(String(e), true);
     }
+  };
+  $("browse-iso").addEventListener("click", chooseIsoFlow);
+  $("drop").addEventListener("click", (e) => {
+    // the DuckDuckGo link and the browse button handle themselves
+    if (e.target.closest("a") || e.target.closest("#browse-iso")) return;
+    chooseIsoFlow();
   });
 
   $("install-engine").addEventListener("click", async () => {
@@ -545,23 +649,40 @@ function bind() {
     });
   }
 
-  $("export-saves").addEventListener("click", async () => {
+  $("card-new").addEventListener("click", async () => {
+    const name = prompt("Name for the new save profile:");
+    if (name) await cardAction("card_new", { name }, `Profile created: ${name.trim()}`);
+  });
+  $("card-duplicate").addEventListener("click", () => {
+    if (!selectedProfile()) return toast("Select a card first", true);
+    cardAction("card_duplicate", { name: selectedProfile() }, "Card duplicated");
+  });
+  $("card-rename").addEventListener("click", async () => {
+    if (!selectedProfile()) return toast("Select a card first", true);
+    const name = prompt("New name:", selectedProfile());
+    if (name) await cardAction("card_rename", { name: selectedProfile(), newName: name }, "Card renamed");
+  });
+  $("card-delete").addEventListener("click", async () => {
+    if (!selectedProfile()) return toast("Select a card first", true);
+    if (!confirm(`Delete "${selectedProfile()}"? This cannot be undone.`)) return;
+    await cardAction("card_delete", { name: selectedProfile() }, "Card deleted");
+    cardSelection = null;
+  });
+  $("card-share").addEventListener("click", async () => {
+    if (!selectedProfile()) return toast("Select a card first", true);
     try {
-      const path = await call("export_saves", { dest: null });
-      toast(`Save exported to ${path}`);
+      const share = await call("card_share", { name: selectedProfile() });
+      await navigator.clipboard.writeText(share.link).catch(() => {});
+      toast(`Link copied (${human(share.link.length)} chars) — .ps2.gz: ${share.file}`);
     } catch (e) {
-      if (!String(e).includes("cancelled")) toast(String(e), true);
+      toast(String(e), true);
     }
   });
-
-  $("import-saves").addEventListener("click", async () => {
-    try {
-      const path = await call("import_saves", { src: null });
-      toast(`Save imported into ${path}`);
-      refreshSaves();
-    } catch (e) {
-      if (!String(e).includes("cancelled")) toast(String(e), true);
-    }
+  $("card-import").addEventListener("click", async () => {
+    const payload = prompt("Paste the save link (https://…#d=…) or a .ps2.gz file path:");
+    if (!payload) return;
+    const name = prompt("Save as profile (name):", "") || "";
+    await cardAction("card_import", { payload: payload.trim(), name: name.trim() }, "Save imported");
   });
   $("play").addEventListener("click", play);
 

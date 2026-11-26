@@ -9,17 +9,19 @@
   <body>
     <div class="bg" aria-hidden="true">
       <div class="photo"></div>
+      <div class="streaks"></div>
+      <div class="flake-bg flake-fill"></div>
+      <div class="flake-bg flake-contour"></div>
       <div class="shade"></div>
-      <div class="glow"></div>
-      <div class="big-three">3</div>
-      <div class="snow s1">&#10052;</div>
-      <div class="snow s2">&#10052;</div>
-      <div class="snow s3">&#10052;</div>
+      <div class="dotsnow"></div>
+      <div class="falling-flakes">
+        <i class="ff f1"></i><i class="ff f2"></i><i class="ff f3"></i><i class="ff f4"></i>
+        <i class="ff f5"></i><i class="ff f6"></i><i class="ff f7"></i><i class="ff f8"></i>
+      </div>
     </div>
 
     <header class="top">
       <div class="brand">
-        <img class="app-icon" src="assets/icon.png" alt="s2X3" />
         <div class="brand-text">
           <svg class="wordmark" viewBox="0 0 320 82" role="img" aria-label="s2X3">
             <defs>
@@ -63,12 +65,12 @@
 
       <section class="setup" id="setup" hidden>
         <div class="drop" id="drop">
-          <div class="drop-badge">ISO</div>
-          <h3>Drop your SSX 3 disc image</h3>
-          <p>PlayStation 2 &middot; <code>SLUS_207.72</code> &middot; .iso, .bin or .img</p>
+          <div class="drop-badge" id="drop-badge">ISO</div>
+          <h3 id="drop-title">Drop your SSX 3 disc image</h3>
+          <p id="drop-sub">PlayStation 2 &middot; <code>SLUS_207.72</code> &middot; .iso, .bin or .img</p>
           <button class="ghost small" id="browse-iso">Browse&hellip;</button>
           <small id="drop-note">or drag the file anywhere into this window</small>
-          <p class="drop-search">No disc image yet?
+          <p class="drop-search" id="drop-search">No disc image yet?
             <a href="https://duckduckgo.com/?q=SSX+3+USA+PS2+iso" id="iso-search">Search DuckDuckGo</a>
           </p>
         </div>
@@ -84,6 +86,9 @@
             <button class="ghost" id="update-engine" hidden>Update engine</button>
           </div>
           <p class="muted" id="update-note" hidden></p>
+          <div class="build-progress" id="build-progress" hidden aria-hidden="true">
+            <span class="build-bar"></span>
+          </div>
           <pre id="setup-log" hidden></pre>
         </div>
       </section>
@@ -127,11 +132,20 @@
 
           <div class="saves">
             <h4>Save game</h4>
-            <p id="saves-info" class="muted">checking…</p>
-            <div class="saves-actions">
-              <button id="export-saves" class="ghost">Export…</button>
-              <button id="import-saves" class="ghost">Import…</button>
+            <div class="card-list" id="card-list">
+              <p id="saves-info" class="muted">checking…</p>
             </div>
+            <div class="saves-actions">
+              <button id="card-new" class="ghost small">New</button>
+              <button id="card-duplicate" class="ghost small">Duplicate</button>
+              <button id="card-rename" class="ghost small">Rename</button>
+              <button id="card-delete" class="ghost small">Delete</button>
+            </div>
+            <div class="saves-actions">
+              <button id="card-share" class="ghost small">Share link…</button>
+              <button id="card-import" class="ghost small">Open link…</button>
+            </div>
+            <p class="muted" id="card-note">The active card is what the game plays on.</p>
           </div>
 
           <details class="logbox">
