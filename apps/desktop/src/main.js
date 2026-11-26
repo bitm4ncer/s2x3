@@ -160,8 +160,8 @@ function mockInvoke(cmd, args) {  if (cmd === "state") {
     return Promise.resolve(structuredClone(mockCards));
   if (cmd === "textures_list") return Promise.resolve(structuredClone(mockPacks));
   if (cmd === "textures_toggle") {
-    const p = mockPacks.find((x) => x.id === args.id);
-    if (p) p.enabled = args.enabled;
+    const pack = mockPacks.find((x) => x.id === args.id);
+    if (pack) pack.enabled = args.enabled;
     return Promise.resolve(structuredClone(mockPacks));
   }
   if (cmd === "textures_remove") {
@@ -298,11 +298,7 @@ const TABS = [
     label: "graphics",
     keys: ["SSX3_RENDER_SCALE", "SSX3_RENDER_SIZE", "SSX3_RESOLUTION", "SSX3_FOV", "SSX3_ANISO", "SSX3_LOD_BIAS", "SSX3_AA", "SSX3_AO", "SSX3_BLOOM", "SSX3_SHADOWS", "SSX3_SNOW"],
   },
-  {
-    id: "controls",
-    label: "controls",
-    keys: ["SSX3_STICK_TRICKS", "SSX3_PAD2"],
-  },
+  { id: "controls", label: "controls", keys: ["SSX3_STICK_TRICKS", "SSX3_PAD2"] },
   { id: "textures", label: "textures", keys: [] },
   {
     id: "advanced",
@@ -475,8 +471,6 @@ function render(next) {
   $("play").setAttribute("title", ready ? "Play" : playReason);
 }
 
-/// The „textures" tab: pack cards plus the background jobs (disc read,
-/// HD upscale). Everything visible here maps 1:1 to a `textures_*` command.
 async function renderPacks(el) {
   el.innerHTML = '<p class="muted">loading…</p>';
   let packs;
@@ -526,47 +520,47 @@ async function renderPacks(el) {
     : "Noch keine Texture-Packs — „Import…“ nimmt ein ZIP, „Texturen neu lesen“ liest die Disc im Hintergrund.";
   el.append(hint);
 
-  for (const p of packs) {
+  for (const pack of packs) {
     const card = document.createElement("div");
-    card.className = "pack" + (p.enabled ? " on" : "");
+    card.className = "pack" + (pack.enabled ? " on" : "");
 
     const head = document.createElement("div");
     head.className = "pack-head";
-    head.innerHTML = `<b>${escapeHtml(p.name)}</b><span class="badge">${escapeHtml(p.kind)}</span>`;
+    head.innerHTML = `<b>${escapeHtml(pack.name)}</b><span class="badge">${escapeHtml(pack.kind)}</span>`;
     const meta = document.createElement("small");
-    meta.textContent = [p.author, p.version, `${p.texture_count} Texturen`]
+    meta.textContent = [pack.author, pack.version, `${pack.texture_count} Texturen`]
       .filter(Boolean)
       .join(" · ");
     card.append(head, meta);
 
-    if (p.error) {
+    if (pack.error) {
       const err = document.createElement("p");
       err.className = "pack-error";
-      err.textContent = p.error;
+      err.textContent = pack.error;
       card.append(err);
     }
-    if (p.conflicts) {
-      const c = document.createElement("p");
-      c.className = "pack-error";
-      c.textContent = `${p.conflicts} Textur(en) überlappt mit einem anderen aktiven Pack`;
-      card.append(c);
+    if (pack.conflicts) {
+      const c2 = document.createElement("p");
+      c2.className = "pack-error";
+      c2.textContent = `${pack.conflicts} Textur(en) überlappt mit einem anderen aktiven Pack`;
+      card.append(c2);
     }
-    for (const img of p.previews ?? []) {
+    for (const img of pack.previews ?? []) {
       if (!hasTauri || !window.__TAURI__.core?.convertFileSrc) break;
-      const el2 = document.createElement("img");
-      el2.className = "pack-preview";
-      el2.src = window.__TAURI__.core.convertFileSrc(img);
-      el2.alt = `${p.name} preview`;
-      card.append(el2);
+      const prev = document.createElement("img");
+      prev.className = "pack-preview";
+      prev.src = window.__TAURI__.core.convertFileSrc(img);
+      prev.alt = `${pack.name} preview`;
+      card.append(prev);
     }
 
     const row = document.createElement("div");
     row.className = "pack-row";
     const toggle = document.createElement("button");
     toggle.className = "ghost small";
-    toggle.textContent = p.enabled ? "Aus" : "An";
+    toggle.textContent = pack.enabled ? "Aus" : "An";
     toggle.addEventListener("click", async () => {
-      await call("textures_toggle", { id: p.id, enabled: !p.enabled }).catch((e) =>
+      await call("textures_toggle", { id: pack.id, enabled: !pack.enabled }).catch((e) =>
         toast(String(e), true)
       );
       renderPacks(el);
@@ -575,13 +569,13 @@ async function renderPacks(el) {
     folder.className = "ghost small";
     folder.textContent = "Ordner öffnen";
     folder.addEventListener("click", () =>
-      call("textures_open_folder", { id: p.id }).catch((e) => toast(String(e), true))
+      call("textures_open_folder", { id: pack.id }).catch((e) => toast(String(e), true))
     );
     const del = document.createElement("button");
     del.className = "ghost small";
     del.textContent = "Entfernen";
     del.addEventListener("click", async () => {
-      await call("textures_remove", { id: p.id }).catch((e) => toast(String(e), true));
+      await call("textures_remove", { id: pack.id }).catch((e) => toast(String(e), true));
       renderPacks(el);
     });
     row.append(toggle, folder, del);
@@ -666,6 +660,17 @@ function renderCards(profiles) {
           <small>${p.data_bytes ? human(p.data_bytes) + " save data" : ""}</small>
         </div>
         <div class="card-saves">${saves}</div>
+        <div class="card-tools">
+          <button class="card-tool" data-tool="duplicate" title="Duplicate">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h8a2 2 0 0 1 2 2v8h-2V3H5zM3 5h8a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>
+          </button>
+          <button class="card-tool" data-tool="rename" title="Rename">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 1.5l3 3L6 13l-3.5.5L3 10zM10.5 2.5l3 3"/></svg>
+          </button>
+          <button class="card-tool card-tool-danger" data-tool="delete" title="Delete">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2h4l.5 1H14v2H2V3h3.5zM3.5 6h9l-.7 8a1 1 0 0 1-1 .9H5.2a1 1 0 0 1-1-.9z"/></svg>
+          </button>
+        </div>
       </div>`;
     })
     .join("");
@@ -681,6 +686,22 @@ function renderCards(profiles) {
     row.addEventListener("click", () => {
       cardSelection = row.dataset.name;
       renderCards(profiles);
+    });
+    row.querySelectorAll(".card-tool").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const name = row.dataset.name;
+        if (btn.dataset.tool === "duplicate") {
+          await cardAction("card_duplicate", { name }, "Card duplicated");
+        } else if (btn.dataset.tool === "rename") {
+          const next = prompt("New name:", name);
+          if (next) await cardAction("card_rename", { name, newName: next }, "Card renamed");
+        } else if (btn.dataset.tool === "delete") {
+          if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+          await cardAction("card_delete", { name }, "Card deleted");
+          if (cardSelection === name) cardSelection = null;
+        }
+      });
     });
   });
 }
@@ -824,53 +845,76 @@ function bind() {
     const name = prompt("Name for the new save profile:");
     if (name) await cardAction("card_new", { name }, `Profile created: ${name.trim()}`);
   });
-  $("card-duplicate").addEventListener("click", () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    cardAction("card_duplicate", { name: selectedProfile() }, "Card duplicated");
+  // save card menus: Export… (File / Copy hash) and Import… (File / Paste hash)
+  const closeMenus = () =>
+    document.querySelectorAll(".menu").forEach((m) => (m.hidden = true));
+  const toggleMenu = (menu) => {
+    const open = menu.hidden;
+    closeMenus();
+    menu.hidden = !open;
+  };
+  document.addEventListener("click", closeMenus);
+  $("card-export").addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu($("menu-export"));
   });
-  $("card-rename").addEventListener("click", async () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    const name = prompt("New name:", selectedProfile());
-    if (name) await cardAction("card_rename", { name: selectedProfile(), newName: name }, "Card renamed");
+  $("card-import").addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu($("menu-import"));
   });
-  $("card-delete").addEventListener("click", async () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    if (!confirm(`Delete "${selectedProfile()}"? This cannot be undone.`)) return;
-    await cardAction("card_delete", { name: selectedProfile() }, "Card deleted");
-    cardSelection = null;
-  });
-  $("card-share").addEventListener("click", async () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    try {
-      const share = await call("card_export", { name: selectedProfile() });
-      await navigator.clipboard.writeText(share.hash).catch(() => {});
-      toast(`Exported: ${share.file} · hash ${share.hash} (copied)`);
-    } catch (e) {
-      if (!String(e).includes("cancelled")) toast(String(e), true);
-    }
-  });
-  $("card-share").addEventListener("click", async () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    try {
-      const share = await call("card_export", { name: selectedProfile() });
-      await navigator.clipboard.writeText(share.hash).catch(() => {});
-      toast(`Exported: ${share.file} — hash ${share.hash} (copied)`);
-    } catch (e) {
-      if (!String(e).includes("cancelled")) toast(String(e), true);
-    }
-  });
-  $("card-import").addEventListener("click", async () => {
-    const payload = prompt(
-      "Paste the hash payload (n=…&h=…&d=…), a save link, or a .ps2.gz file path:"
+  $("menu-export")
+    .querySelectorAll("button")
+    .forEach((b) =>
+      b.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMenus();
+        if (!selectedProfile()) return toast("Select a card first", true);
+        if (b.dataset.act === "hash") {
+          try {
+            const payload = await call("card_hash_copy", { name: selectedProfile() });
+            await navigator.clipboard.writeText(payload).catch(() => {});
+            toast(`Hash payload copied (${human(payload.length)} chars) — paste it into Import on another device`);
+          } catch (err) {
+            toast(String(err), true);
+          }
+          return;
+        }
+        try {
+          const share = await call("card_export", { name: selectedProfile() });
+          await navigator.clipboard.writeText(share.hash).catch(() => {});
+          toast(`Exported: ${share.file} · hash ${share.hash} (copied)`);
+        } catch (err) {
+          toast(String(err), true);
+        }
+      })
     );
-    if (!payload) return;
-    try {
-      renderCards(await call("card_import", { payload: payload.trim(), name: "" }));
-      toast("Save imported — the new profile is in the list");
-    } catch (e) {
-      toast(String(e), true);
-    }
-  });
+  $("menu-import")
+    .querySelectorAll("button")
+    .forEach((b) =>
+      b.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMenus();
+        if (b.dataset.act === "paste") {
+          const payload = prompt(
+            "Paste the hash payload (n=…&h=…&d=…), a save link, or a .ps2.gz file path:"
+          );
+          if (!payload) return;
+          try {
+            renderCards(await call("card_import", { payload: payload.trim(), name: "" }));
+            toast("Save imported — the new profile is in the list");
+          } catch (err) {
+            toast(String(err), true);
+          }
+          return;
+        }
+        try {
+          renderCards(await call("card_import_file", { src: null, name: "" }));
+          toast("Save imported — the new profile is in the list");
+        } catch (err) {
+          if (!String(err).includes("cancelled")) toast(String(err), true);
+        }
+      })
+    );
   $("play").addEventListener("click", play);
 
   $("save-paths").addEventListener("click", async () => {
@@ -924,18 +968,6 @@ bind();
 history.scrollRestoration = "manual";
 document.querySelector("main").scrollTop = 0;
 refreshState();
-
-if (hasTauri && window.__TAURI__.event) {
-  for (const ev of ["textures-extract", "textures-upscale"]) {
-    window.__TAURI__.event.listen(ev, (e) => {
-      const st = e.payload?.state ?? "";
-      const msg = e.payload?.message ?? "";
-      if (st === "done") toast(`Textures: ${msg}`);
-      if (st === "error") toast(`Textures: ${msg}`, true);
-      if (st !== "running") refreshState();
-    });
-  }
-}
 function active() {
   return !document.hidden && document.hasFocus();
 }
@@ -949,3 +981,15 @@ document.addEventListener("visibilitychange", () => {
   if (active()) refreshState();
 });
 window.addEventListener("focus", refreshState);
+
+if (hasTauri && window.__TAURI__.event) {
+  for (const ev of ["textures-extract", "textures-upscale"]) {
+    window.__TAURI__.event.listen(ev, (e) => {
+      const st = e.payload?.state ?? "";
+      const msg = e.payload?.message ?? "";
+      if (st === "done") toast(`Textures: ${msg}`);
+      if (st === "error") toast(`Textures: ${msg}`, true);
+      if (st !== "running") refreshState();
+    });
+  }
+}
