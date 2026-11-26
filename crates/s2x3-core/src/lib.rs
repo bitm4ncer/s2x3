@@ -185,7 +185,25 @@ pub struct Paths {
     /// Texture replacement folder for the Xbox button prompts.
     #[serde(default)]
     pub texreplace: PathBuf,
+    /// The active memory card image (save profile). Empty means the classic
+    /// `saves/ssx3-mc0.ps2`.
+    #[serde(default)]
+    pub memcard: PathBuf,
 }
+
+impl Paths {
+    /// The memory card the game plays on; `memcard` when set, else the
+    /// classic `ssx3-mc0.ps2` next to the saves.
+    pub fn active_memcard(&self) -> PathBuf {
+        if self.memcard.as_os_str().is_empty() {
+            self.saves.join("ssx3-mc0.ps2")
+        } else {
+            self.memcard.clone()
+        }
+    }
+}
+
+pub mod card;
 
 /// `$S2X3_CONFIG`, else `%APPDATA%/s2x3/config.toml` on Windows, else
 /// `$XDG_CONFIG_HOME/s2x3/config.toml`, else `~/.config/s2x3/config.toml`.
