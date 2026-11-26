@@ -33,6 +33,24 @@ enum SavesAction {
 }
 
 #[derive(Subcommand)]
+enum TexturesAction {
+    /// List the installed packs and their state.
+    List,
+    /// Install a pack from a zip or folder.
+    Import { path: PathBuf },
+    /// Delete an installed pack.
+    Remove { id: String },
+    /// Turn a pack on (rebuilds the active set).
+    Enable { id: String },
+    /// Turn a pack off (rebuilds the active set).
+    Disable { id: String },
+    /// Extract the disc's textures offline (no game start).
+    Extract,
+    /// Upscale the extracted textures into an HD pack (needs a Vulkan GPU).
+    Upscale,
+}
+
+#[derive(Subcommand)]
 enum Command {
     /// Write the launcher config.
     Init {
@@ -64,6 +82,11 @@ enum Command {
         #[command(subcommand)]
         action: SavesAction,
     },
+    /// Install, manage and build texture packs.
+    Textures {
+        #[command(subcommand)]
+        action: TexturesAction,
+    },
     /// Build the engine from its sources (setup + cargo build).
     Install,
     /// Start the engine.
@@ -85,6 +108,102 @@ fn main() {
         eprintln!("s2x3: {e:#}");
         std::process::exit(1);
     }
+}
+
+/// The `textures` subcommand: thin CLI over `s2x3_core::textures`. Mutating
+/// actions rebuild the active set and save the config.
+fn textures_cmd(config: &mut s2x3_core::Config, action: &TexturesAction) -> Result<()> {
+    use s2x3_core::textures as tx;
+    match action {
+        TexturesAction::List => {
+            let entries = tx::list(&config.paths.textures_packs());
+            if entries.is_empty() {
+                println!("no texture packs installed");
+            }
+            for e in entries {
+                let state = match config.textures.enabled.get(&e.id) {
+                    Some(true) => "on",
+                    Some(false) => "off",
+                    None => "-",
+                };
+                let kind = e
+                    .pack
+                    .as_ref()
+                    .map(|p| p.manifest.kind.to_string())
+                    .unwrap_or_else(|| "?".into());
+                println!(
+                    "{:>4}  {:<20} {:<9} {:>4}",
+                    state, e.id, kind, e.texture_count
+                );
+                if let Some(err) = &e.error {
+                    println!("       ! {err}");
+                }
+            }
+        }
+        TexturesAction::Import { path } => {
+            let id = tx::import(path, &config.paths.textures_packs(), false)?;
+            textures_apply(config)?;
+            println!("installed: {id}");
+        }
+        TexturesAction::Remove { id } => {
+            tx::remove(&config.paths.textures_packs(), id)?;
+            config.textures.enabled.remove(id);
+            config.textures.priority.retain(|p| p != id);
+            textures_apply(config)?;
+            println!("removed: {id}");
+        }
+        TexturesAction::Enable { id } => {
+            textures_ensure_installed(config, id)?;
+            config.textures.enabled.insert(id.clone(), true);
+            textures_apply(config)?;
+            println!("enabled: {id}");
+        }
+        TexturesAction::Disable { id } => {
+            config.textures.enabled.insert(id.clone(), false);
+            textures_apply(config)?;
+            println!("disabled: {id}");
+        }
+        TexturesAction::Extract => {
+            let summary = tx::run_extract(config)?;
+            println!("{summary}");
+        }
+        TexturesAction::Upscale => {
+            let pack = tx::run_upscale(config)?;
+            textures_apply(config)?;
+            println!("pack created: {}", pack.display());
+        }
+    }
+    config.save()?;
+    Ok(())
+}
+
+/// Rebuild the active merge folder from the config state.
+fn textures_apply(config: &s2x3_core::Config) -> Result<()> {
+    use s2x3_core::textures as tx;
+    let report = tx::merge(
+        &config.paths.textures_packs(),
+        &config.paths.textures_active(),
+        &config.textures.enabled,
+        &config.textures.priority,
+    )?;
+    if !report.conflicts.is_empty() {
+        eprintln!(
+            "note: several active packs replace the same textures: {}",
+            report.conflicts.join(", ")
+        );
+    }
+    Ok(())
+}
+
+fn textures_ensure_installed(config: &s2x3_core::Config, id: &str) -> Result<()> {
+    use s2x3_core::textures as tx;
+    if !tx::list(&config.paths.textures_packs())
+        .iter()
+        .any(|e| e.id == id && e.pack.is_some())
+    {
+        bail!("pack `{id}` is not installed");
+    }
+    Ok(())
 }
 
 fn run() -> Result<()> {
@@ -121,6 +240,9 @@ fn run() -> Result<()> {
             }
         }
         Command::Saves { action } => saves(&config, action)?,
+        Command::Textures { action } => {
+            textures_cmd(&mut config, &action)?;
+        }
         Command::Install => install(&config)?,
         Command::Detect => detect(&config)?,
         Command::Doctor => doctor(&config)?,
@@ -310,4 +432,105 @@ fn launch(
     let status = child.wait()?;
     println!("engine exited: {status}");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use s2x3_core::textures as tx;
+
+    const MANIFEST: &str = "\
+name = \"Xbox Buttons\"
+author = \"s2x3\"
+version = \"1.0.0\"
+kind = \"own-art\"
+";
+
+    #[test]
+    fn textures_actions_round_trip() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::env::set_var(s2x3_core::CONFIG_ENV, tmp.path().join("config.toml"));
+
+        // install a pack from a folder, via the CLI surface
+        let src = tmp.path().join("Xbox Buttons");
+        std::fs::create_dir_all(src.join("textures")).unwrap();
+        std::fs::write(src.join(tx::MANIFEST), MANIFEST).unwrap();
+        std::fs::write(src.join("textures").join("f897162c0f661c8b.png"), b"png").unwrap();
+
+        let mut config = s2x3_core::Config::load().unwrap().resolved();
+        textures_cmd(&mut config, &TexturesAction::Import { path: src.clone() }).unwrap();
+
+        textures_cmd(
+            &mut config,
+            &TexturesAction::Enable {
+                id: "xbox-buttons".into(),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            config.textures.enabled.get("xbox-buttons"),
+            Some(&true),
+            "enable writes the config state"
+        );
+        assert!(config
+            .paths
+            .textures_active()
+            .join("f897162c0f661c8b.png")
+            .is_file());
+
+        // unknown id: readable error, config unchanged
+        let err = format!(
+            "{:#}",
+            textures_cmd(&mut config, &TexturesAction::Enable { id: "ghost".into() },).unwrap_err()
+        );
+        assert!(err.contains("ghost"), "got: {err}");
+
+        textures_cmd(
+            &mut config,
+            &TexturesAction::Disable {
+                id: "xbox-buttons".into(),
+            },
+        )
+        .unwrap();
+        assert_eq!(config.textures.enabled.get("xbox-buttons"), Some(&false));
+        assert!(!config
+            .paths
+            .textures_active()
+            .join("f897162c0f661c8b.png")
+            .is_file());
+
+        textures_cmd(
+            &mut config,
+            &TexturesAction::Remove {
+                id: "xbox-buttons".into(),
+            },
+        )
+        .unwrap();
+        assert!(!config.paths.textures_packs().join("xbox-buttons").exists());
+    }
+
+    #[test]
+    fn extract_and_upscale_fail_readable_without_tooling() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::env::set_var(s2x3_core::CONFIG_ENV, tmp.path().join("config.toml"));
+        let mut config = s2x3_core::Config::load().unwrap().resolved();
+        config.engine.root = tmp.path().join("no-engine");
+
+        let err = format!(
+            "{:#}",
+            textures_cmd(&mut config, &TexturesAction::Extract).unwrap_err()
+        );
+        assert!(
+            err.contains("dump-textures") && err.contains("engine"),
+            "got: {err}"
+        );
+        let err = format!(
+            "{:#}",
+            textures_cmd(&mut config, &TexturesAction::Upscale).unwrap_err()
+        );
+        assert!(
+            err.contains("upscale-textures") || err.contains("python"),
+            "got: {err}"
+        );
+    }
 }

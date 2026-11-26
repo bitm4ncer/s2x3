@@ -17,3 +17,4 @@ Task 1: start (base e943a94)
 Task 1: complete (commits e943a94..eee2628, tests: cargo test -p s2x3-core -> 1 passed 0 failed). Ruling: s2x3-core hat kein bestehendes Testmodul (Plan nahm eines an) - neu angelegt; tempfile als workspace dev-dep ergaenzt.
 Task 2: complete (commits eee2628..f22285e, tests: cargo test -p s2x3-core -> 6 passed 0 failed)
 Task 3: complete (commits 91af369~, tests: cargo test -p s2x3-core -> 12 passed 0 failed). Ruling: zip-9-API (name() -> Result, enclosed_name), Staging entpackt ohne Root-Ordner (Root = id).
+Task 5: complete (commits 3e6a676..917d374, tests: cargo test --workspace -> 18 passed 0 failed). Ruling: ps2.rs hat keine Testinfrastruktur und launch() spawned den echten Bin - die Env-Mapping-Logik wird in core getestet (launch_replace_env), die Adapter-Aenderung ist eine Zeile.

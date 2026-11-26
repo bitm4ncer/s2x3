@@ -1,12 +1,13 @@
 //! Texture packs: manifest parsing and listing.
 //!
-//! Spec: docs/superpowers/specs/2026-11-26-texture-packs-design.md — a pack
+//! Spec: docs/superpowers/specs/2026-11-26-texture-packs-design.md â€” a pack
 //! is a folder with `manifest.toml` and `textures/<hash>.png` files. Hash
 //! names are 16 lowercase hex digits (the engine's `pack::name` output).
 
 use anyhow::{Context, Result};
 use std::collections::BTreeMap;
 use std::fmt;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 /// The manifest file name inside a pack folder.
@@ -40,7 +41,7 @@ pub struct PackManifest {
     /// Engine commit the pack was built against (staleness check).
     #[serde(default)]
     pub engine_commit: Option<String>,
-    /// Hash (16 hex digits) → human label of what the texture shows.
+    /// Hash (16 hex digits) â†’ human label of what the texture shows.
     #[serde(default)]
     pub targets: BTreeMap<String, String>,
 }
@@ -108,7 +109,7 @@ fn bad_hash_names(dir: &Path) -> Vec<String> {
 }
 
 /// List the packs in `packs_dir`, sorted by id. Folders that are not usable
-/// packs come back with `error` set and `pack: None` — they are shown, never
+/// packs come back with `error` set and `pack: None` â€” they are shown, never
 /// hidden, and never modified by listing.
 pub fn list(packs_dir: &Path) -> Vec<PackEntry> {
     let mut out = Vec::new();
@@ -330,6 +331,149 @@ pub fn remove(packs_dir: &Path, id: &str) -> Result<()> {
     std::fs::remove_dir_all(&target).with_context(|| format!("remove {}", target.display()))
 }
 
+/// The engine binary, same resolution as the adapters: a built binary wins
+/// over the dist fallback.
+pub fn engine_binary(config: &crate::Config) -> PathBuf {
+    let exe = format!("ssx3{}", std::env::consts::EXE_SUFFIX);
+    let built = config.engine.root.join("target/game").join(&exe);
+    if built.exists() {
+        return built;
+    }
+    config.engine.root.join("dist").join(exe)
+}
+
+/// Run the offline extraction (`ssx3 dump-textures`) against the configured
+/// ISO into `paths.textures/dump`. Needs an engine with `dump-textures`
+/// support; the error names the binary when it is missing.
+pub fn run_extract(config: &crate::Config) -> Result<String> {
+    let bin = engine_binary(config);
+    if !bin.exists() {
+        anyhow::bail!(
+            "engine binary missing: {} — build it first; the offline \
+             extraction needs an engine with `dump-textures` support",
+            bin.display()
+        );
+    }
+    let out = config.paths.textures_dump();
+    std::fs::create_dir_all(&out).with_context(|| format!("create {}", out.display()))?;
+    let res = std::process::Command::new(&bin)
+        .arg("dump-textures")
+        .arg("--iso")
+        .arg(&config.paths.iso)
+        .arg("--out")
+        .arg(&out)
+        .output()
+        .with_context(|| format!("run {} dump-textures", bin.display()))?;
+    if !res.status.success() {
+        let mut tail = String::from_utf8_lossy(&res.stderr);
+        let mut tail = tail
+            .lines()
+            .rev()
+            .take(3)
+            .collect::<Vec<_>>()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+        tail.reverse();
+        anyhow::bail!(
+            "dump-textures failed: {}",
+            if tail.is_empty() {
+                format!("exit code {:?}", res.status.code())
+            } else {
+                tail.join(" | ")
+            }
+        );
+    }
+    let summary = String::from_utf8_lossy(&res.stdout);
+    Ok(summary
+        .lines()
+        .last()
+        .unwrap_or("extraction finished")
+        .to_string())
+}
+
+/// The python launcher for the current platform (checked, not spawned).
+fn python() -> &'static str {
+    if cfg!(windows) {
+        "python"
+    } else {
+        "python3"
+    }
+}
+
+/// Run the ESRGAN upscale over the extracted dump into the `hd-upscale`
+/// pack folder, then manifest it as a pack. Needs Python and a
+/// Vulkan-capable GPU; errors name what is missing.
+pub fn run_upscale(config: &crate::Config) -> Result<PathBuf> {
+    let tool = config.engine.root.join("tools").join("upscale-textures.py");
+    if !tool.is_file() {
+        anyhow::bail!(
+            "upscale-textures tool missing in the engine checkout: {} — \
+             update the engine",
+            tool.display()
+        );
+    }
+    let pack = config.paths.textures_packs().join("hd-upscale");
+    std::fs::create_dir_all(&pack).with_context(|| format!("create {}", pack.display()))?;
+    let status = std::process::Command::new(python())
+        .arg(&tool)
+        .arg("--in")
+        .arg(config.paths.textures_dump())
+        .arg("--out")
+        .arg(pack.join("textures"))
+        .arg("--esrgan")
+        .arg(config.paths.textures.join(".tools"))
+        .status();
+    match status {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            anyhow::bail!("python not found — install Python 3 (the engine setup needs it too)")
+        }
+        Err(e) => return Err(anyhow::Error::new(e).context("start python")),
+        Ok(s) if !s.success() => {
+            anyhow::bail!("upscale-textures failed (exit code {:?}) — its log lines above say what went wrong", s.code());
+        }
+        Ok(_) => {}
+    }
+    std::fs::write(
+        pack.join(MANIFEST),
+        format!(
+            "name = \"HD Upscale\"\nauthor = \"s2x3\"\nversion = \"1.0.0\"\nkind = \"upscale\"\n"
+        ),
+    )
+    .with_context(|| format!("write {}", pack.join(MANIFEST).display()))?;
+    Ok(pack)
+}
+
+/// A stable marker for the configured ISO: its size and sha1, streamed.
+/// Used to decide whether the offline extraction has to run again.
+pub fn iso_marker(config: &crate::Config) -> Result<String> {
+    use sha1::{Digest, Sha1};
+    let path = &config.paths.iso;
+    let mut f = std::fs::File::open(path).with_context(|| format!("read {}", path.display()))?;
+    let mut hasher = Sha1::new();
+    let mut buf = [0u8; 1024 * 1024];
+    let mut len: u64 = 0;
+    loop {
+        let n = f
+            .read(&mut buf)
+            .with_context(|| format!("read {}", path.display()))?;
+        if n == 0 {
+            break;
+        }
+        len += n as u64;
+        hasher.update(&buf[..n]);
+    }
+    Ok(format!(
+        "{}-{}",
+        len,
+        hasher
+            .finalize()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    ))
+}
+
 /// Outcome of a merge: how many replacement files are active, and which
 /// texture hashes more than one enabled pack claims (first in priority
 /// wins; the conflict is surfaced, never hidden).
@@ -444,7 +588,7 @@ pub fn merge(
 }
 
 /// Value for `SSX3_TEX_REPLACE`: the active merge folder when it holds at
-/// least one replacement, else `"0"` (explicitly off — the engine's default
+/// least one replacement, else `"0"` (explicitly off â€” the engine's default
 /// `textures/replace` folder must never apply behind the launcher's back).
 pub fn launch_replace_env(config: &crate::Config) -> String {
     let active = config.paths.textures_active();
@@ -467,7 +611,7 @@ kind = \"upscale\"
 /// becomes the `xbox-buttons` pack toggle, and a filled legacy
 /// `paths.texreplace` folder is imported as the `texreplace-import` pack
 /// (derived content: local-only, kind `upscale`). Returns `Ok(true)` when
-/// the config changed; idempotent — a second run changes nothing.
+/// the config changed; idempotent â€” a second run changes nothing.
 pub fn migrate_legacy(config: &mut crate::Config) -> Result<bool> {
     let mut changed = false;
     if config.ui.buttons == "xbox" && config.textures.enabled.get("xbox-buttons") != Some(&true) {
@@ -885,5 +1029,46 @@ kind = \"own-art\"
         assert_eq!(cfg.textures.enabled.get("texreplace-import"), Some(&true));
 
         assert!(!migrate_legacy(&mut cfg).unwrap());
+    }
+
+    // --- engine tooling ---------------------------------------------------
+
+    #[test]
+    fn engine_binary_prefers_the_built_over_the_dist_one() {
+        let tmp = TempDir::new().unwrap();
+        let mut cfg = Config::default();
+        cfg.engine.root = tmp.path().to_path_buf();
+        let exe = format!("ssx3{}", std::env::consts::EXE_SUFFIX);
+        std::fs::create_dir_all(tmp.path().join("dist")).unwrap();
+        std::fs::write(tmp.path().join("dist").join(&exe), b"x").unwrap();
+        assert_eq!(engine_binary(&cfg), tmp.path().join("dist").join(&exe));
+        std::fs::create_dir_all(tmp.path().join("target/game")).unwrap();
+        std::fs::write(tmp.path().join("target/game").join(&exe), b"x").unwrap();
+        assert_eq!(
+            engine_binary(&cfg),
+            tmp.path().join("target/game").join(&exe)
+        );
+    }
+
+    #[test]
+    fn extract_fails_readable_without_an_engine_binary() {
+        let tmp = TempDir::new().unwrap();
+        let mut cfg = Config::default();
+        cfg.engine.root = tmp.path().join("no-engine");
+        cfg.paths.iso = tmp.path().join("iso");
+        cfg.paths.textures = tmp.path().join("textures");
+        let err = format!("{:#}", run_extract(&cfg).unwrap_err());
+        assert!(err.contains("dump-textures"), "got: {err}");
+        assert!(err.contains("engine binary missing"), "got: {err}");
+    }
+
+    #[test]
+    fn upscale_fails_readable_without_the_tool() {
+        let tmp = TempDir::new().unwrap();
+        let mut cfg = Config::default();
+        cfg.engine.root = tmp.path().to_path_buf();
+        cfg.paths.textures = tmp.path().join("textures");
+        let err = format!("{:#}", run_upscale(&cfg).unwrap_err());
+        assert!(err.contains("upscale-textures"), "got: {err}");
     }
 }

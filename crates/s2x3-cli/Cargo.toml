@@ -13,3 +13,6 @@ anyhow.workspace = true
 clap.workspace = true
 s2x3-core = { path = "../s2x3-core" }
 s2x3-engines = { path = "../s2x3-engines" }
+
+[dev-dependencies]
+tempfile.workspace = true
