@@ -72,3 +72,15 @@ removes them; the proper fix belongs upstream (see
 
 On the Iris Xe in this laptop, with the CPU healthy: 640x480 ≈ 60 fps,
 720p ≈ 52, 1080p ≈ 39. Pick the internal size in the launcher settings.
+
+## Xbox button prompts (texture patch)
+
+When the launcher's button prompts are set to Xbox, the patch generates
+itself in the background: the first play doubles as a texture dump
+(`SSX3_TEX_DUMP`), when the game quits the launcher patches the two UI
+atlases into `texreplace/` (`apps/desktop/src-tauri/src/texreplace.rs`),
+and the next start passes `SSX3_TEX_REPLACE` — no manual step. The manual
+way is still available: `tools/xbox-prompts.py --dump <dir> --out <dir>`
+after a dump run. If in-game prompts stay PlayStation 2, check that
+`texreplace/` in the launcher data folder (`AppData/Roaming/s2x3` on
+Windows) contains the two patched atlas files.

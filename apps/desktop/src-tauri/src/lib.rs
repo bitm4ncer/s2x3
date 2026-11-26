@@ -1,6 +1,14 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+/// `CREATE_NO_WINDOW`: keeps helper processes (powershell, git, cmd) from
+/// flashing a console window when the launcher runs as a GUI app.
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 use serde::Serialize;
 use s2x3_core::{
     Capabilities, Config, EngineAdapter, FieldKind, LaunchConfig, Status,
@@ -229,6 +237,23 @@ fn set_paths(engine_root: String, iso: String, saves: String) -> Result<StateDto
 
 const ENGINE_URL: &str = "https://github.com/andersfischernielsen/ssx3-decomp.git";
 
+/// The default config leaves `engine.root` empty, and `Command::current_dir("")`
+/// fails on Windows with os error 123 ("volume label syntax is incorrect").
+/// Resolve an empty root to a real folder next to the config and persist it.
+fn ensure_engine_root(config: &mut Config) -> Result<PathBuf, String> {
+    if !config.engine.root.as_os_str().is_empty() {
+        return Ok(config.engine.root.clone());
+    }
+    let root = s2x3_core::config_path()
+        .parent()
+        .map(|p| p.join("engine"))
+        .unwrap_or_else(|| PathBuf::from("engine"));
+    std::fs::create_dir_all(&root).map_err(|e| format!("create {}: {e}", root.display()))?;
+    config.engine.root = root.clone();
+    config.save().map_err(|e| format!("{e:#}"))?;
+    Ok(root)
+}
+
 #[tauri::command]
 fn set_buttons(value: String) -> Result<StateDto, String> {
     if !matches!(value.as_str(), "ps2" | "xbox") {
@@ -243,7 +268,7 @@ fn set_buttons(value: String) -> Result<StateDto, String> {
 
 #[tauri::command]
 fn set_iso(iso: String) -> Result<StateDto, String> {
-    let (mut config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    let (mut config, _engine) = load().map_err(|e| format!("{e:#}"))?;
     let path = PathBuf::from(&iso);
     if !path.is_file() {
         return Err(format!("disc image not found: {}", path.display()));
@@ -275,6 +300,7 @@ fn open_url(url: String) -> Result<(), String> {
     let mut cmd = {
         let mut c = std::process::Command::new("cmd");
         c.args(["/C", "start", ""]);
+        c.creation_flags(CREATE_NO_WINDOW);
         c
     };
     cmd.arg(url)
@@ -284,17 +310,20 @@ fn open_url(url: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn choose_iso() -> Result<StateDto, String> {
-    let path = rfd::FileDialog::new()
+async fn choose_iso() -> Result<StateDto, String> {
+    // Async dialog: a blocking rfd dialog in a sync command runs on the main
+    // thread and the picker window does not close after picking a file.
+    let picked = rfd::AsyncFileDialog::new()
         .add_filter("Disc image", &["iso", "bin", "img"])
         .pick_file()
-        .ok_or("cancelled")?;
-    set_iso(path.display().to_string())
+        .await
+        .ok_or_else(|| "cancelled".to_string())?;
+    set_iso(picked.path().display().to_string())
 }
 
 #[tauri::command]
 fn set_engine_root(root: String) -> Result<StateDto, String> {
-    let (mut config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    let (mut config, _engine) = load().map_err(|e| format!("{e:#}"))?;
     let path = PathBuf::from(&root);
     if !path.is_dir() {
         return Err(format!("folder not found: {}", path.display()));
@@ -316,6 +345,7 @@ fn shell_command(command: &str) -> std::process::Command {
             "-Command",
             command,
         ]);
+        cmd.creation_flags(CREATE_NO_WINDOW);
         cmd
     }
     #[cfg(not(target_os = "windows"))]
@@ -347,16 +377,38 @@ fn spawn_build(root: &Path, iso: &Path, command: &str) -> Result<u32, String> {
         .spawn()
         .map_err(|e| format!("start build: {e}"))?;
     let pid = child.id();
+    // Track the child so the UI can poll whether the install is still running.
+    let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let flag = done.clone();
     std::thread::spawn(move || {
         let _ = child.wait();
+        flag.store(true, std::sync::atomic::Ordering::SeqCst);
     });
+    *BUILD
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some((pid, done));
     Ok(pid)
+}
+
+/// Latest spawned install/build: (pid, done flag). One build at a time.
+static BUILD: std::sync::Mutex<Option<(u32, std::sync::Arc<std::sync::atomic::AtomicBool>)>> =
+    std::sync::Mutex::new(None);
+
+#[tauri::command]
+fn build_running() -> Result<bool, String> {
+    let guard = BUILD
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    Ok(match guard.as_ref() {
+        Some((_, done)) => !done.load(std::sync::atomic::Ordering::SeqCst),
+        None => false,
+    })
 }
 
 #[tauri::command]
 fn bootstrap_engine() -> Result<u32, String> {
-    let (config, _) = load().map_err(|e| format!("{e:#}"))?;
-    let root = config.engine.root.clone();
+    let (mut config, _) = load().map_err(|e| format!("{e:#}"))?;
+    let root = ensure_engine_root(&mut config)?;
     let iso = config.paths.iso.clone();
     #[cfg(target_os = "windows")]
     let cmd = format!(
@@ -371,8 +423,8 @@ fn bootstrap_engine() -> Result<u32, String> {
 
 #[tauri::command]
 fn update_engine() -> Result<u32, String> {
-    let (config, _) = load().map_err(|e| format!("{e:#}"))?;
-    let root = config.engine.root.clone();
+    let (mut config, _) = load().map_err(|e| format!("{e:#}"))?;
+    let root = ensure_engine_root(&mut config)?;
     let iso = config.paths.iso.clone();
     #[cfg(target_os = "windows")]
     let command = "git pull --ff-only\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\npython tools/setup.py\nif ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\ncargo build --profile game -p ssx3";
@@ -402,13 +454,29 @@ fn check_engine_update() -> Result<UpdateDto, String> {
             detail: "not a git checkout".into(),
         });
     }
-    let local = std::process::Command::new("git")
+    #[cfg(target_os = "windows")]
+    let mut git_local = {
+        let mut c = std::process::Command::new("git");
+        c.creation_flags(CREATE_NO_WINDOW);
+        c
+    };
+    #[cfg(not(target_os = "windows"))]
+    let mut git_local = std::process::Command::new("git");
+    let local = git_local
         .args(["-C"])
         .arg(&root)
         .args(["rev-parse", "HEAD"])
         .output()
         .map_err(|e| format!("git: {e}"))?;
-    let remote = std::process::Command::new("git")
+    #[cfg(target_os = "windows")]
+    let mut git_remote = {
+        let mut c = std::process::Command::new("git");
+        c.creation_flags(CREATE_NO_WINDOW);
+        c
+    };
+    #[cfg(not(target_os = "windows"))]
+    let mut git_remote = std::process::Command::new("git");
+    let remote = git_remote
         .args(["-C"])
         .arg(&root)
         .args(["ls-remote", "origin", "HEAD"])
@@ -445,41 +513,70 @@ fn saves_info() -> Result<s2x3_core::SavesInfo, String> {
 }
 
 #[tauri::command]
-fn export_saves(dest: Option<String>) -> Result<String, String> {
-    let (_config, engine) = load().map_err(|e| format!("{e:#}"))?;
+async fn export_saves(dest: Option<String>) -> Result<String, String> {
     let path = match dest {
         Some(p) => std::path::PathBuf::from(p),
-        None => rfd::FileDialog::new()
+        None => rfd::AsyncFileDialog::new()
             .set_file_name("ssx3-mc0.ps2")
             .save_file()
-            .ok_or("cancelled")?,
+            .await
+            .ok_or_else(|| "cancelled".to_string())?
+            .path()
+            .to_path_buf(),
     };
+    let (_config, engine) = load().map_err(|e| format!("{e:#}"))?;
     let out = engine.export_saves(&path).map_err(|e| format!("{e:#}"))?;
     Ok(out.display().to_string())
 }
 
 #[tauri::command]
-fn import_saves(src: Option<String>) -> Result<String, String> {
-    let (_config, engine) = load().map_err(|e| format!("{e:#}"))?;
+async fn import_saves(src: Option<String>) -> Result<String, String> {
     let path = match src {
         Some(p) => std::path::PathBuf::from(p),
-        None => rfd::FileDialog::new()
+        None => rfd::AsyncFileDialog::new()
             .add_filter("PS2 memory card", &["ps2", "bin", "img"])
             .pick_file()
-            .ok_or("cancelled")?,
+            .await
+            .ok_or_else(|| "cancelled".to_string())?
+            .path()
+            .to_path_buf(),
     };
-    let dst = engine.import_saves(&path).map_err(|e| format!("{e:#}"))?;
+    let dst = engine_import(&path).map_err(|e| format!("{e:#}"))?;
     Ok(dst.display().to_string())
+}
+
+fn engine_import(path: &Path) -> anyhow::Result<PathBuf> {
+    let (_config, engine) = load()?;
+    engine.import_saves(path)
 }
 
 #[tauri::command]
 fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
     let (config, engine) = load().map_err(|e| format!("{e:#}"))?;
     let log = config.paths.saves.join("launcher.log");
+
+    // Xbox prompts: everything happens in the background. If the prompt
+    // atlases are not patched yet, this run doubles as the texture dump and
+    // the patch is generated when the game quits. If the dump already has the
+    // atlases, the patch is generated right now.
+    let mut extra_env = BTreeMap::new();
+    let dump_dir = config.engine.root.join("textures").join("dump");
+    let out_dir = config.paths.texreplace.clone();
+    let needs_patch = config.ui.buttons == "xbox" && !texreplace::complete(&out_dir);
+    let dumped = needs_patch && !texreplace::dumped(&dump_dir).is_empty();
+    let run_dump = needs_patch && texreplace::dumped(&dump_dir).is_empty();
+    if dumped {
+        if let Err(e) = texreplace::patch(&dump_dir, &out_dir) {
+            eprintln!("texreplace patch failed: {e:#}");
+        }
+    } else if run_dump {
+        extra_env.insert("SSX3_TEX_DUMP".into(), dump_dir.display().to_string());
+    }
+
     let mut child = engine
         .launch(&LaunchConfig {
             overrides: overrides.unwrap_or_default(),
-            extra_env: BTreeMap::new(),
+            extra_env,
             extra_args: vec![],
             log: Some(log),
         })
@@ -487,6 +584,13 @@ fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
     let pid = child.id();
     std::thread::spawn(move || {
         let _ = child.wait();
+        // After the game quits: if this run wrote the dump, generate the
+        // patch automatically so the next start shows Xbox glyphs.
+        if run_dump {
+            if let Err(e) = texreplace::patch(&dump_dir, &out_dir) {
+                eprintln!("texreplace patch failed: {e:#}");
+            }
+        }
     });
     Ok(pid)
 }
@@ -520,6 +624,14 @@ fn read_tail(path: &Path, lines: usize) -> anyhow::Result<String> {
     Ok(all[start..].join("\n"))
 }
 
+mod cards;
+mod texreplace;
+pub use cards::{
+    card_activate, card_activate_default, card_delete, card_duplicate, card_export,
+    card_hash, card_hash_copy, card_import, card_import_file, card_new, card_rename,
+    save_profiles,
+};
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -541,13 +653,26 @@ pub fn run() {
             bootstrap_engine,
             update_engine,
             check_engine_update,
+            build_running,
             install_log_tail,
             saves_info,
             export_saves,
             import_saves,
             install,
             launch,
-            log_tail
+            log_tail,
+            save_profiles,
+            card_new,
+            card_duplicate,
+            card_rename,
+            card_delete,
+            card_activate,
+            card_activate_default,
+            card_export,
+            card_import_file,
+            card_hash,
+            card_hash_copy,
+            card_import
         ])
         .run(tauri::generate_context!())
         .expect("error while running S2X3");

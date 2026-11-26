@@ -12,11 +12,15 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+image = { version = "0.25", default-features = false, features = ["png"] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
 rfd = { version = "0.15", default-features = false }
+flate2 = "1"
+base64 = "0.22"
+sha2 = "0.10"
 s2x3-core = { path = "../../../crates/s2x3-core" }
 s2x3-engines = { path = "../../../crates/s2x3-engines" }
 

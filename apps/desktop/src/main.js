@@ -131,13 +131,17 @@ function mockInvoke(cmd, args) {  if (cmd === "state") {
   }
   if (cmd === "save_profiles")
     return Promise.resolve(structuredClone(mockCards));
-  if (cmd === "card_new" || cmd === "card_import")
+  if (cmd === "card_new" || cmd === "card_import_file" || cmd === "card_import")
     return Promise.resolve(structuredClone(mockCards));
-  if (cmd === "card_share")
+  if (cmd === "card_export")
     return Promise.resolve({
-      link: "https://s2x3.dev/save#n=career&h=450fc302&d=…",
       file: "/home/player/Games/SSX3-ps2/cards/career.ps2.gz",
+      hash: "450fc3021ee3bf25",
     });
+  if (cmd === "card_hash_copy")
+    return Promise.resolve(
+      "n=career&h=450fc3021ee3bf25&d=H4sIAAAAAAAAE…"
+    );
   if (cmd === "install_log_tail")
     return Promise.resolve("[setup] cloning ssx3-decomp…\n[setup] cargo build --profile game -p ssx3\n");
   if (cmd === "launch") return Promise.resolve(4242);
@@ -213,7 +217,7 @@ function promptSet() {
       <small>${
         state.texreplace_present
           ? "Xbox uses the texture patch in the texreplace folder."
-          : "No texture patch found. In game prompts stay PlayStation 2."
+          : "The Xbox prompt patch is generated automatically — play once and it is ready for the next start."
       }</small>
     </div>
     <div class="prompt-cards">
@@ -668,21 +672,45 @@ function bind() {
     await cardAction("card_delete", { name: selectedProfile() }, "Card deleted");
     cardSelection = null;
   });
-  $("card-share").addEventListener("click", async () => {
+  $("card-export").addEventListener("click", async () => {
     if (!selectedProfile()) return toast("Select a card first", true);
     try {
-      const share = await call("card_share", { name: selectedProfile() });
-      await navigator.clipboard.writeText(share.link).catch(() => {});
-      toast(`Link copied (${human(share.link.length)} chars) — .ps2.gz: ${share.file}`);
+      const share = await call("card_export", { name: selectedProfile() });
+      await navigator.clipboard.writeText(share.hash).catch(() => {});
+      toast(`Exported: ${share.file} · hash ${share.hash} (copied)`);
+    } catch (e) {
+      if (!String(e).includes("cancelled")) toast(String(e), true);
+    }
+  });
+  $("card-hash").addEventListener("click", async () => {
+    if (!selectedProfile()) return toast("Select a card first", true);
+    try {
+      const payload = await call("card_hash_copy", { name: selectedProfile() });
+      await navigator.clipboard.writeText(payload).catch(() => {});
+      toast(`Hash payload copied (${human(payload.length)} chars) — paste it into Import on another device`);
     } catch (e) {
       toast(String(e), true);
     }
   });
   $("card-import").addEventListener("click", async () => {
-    const payload = prompt("Paste the save link (https://…#d=…) or a .ps2.gz file path:");
+    try {
+      renderCards(await call("card_import_file", { src: null, name: "" }));
+      toast("Save imported — the new profile is in the list");
+    } catch (e) {
+      if (!String(e).includes("cancelled")) toast(String(e), true);
+    }
+  });
+  $("card-paste").addEventListener("click", async () => {
+    const payload = prompt(
+      "Paste the hash payload (n=…&h=…&d=…), a save link, or a .ps2.gz file path:"
+    );
     if (!payload) return;
-    const name = prompt("Save as profile (name):", "") || "";
-    await cardAction("card_import", { payload: payload.trim(), name: name.trim() }, "Save imported");
+    try {
+      renderCards(await call("card_import", { payload: payload.trim(), name: "" }));
+      toast("Save imported — the new profile is in the list");
+    } catch (e) {
+      toast(String(e), true);
+    }
   });
   $("play").addEventListener("click", play);
 
