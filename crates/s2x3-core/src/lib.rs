@@ -12,6 +12,8 @@ use std::process::Child;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+pub mod textures;
+
 pub const CONFIG_ENV: &str = "S2X3_CONFIG";
 
 /// What an engine can do. The UI shows fields and buttons from this, so a

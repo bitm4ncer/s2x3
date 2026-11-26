@@ -14,3 +14,4 @@ Upstream sibling plan: docs/superpowers/plans/2026-11-26-texture-packs-upstream.
 
 Task 1: start (base e943a94)
 Task 1: start (base e943a94)
+Task 1: complete (commits e943a94..eee2628, tests: cargo test -p s2x3-core -> 1 passed 0 failed). Ruling: s2x3-core hat kein bestehendes Testmodul (Plan nahm eines an) - neu angelegt; tempfile als workspace dev-dep ergaenzt.
