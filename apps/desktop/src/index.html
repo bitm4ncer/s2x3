@@ -131,21 +131,31 @@
           <div class="caps" id="caps"></div>
 
           <div class="saves">
-            <h4>Save game</h4>
+            <div class="saves-title">
+              <h4>Save game</h4>
+              <button id="card-new" class="icon-btn" title="New card" aria-label="New card">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 2h2v5h5v2H9v5H7V9H2V7h5z" /></svg>
+              </button>
+            </div>
             <div class="card-list" id="card-list">
               <p id="saves-info" class="muted">checking…</p>
             </div>
             <div class="saves-actions">
-              <button id="card-new" class="ghost small">New</button>
-              <button id="card-duplicate" class="ghost small">Duplicate</button>
-              <button id="card-rename" class="ghost small">Rename</button>
-              <button id="card-delete" class="ghost small">Delete</button>
+              <div class="menu-wrap">
+                <button id="card-export" class="ghost small">Export…</button>
+                <div class="menu" id="menu-export" hidden>
+                  <button data-act="file">File…</button>
+                  <button data-act="hash">Copy hash</button>
+                </div>
+              </div>
+              <div class="menu-wrap">
+                <button id="card-import" class="ghost small">Import…</button>
+                <div class="menu" id="menu-import" hidden>
+                  <button data-act="file">File…</button>
+                  <button data-act="paste">Paste hash…</button>
+                </div>
+              </div>
             </div>
-            <div class="saves-actions">
-              <button id="card-share" class="ghost small">Share link…</button>
-              <button id="card-import" class="ghost small">Open link…</button>
-            </div>
-            <p class="muted" id="card-note">The active card is what the game plays on.</p>
           </div>
 
           <details class="logbox">

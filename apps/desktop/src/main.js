@@ -499,6 +499,17 @@ function renderCards(profiles) {
           <small>${p.data_bytes ? human(p.data_bytes) + " save data" : ""}</small>
         </div>
         <div class="card-saves">${saves}</div>
+        <div class="card-tools">
+          <button class="card-tool" data-tool="duplicate" title="Duplicate">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h8a2 2 0 0 1 2 2v8h-2V3H5zM3 5h8a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>
+          </button>
+          <button class="card-tool" data-tool="rename" title="Rename">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 1.5l3 3L6 13l-3.5.5L3 10zM10.5 2.5l3 3"/></svg>
+          </button>
+          <button class="card-tool card-tool-danger" data-tool="delete" title="Delete">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2h4l.5 1H14v2H2V3h3.5zM3.5 6h9l-.7 8a1 1 0 0 1-1 .9H5.2a1 1 0 0 1-1-.9z"/></svg>
+          </button>
+        </div>
       </div>`;
     })
     .join("");
@@ -514,6 +525,22 @@ function renderCards(profiles) {
     row.addEventListener("click", () => {
       cardSelection = row.dataset.name;
       renderCards(profiles);
+    });
+    row.querySelectorAll(".card-tool").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const name = row.dataset.name;
+        if (btn.dataset.tool === "duplicate") {
+          await cardAction("card_duplicate", { name }, "Card duplicated");
+        } else if (btn.dataset.tool === "rename") {
+          const next = prompt("New name:", name);
+          if (next) await cardAction("card_rename", { name, newName: next }, "Card renamed");
+        } else if (btn.dataset.tool === "delete") {
+          if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+          await cardAction("card_delete", { name }, "Card deleted");
+          if (cardSelection === name) cardSelection = null;
+        }
+      });
     });
   });
 }
@@ -657,61 +684,76 @@ function bind() {
     const name = prompt("Name for the new save profile:");
     if (name) await cardAction("card_new", { name }, `Profile created: ${name.trim()}`);
   });
-  $("card-duplicate").addEventListener("click", () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    cardAction("card_duplicate", { name: selectedProfile() }, "Card duplicated");
+  // save card menus: Export… (File / Copy hash) and Import… (File / Paste hash)
+  const closeMenus = () =>
+    document.querySelectorAll(".menu").forEach((m) => (m.hidden = true));
+  const toggleMenu = (menu) => {
+    const open = menu.hidden;
+    closeMenus();
+    menu.hidden = !open;
+  };
+  document.addEventListener("click", closeMenus);
+  $("card-export").addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu($("menu-export"));
   });
-  $("card-rename").addEventListener("click", async () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    const name = prompt("New name:", selectedProfile());
-    if (name) await cardAction("card_rename", { name: selectedProfile(), newName: name }, "Card renamed");
+  $("card-import").addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu($("menu-import"));
   });
-  $("card-delete").addEventListener("click", async () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    if (!confirm(`Delete "${selectedProfile()}"? This cannot be undone.`)) return;
-    await cardAction("card_delete", { name: selectedProfile() }, "Card deleted");
-    cardSelection = null;
-  });
-  $("card-export").addEventListener("click", async () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    try {
-      const share = await call("card_export", { name: selectedProfile() });
-      await navigator.clipboard.writeText(share.hash).catch(() => {});
-      toast(`Exported: ${share.file} · hash ${share.hash} (copied)`);
-    } catch (e) {
-      if (!String(e).includes("cancelled")) toast(String(e), true);
-    }
-  });
-  $("card-hash").addEventListener("click", async () => {
-    if (!selectedProfile()) return toast("Select a card first", true);
-    try {
-      const payload = await call("card_hash_copy", { name: selectedProfile() });
-      await navigator.clipboard.writeText(payload).catch(() => {});
-      toast(`Hash payload copied (${human(payload.length)} chars) — paste it into Import on another device`);
-    } catch (e) {
-      toast(String(e), true);
-    }
-  });
-  $("card-import").addEventListener("click", async () => {
-    try {
-      renderCards(await call("card_import_file", { src: null, name: "" }));
-      toast("Save imported — the new profile is in the list");
-    } catch (e) {
-      if (!String(e).includes("cancelled")) toast(String(e), true);
-    }
-  });
-  $("card-paste").addEventListener("click", async () => {
-    const payload = prompt(
-      "Paste the hash payload (n=…&h=…&d=…), a save link, or a .ps2.gz file path:"
+  $("menu-export")
+    .querySelectorAll("button")
+    .forEach((b) =>
+      b.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMenus();
+        if (!selectedProfile()) return toast("Select a card first", true);
+        if (b.dataset.act === "hash") {
+          try {
+            const payload = await call("card_hash_copy", { name: selectedProfile() });
+            await navigator.clipboard.writeText(payload).catch(() => {});
+            toast(`Hash payload copied (${human(payload.length)} chars) — paste it into Import on another device`);
+          } catch (err) {
+            toast(String(err), true);
+          }
+          return;
+        }
+        try {
+          const share = await call("card_export", { name: selectedProfile() });
+          await navigator.clipboard.writeText(share.hash).catch(() => {});
+          toast(`Exported: ${share.file} · hash ${share.hash} (copied)`);
+        } catch (err) {
+          toast(String(err), true);
+        }
+      })
     );
-    if (!payload) return;
-    try {
-      renderCards(await call("card_import", { payload: payload.trim(), name: "" }));
-      toast("Save imported — the new profile is in the list");
-    } catch (e) {
-      toast(String(e), true);
-    }
-  });
+  $("menu-import")
+    .querySelectorAll("button")
+    .forEach((b) =>
+      b.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeMenus();
+        if (b.dataset.act === "paste") {
+          const payload = prompt(
+            "Paste the hash payload (n=…&h=…&d=…), a save link, or a .ps2.gz file path:"
+          );
+          if (!payload) return;
+          try {
+            renderCards(await call("card_import", { payload: payload.trim(), name: "" }));
+            toast("Save imported — the new profile is in the list");
+          } catch (err) {
+            toast(String(err), true);
+          }
+          return;
+        }
+        try {
+          renderCards(await call("card_import_file", { src: null, name: "" }));
+          toast("Save imported — the new profile is in the list");
+        } catch (err) {
+          if (!String(err).includes("cancelled")) toast(String(err), true);
+        }
+      })
+    );
   $("play").addEventListener("click", play);
 
   $("save-paths").addEventListener("click", async () => {

@@ -673,9 +673,149 @@ main::-webkit-scrollbar-thumb:hover {
   font-weight: 400;
 }
 
+.saves-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* small orange plus button in the Save game title */
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: var(--orangerib);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.12s, filter 0.12s;
+}
+
+.icon-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: #fff;
+}
+
+.icon-btn:hover,
+.icon-btn:focus-visible {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
 .saves p {
   margin: 0 0 8px;
   font-size: 10.5px;
+}
+
+/* hover tool buttons on each save card */
+.card-row {
+  position: relative;
+}
+
+.card-tools {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.card-row:hover .card-tools,
+.card-row:focus-within .card-tools {
+  opacity: 1;
+}
+
+.card-row:hover .card-meta,
+.card-row:focus-within .card-meta {
+  opacity: 0;
+}
+
+.card-meta {
+  transition: opacity 0.12s;
+}
+
+.card-tool {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--navy);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(11, 44, 75, 0.18);
+  transition: background 0.12s, color 0.12s;
+}
+
+.card-tool svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+.card-tool:hover,
+.card-tool:focus-visible {
+  background: var(--orangerib);
+  color: #fff;
+  box-shadow: none;
+}
+
+.card-tool-danger:hover,
+.card-tool-danger:focus-visible {
+  background: var(--red);
+}
+
+/* context menus for Export… / Import… */
+.menu-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.menu-wrap .ghost {
+  width: 100%;
+  margin-top: 0;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  min-width: 170px;
+  z-index: 8;
+  padding: 5px;
+  border-radius: 10px;
+  background: var(--navygrad);
+  box-shadow: 0 12px 28px rgba(3, 22, 43, 0.35);
+}
+
+.menu button {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 7px 10px;
+  border-radius: 6px;
+  text-align: left;
+  font-family: var(--body);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  cursor: pointer;
+}
+
+.menu button:hover,
+.menu button:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--orange-2);
 }
 
 .saves-actions {
