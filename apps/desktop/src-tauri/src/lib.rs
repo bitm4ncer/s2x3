@@ -587,9 +587,7 @@ fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
         .textures_packs()
         .join("xbox-buttons")
         .join("textures");
-    let needs_patch = config.ui.buttons == "xbox"
-        && !config.textures.generated_xbox
-        && !texreplace::complete(&out_dir);
+    let needs_patch = config.ui.buttons == "xbox" && !texreplace::complete(&out_dir);
     let dumped = needs_patch && !texreplace::dumped(&dump_dir).is_empty();
     let run_dump = needs_patch && texreplace::dumped(&dump_dir).is_empty();
     if dumped {
