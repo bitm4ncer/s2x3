@@ -9,11 +9,9 @@ use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
-use serde::Serialize;
-use s2x3_core::{
-    Capabilities, Config, EngineAdapter, FieldKind, LaunchConfig, Status,
-};
+use s2x3_core::{Capabilities, Config, EngineAdapter, FieldKind, LaunchConfig, Status};
 use s2x3_engines::by_id;
+use serde::Serialize;
 use tauri::Manager;
 
 #[derive(Serialize)]
@@ -68,7 +66,12 @@ struct StateDto {
 }
 
 fn load() -> anyhow::Result<(Config, Box<dyn EngineAdapter>)> {
-    let config = Config::load()?.resolved();
+    let mut config = Config::load()?.resolved();
+    // One-time migration from the pre-pack texreplace mechanism; saves when
+    // it changed something.
+    if s2x3_core::textures::migrate_legacy(&mut config).unwrap_or(false) {
+        let _ = config.save();
+    }
     let engine = by_id(&config)?;
     Ok((config, engine))
 }
@@ -105,7 +108,9 @@ fn fields(engine: &dyn EngineAdapter) -> Vec<FieldDto> {
         .map(|f| {
             let (kind, choices, min, max) = match f.kind {
                 FieldKind::Bool => ("bool".to_string(), vec![], None, None),
-                FieldKind::Integer { min, max } => ("int".to_string(), vec![], Some(min), Some(max)),
+                FieldKind::Integer { min, max } => {
+                    ("int".to_string(), vec![], Some(min), Some(max))
+                }
                 FieldKind::Choice(c) => (
                     "choice".to_string(),
                     c.iter().map(|s| s.to_string()).collect(),
@@ -130,7 +135,13 @@ fn fields(engine: &dyn EngineAdapter) -> Vec<FieldDto> {
                 .unwrap_or_else(|| {
                     choices
                         .iter()
-                        .map(|c| if c.is_empty() { "Auto".to_string() } else { c.clone() })
+                        .map(|c| {
+                            if c.is_empty() {
+                                "Auto".to_string()
+                            } else {
+                                c.clone()
+                            }
+                        })
                         .collect()
                 });
             FieldDto {
@@ -484,7 +495,11 @@ fn check_engine_update() -> Result<UpdateDto, String> {
         .map_err(|e| format!("git: {e}"))?;
     let local_s = String::from_utf8_lossy(&local.stdout).trim().to_string();
     let remote_line = String::from_utf8_lossy(&remote.stdout);
-    let remote_s = remote_line.split_whitespace().next().unwrap_or("").to_string();
+    let remote_s = remote_line
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_string();
     Ok(UpdateDto {
         available: !remote_s.is_empty() && remote_s != local_s,
         detail: if remote_s.is_empty() {
@@ -552,21 +567,26 @@ fn engine_import(path: &Path) -> anyhow::Result<PathBuf> {
 
 #[tauri::command]
 fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
-    let (config, engine) = load().map_err(|e| format!("{e:#}"))?;
+    let (mut config, engine) = load().map_err(|e| format!("{e:#}"))?;
     let log = config.paths.saves.join("launcher.log");
 
     // Xbox prompts: everything happens in the background. If the prompt
     // atlases are not patched yet, this run doubles as the texture dump and
-    // the patch is generated when the game quits. If the dump already has the
-    // atlases, the patch is generated right now.
+    // the pack is generated when the game quits. If the dump already has the
+    // atlases, the pack is generated right now. The dump lives under
+    // paths.textures (launcher data — never inside the engine checkout).
     let mut extra_env = BTreeMap::new();
-    let dump_dir = config.engine.root.join("textures").join("dump");
-    let out_dir = config.paths.texreplace.clone();
+    let dump_dir = config.paths.textures_dump();
+    let out_dir = config
+        .paths
+        .textures_packs()
+        .join("xbox-buttons")
+        .join("textures");
     let needs_patch = config.ui.buttons == "xbox" && !texreplace::complete(&out_dir);
     let dumped = needs_patch && !texreplace::dumped(&dump_dir).is_empty();
     let run_dump = needs_patch && texreplace::dumped(&dump_dir).is_empty();
     if dumped {
-        if let Err(e) = texreplace::patch(&dump_dir, &out_dir) {
+        if let Err(e) = textures::generate_xbox_pack(&mut config) {
             eprintln!("texreplace patch failed: {e:#}");
         }
     } else if run_dump {
@@ -585,9 +605,9 @@ fn launch(overrides: Option<BTreeMap<String, String>>) -> Result<u32, String> {
     std::thread::spawn(move || {
         let _ = child.wait();
         // After the game quits: if this run wrote the dump, generate the
-        // patch automatically so the next start shows Xbox glyphs.
+        // pack automatically so the next start shows Xbox glyphs.
         if run_dump {
-            if let Err(e) = texreplace::patch(&dump_dir, &out_dir) {
+            if let Err(e) = textures::generate_xbox_pack(&mut config) {
                 eprintln!("texreplace patch failed: {e:#}");
             }
         }
@@ -626,10 +646,14 @@ fn read_tail(path: &Path, lines: usize) -> anyhow::Result<String> {
 
 mod cards;
 mod texreplace;
+mod textures;
 pub use cards::{
-    card_activate, card_activate_default, card_delete, card_duplicate, card_export,
-    card_hash, card_hash_copy, card_import, card_import_file, card_new, card_rename,
-    save_profiles,
+    card_activate, card_activate_default, card_delete, card_duplicate, card_export, card_hash,
+    card_hash_copy, card_import, card_import_file, card_new, card_rename, save_profiles,
+};
+pub use textures::{
+    textures_extract, textures_import, textures_list, textures_open_folder, textures_remove,
+    textures_toggle, textures_upscale,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -672,7 +696,14 @@ pub fn run() {
             card_import_file,
             card_hash,
             card_hash_copy,
-            card_import
+            card_import,
+            textures_list,
+            textures_import,
+            textures_remove,
+            textures_toggle,
+            textures_extract,
+            textures_upscale,
+            textures_open_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running S2X3");

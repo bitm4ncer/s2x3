@@ -100,12 +100,7 @@ fn patch_atlas(atlas: &image::RgbaImage) -> anyhow::Result<image::RgbaImage> {
                 out.put_pixel(x, y, image::Rgba([0, 0, 0, 0]));
             }
         }
-        let glyph = image::imageops::resize(
-            &glyph_image(letter)?,
-            w,
-            h,
-            FilterType::Lanczos3,
-        );
+        let glyph = image::imageops::resize(&glyph_image(letter)?, w, h, FilterType::Lanczos3);
         image::imageops::overlay(&mut out, &glyph, x0 as i64, y0 as i64);
     }
     Ok(out)

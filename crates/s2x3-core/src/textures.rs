@@ -365,7 +365,7 @@ pub fn run_extract(config: &crate::Config) -> Result<String> {
         .output()
         .with_context(|| format!("run {} dump-textures", bin.display()))?;
     if !res.status.success() {
-        let mut tail = String::from_utf8_lossy(&res.stderr);
+        let tail = String::from_utf8_lossy(&res.stderr);
         let mut tail = tail
             .lines()
             .rev()
@@ -390,6 +390,38 @@ pub fn run_extract(config: &crate::Config) -> Result<String> {
         .last()
         .unwrap_or("extraction finished")
         .to_string())
+}
+
+/// Texture hashes that more than one *enabled* pack claims — read-only (the
+/// merge itself is what resolves them; this is for the UI's warning).
+pub fn conflicts(
+    packs_dir: &Path,
+    enabled: &BTreeMap<String, bool>,
+    priority: &[String],
+) -> Vec<String> {
+    let _ = priority;
+    let mut claim: BTreeMap<String, usize> = BTreeMap::new();
+    for e in list(packs_dir) {
+        if !enabled.get(&e.id).copied().unwrap_or(false) {
+            continue;
+        }
+        let tex_dir = packs_dir.join(&e.id).join("textures");
+        if let Ok(rd) = std::fs::read_dir(tex_dir) {
+            for f in rd.flatten() {
+                let p = f.path();
+                if p.extension().is_some_and(|x| x.eq_ignore_ascii_case("png")) {
+                    if let Some(stem) = p.file_stem().and_then(|s| s.to_str()) {
+                        *claim.entry(stem.to_ascii_lowercase()).or_default() += 1;
+                    }
+                }
+            }
+        }
+    }
+    claim
+        .into_iter()
+        .filter(|(_, n)| *n > 1)
+        .map(|(h, _)| h)
+        .collect()
 }
 
 /// The python launcher for the current platform (checked, not spawned).
@@ -1029,6 +1061,24 @@ kind = \"own-art\"
         assert_eq!(cfg.textures.enabled.get("texreplace-import"), Some(&true));
 
         assert!(!migrate_legacy(&mut cfg).unwrap());
+    }
+
+    #[test]
+    fn conflicts_reports_shared_hashes_of_enabled_packs() {
+        let tmp = TempDir::new().unwrap();
+        let packs = tmp.path().join("packs");
+        pack(
+            packs.as_path(),
+            "a",
+            VALID,
+            &[&format!("{HASH1}.png"), &format!("{HASH2}.png")],
+        );
+        pack(packs.as_path(), "b", VALID, &[&format!("{HASH1}.png")]);
+
+        let mut on = enabled(&["a", "b"]);
+        assert_eq!(conflicts(&packs, &on, &[]), vec![HASH1.to_string()]);
+        on.insert("b".into(), false);
+        assert!(conflicts(&packs, &on, &[]).is_empty());
     }
 
     // --- engine tooling ---------------------------------------------------

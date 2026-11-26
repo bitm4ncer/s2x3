@@ -12,6 +12,7 @@ use std::process::Child;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+pub mod card;
 pub mod textures;
 
 pub const CONFIG_ENV: &str = "S2X3_CONFIG";
@@ -205,6 +206,11 @@ pub struct Paths {
     /// Texture replacement folder for the Xbox button prompts.
     #[serde(default)]
     pub texreplace: PathBuf,
+    /// The active memory card image (save profile). Empty means the classic
+    /// `saves/ssx3-mc0.ps2`. [carried uncommitted from the parallel agent's
+    /// in-flight save-manager work; base commit e943a94 needs it]
+    #[serde(default)]
+    pub memcard: PathBuf,
     /// Root of the launcher-managed texture pack store: `dump/` (extracted
     /// game textures), `packs/<id>/` (installed packs), `active/` (merge
     /// folder handed to the engine at launch).
@@ -320,6 +326,15 @@ impl Config {
 }
 
 impl Paths {
+    /// The memory card the game plays on; `memcard` when set, else the
+    /// classic `ssx3-mc0.ps2` next to the saves.
+    pub fn active_memcard(&self) -> PathBuf {
+        if self.memcard.as_os_str().is_empty() {
+            self.saves.join("ssx3-mc0.ps2")
+        } else {
+            self.memcard.clone()
+        }
+    }
     /// Extracted game textures (offline dump or `SSX3_TEX_DUMP` output).
     pub fn textures_dump(&self) -> PathBuf {
         self.textures.join("dump")
