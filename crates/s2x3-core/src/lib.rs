@@ -216,8 +216,7 @@ pub struct Paths {
     #[serde(default)]
     pub texreplace: PathBuf,
     /// The active memory card image (save profile). Empty means the classic
-    /// `saves/ssx3-mc0.ps2`. [carried uncommitted from the parallel agent's
-    /// in-flight save-manager work; base commit e943a94 needs it]
+    /// `saves/ssx3-mc0.ps2`.
     #[serde(default)]
     pub memcard: PathBuf,
     /// Root of the launcher-managed texture pack store: `dump/` (extracted
@@ -225,6 +224,18 @@ pub struct Paths {
     /// folder handed to the engine at launch).
     #[serde(default)]
     pub textures: PathBuf,
+}
+
+impl Paths {
+    /// The memory card the game plays on; `memcard` when set, else the
+    /// classic `ssx3-mc0.ps2` next to the saves.
+    pub fn active_memcard(&self) -> PathBuf {
+        if self.memcard.as_os_str().is_empty() {
+            self.saves.join("ssx3-mc0.ps2")
+        } else {
+            self.memcard.clone()
+        }
+    }
 }
 
 /// `$S2X3_CONFIG`, else `%APPDATA%/s2x3/config.toml` on Windows, else
@@ -335,15 +346,6 @@ impl Config {
 }
 
 impl Paths {
-    /// The memory card the game plays on; `memcard` when set, else the
-    /// classic `ssx3-mc0.ps2` next to the saves.
-    pub fn active_memcard(&self) -> PathBuf {
-        if self.memcard.as_os_str().is_empty() {
-            self.saves.join("ssx3-mc0.ps2")
-        } else {
-            self.memcard.clone()
-        }
-    }
     /// Extracted game textures (offline dump or `SSX3_TEX_DUMP` output).
     pub fn textures_dump(&self) -> PathBuf {
         self.textures.join("dump")

@@ -33,6 +33,11 @@ is vendored in this repository. Keep its notices when you redistribute it.
   `.design/s2x3_AppIcon.png`.
 - The launcher screenshots in `docs/` and `site/` show this application and
   contain no game data.
+- The controller button glyphs in `apps/desktop/src/assets/buttons/` are cropped
+  from "PlayStation Buttons" by **Medevenx**, used with the set's permission for
+  personal, non-commercial fan projects. PlayStation shapes identify controller
+  buttons; the PlayStation marks belong to Sony Interactive Entertainment. s2X3
+  is not affiliated with or endorsed by Sony.
 
 ## Runtime
 
