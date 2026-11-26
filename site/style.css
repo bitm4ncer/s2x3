@@ -729,11 +729,12 @@ code {
 /* orange bullet, like "Â· Select Character" */
 .sec-title::before {
   content: "";
-  width: 22px;
-  height: 22px;
-  background: var(--midnight);
+  width: 33px;
+  height: 33px;
+  background: #ffffff;
   -webkit-mask: url("assets/NowFlake_fill.svg") center / contain no-repeat;
   mask: url("assets/NowFlake_fill.svg") center / contain no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(3, 22, 43, 0.35));
 }
 
 .sec-meta {
