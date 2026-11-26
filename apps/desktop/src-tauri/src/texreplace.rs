@@ -37,6 +37,21 @@ const GLYPH_B: &[u8] = include_bytes!("../assets/glyphs/b.png");
 const GLYPH_X: &[u8] = include_bytes!("../assets/glyphs/x.png");
 const GLYPH_Y: &[u8] = include_bytes!("../assets/glyphs/y.png");
 
+/// Shoulder prompts in the 256x256 atlas: PS2 `R1 L1 / R2 L2` boxes
+/// (x0, y0, x1, y1) and the Xbox box art replacing them (RB/LB/RT/LT —
+/// PS2 R1 = Xbox RB, L1 = LB, R2 = RT, L2 = LT).
+const SHOULDERS: [((u32, u32, u32, u32), char, &[u8]); 4] = [
+    ((121, 158, 149, 172), 'r', include_bytes!("../assets/glyphs/rb.png")), // R1 -> RB
+    ((152, 158, 180, 172), 'l', include_bytes!("../assets/glyphs/lb.png")), // L1 -> LB
+    ((121, 175, 149, 189), 'r', include_bytes!("../assets/glyphs/rt.png")), // R2 -> RT
+    ((152, 175, 180, 189), 'l', include_bytes!("../assets/glyphs/lt.png")), // L2 -> LT
+];
+
+/// The controller drawing at the sheet's top (its opaque bounds): the PS2
+/// pad photo goes, an Xbox pad takes its place (same rect, contained).
+const CONTROLLER: (u32, u32, u32, u32) = (7, 5, 177, 112);
+const CONTROLLER_PNG: &[u8] = include_bytes!("../assets/glyphs/controller.png");
+
 fn glyph_image(letter: char) -> anyhow::Result<image::RgbaImage> {
     let bytes = match letter {
         'a' => GLYPH_A,
@@ -103,6 +118,43 @@ fn patch_atlas(atlas: &image::RgbaImage) -> anyhow::Result<image::RgbaImage> {
         let glyph = image::imageops::resize(&glyph_image(letter)?, w, h, FilterType::Lanczos3);
         image::imageops::overlay(&mut out, &glyph, x0 as i64, y0 as i64);
     }
+    // The shoulder boxes: same treatment, Xbox box art instead of glyphs.
+    for ((x0, y0, x1, y1), _, art) in SHOULDERS {
+        let w = (x1 - x0 + 1) as usize;
+        let h = (y1 - y0 + 1) as usize;
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                out.put_pixel(x, y, image::Rgba([0, 0, 0, 0]));
+            }
+        }
+        let box_img = image::load_from_memory(art)?.to_rgba8();
+        let box_img = image::imageops::resize(
+            &box_img,
+            w as u32,
+            h as u32,
+            FilterType::Lanczos3,
+        );
+        image::imageops::overlay(&mut out, &box_img, x0 as i64, y0 as i64);
+    }
+    // The controller drawing: the Xbox pad, contained and centred in the
+    // photo's rect.
+    {
+        let (x0, y0, x1, y1) = CONTROLLER;
+        let (w, h) = ((x1 - x0 + 1) as f32, (y1 - y0 + 1) as f32);
+        for y in y0..=y1 {
+            for x in x0..=x1 {
+                out.put_pixel(x, y, image::Rgba([0, 0, 0, 0]));
+            }
+        }
+        let pad = image::load_from_memory(CONTROLLER_PNG)?.to_rgba8();
+        let scale = (w / pad.width() as f32).min(h / pad.height() as f32);
+        let nw = (pad.width() as f32 * scale).round().max(1.0) as u32;
+        let nh = (pad.height() as f32 * scale).round().max(1.0) as u32;
+        let pad = image::imageops::resize(&pad, nw, nh, FilterType::Lanczos3);
+        let ox = (x0 as f32 + (w - nw as f32) / 2.0).round() as i64;
+        let oy = (y0 as f32 + (h - nh as f32) / 2.0).round() as i64;
+        image::imageops::overlay(&mut out, &pad, ox, oy);
+    }
     Ok(out)
 }
 
@@ -123,33 +175,23 @@ mod tests {
         }
         let patched = patch_atlas(&atlas).unwrap();
         for (x0, y0, x1, y1, letter) in SLOTS {
-            // the glyph art is a coloured disc with a white letter: most of
-            // the slot must carry the disc colour, none of it the old blue.
-            let expected = match letter {
-                'a' => [63, 191, 95],
-                'b' => [229, 72, 77],
-                'x' => [59, 130, 246],
-                'y' => [242, 199, 68],
-                _ => unreachable!(),
-            };
-            let mut disc = 0;
+            // the ring-style art landed: most of the slot is opaque, and
+            // none of it is the old blue.
+            let mut opaque = 0;
             let mut total = 0;
             for y in y0..=y1 {
                 for x in x0..=x1 {
                     let c = patched.get_pixel(x, y);
                     total += 1;
-                    if (c[0] as i32 - expected[0] as i32).abs() < 50
-                        && (c[1] as i32 - expected[1] as i32).abs() < 50
-                        && (c[2] as i32 - expected[2] as i32).abs() < 50
-                    {
-                        disc += 1;
+                    if c[3] > 0 {
+                        opaque += 1;
                     }
                     assert_ne!(c, &image::Rgba([40, 90, 140, 255]), "slot not patched");
                 }
             }
             assert!(
-                disc > total / 3,
-                "letter {letter}: disc colour covers only {disc}/{total} pixels"
+                opaque > total / 3,
+                "letter {letter}: only {opaque}/{total} pixels are painted"
             );
         }
     }
