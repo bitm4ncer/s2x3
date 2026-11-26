@@ -291,7 +291,7 @@ const TABS = [
   {
     id: "display",
     label: "display",
-    keys: ["SSX3_TICK_HZ", "SSX3_ASPECT", "SSX3_FULLSCREEN", "SSX3_SKIP_MOVIES", "SSX3_REAL_CLOCK"],
+    keys: ["SSX3_TICK_HZ", "SSX3_ASPECT", "SSX3_FULLSCREEN", "SSX3_SKIP_MOVIES", "SSX3_REAL_CLOCK", "SSX3_HUD_EDGE"],
   },
   {
     id: "graphics",
