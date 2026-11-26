@@ -469,16 +469,16 @@
       <footer class="footer">
         <div class="actions">
           <a href="https://github.com/bitm4ncer/s2x3/releases/latest">
-            <i class="glyph g-a" aria-hidden="true">A</i> Get the alpha
+            <i class="mark" aria-hidden="true"></i> Get the alpha
           </a>
           <a href="https://github.com/bitm4ncer/s2x3/blob/main/ROADMAP.md">
-            <i class="glyph g-y" aria-hidden="true">Y</i> Roadmap
+            <i class="mark" aria-hidden="true"></i> Roadmap
           </a>
           <a href="https://github.com/bitm4ncer/s2x3">
-            <i class="glyph g-x" aria-hidden="true">X</i> Source
+            <i class="mark" aria-hidden="true"></i> Source
           </a>
           <a href="https://github.com/bitm4ncer/s2x3/commits/main">
-            <i class="glyph g-b" aria-hidden="true">B</i> Changes
+            <i class="mark" aria-hidden="true"></i> Changes
           </a>
         </div>
         <div class="footer-inner">
@@ -504,8 +504,8 @@
         const update = () => {
           raf = 0;
           const y = window.scrollY;
-          fill.style.transform = "translateY(" + y * 0.05 + "px)";
-          contour.style.transform = "translateY(" + y * -0.02 + "px)";
+          fill.style.transform = "translateY(" + y * 0.08 + "px)";
+          contour.style.transform = "translateY(" + y * 0.03 + "px)";
         };
         window.addEventListener("scroll", () => {
           if (!raf) raf = requestAnimationFrame(update);
