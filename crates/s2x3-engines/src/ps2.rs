@@ -495,6 +495,10 @@ impl EngineAdapter for Ps2Rust {
             "SSX3_TEX_REPLACE",
             s2x3_core::textures::launch_replace_env(&self.config),
         );
+        // The dump is cumulative: every session adds the textures it uploads
+        // (the engine writes each name once), so packs grow to cover
+        // everything the player has seen without extra work.
+        cmd.env("SSX3_TEX_DUMP", self.config.paths.textures_dump());
 
         for (k, v) in &self.config.settings {
             cmd.env(k, v);

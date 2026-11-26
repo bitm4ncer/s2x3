@@ -76,12 +76,6 @@ fn preview_list(pack_dir: &Path) -> Vec<String> {
     out
 }
 
-/// The offline extraction has to run when it never ran (`""`) or the ISO
-/// changed since the stored marker.
-fn needs_extract(stored: &str, current: &str) -> bool {
-    stored.is_empty() || stored != current
-}
-
 /// Write the `xbox-buttons` pack manifest once; never overwrite.
 fn write_manifest_if_missing(dir: &Path) {
     let path = dir.join(MANIFEST);
@@ -257,7 +251,7 @@ pub fn textures_extract(app: tauri::AppHandle) -> Result<String, String> {
             );
         };
         emit("running", "Texturen werden aus der Disc gelesen …");
-        let r = (|| -> anyhow::Result<bool> {
+        let r = (|| -> anyhow::Result<()> {
             let (mut config, _) = crate::load()?;
             if !config.paths.iso.is_file() {
                 anyhow::bail!(
@@ -266,19 +260,17 @@ pub fn textures_extract(app: tauri::AppHandle) -> Result<String, String> {
                 );
             }
             let current = tx::iso_marker(&config)?;
-            if !needs_extract(&config.textures.iso_marker, &current) {
-                return Ok(false);
-            }
+            // The extractor is idempotent (existing files are skipped), so an
+            // explicit click always runs it: the pack follows the dump.
             let summary = tx::run_extract(&config)?;
             config.textures.iso_marker = current;
             generate_xbox_pack(&mut config)?;
             config.save()?;
             emit("done", &summary);
-            Ok(true)
+            Ok(())
         })();
         match r {
-            Ok(false) => emit("current", "Texturen sind aktuell"),
-            Ok(true) => {}
+            Ok(()) => {}
             Err(e) => emit("error", &format!("{e:#}")),
         }
         EXTRACT_RUNNING.store(false, Ordering::SeqCst);
@@ -393,13 +385,6 @@ kind = \"own-art\"
         assert_eq!(d.error.as_deref(), Some("kaputt"));
         assert!(!d.enabled);
         assert_eq!(d.conflicts, 1);
-    }
-
-    #[test]
-    fn extract_needed_only_when_the_marker_moved() {
-        assert!(needs_extract("", "abc"));
-        assert!(needs_extract("abc", "def"));
-        assert!(!needs_extract("abc", "abc"));
     }
 
     #[test]
