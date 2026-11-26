@@ -22,3 +22,4 @@ apps/desktop/src/assets/buttons/*.png
 qa.js
 package.json
 package-lock.json
+.superpowers/
