@@ -143,6 +143,24 @@ pub struct Config {
     /// Launcher behaviour that is not an engine setting.
     #[serde(default)]
     pub ui: Ui,
+    /// Texture pack state: which packs are on, their order, and whether the
+    /// offline extraction has run for the current ISO.
+    #[serde(default)]
+    pub textures: TexturesSettings,
+}
+
+/// Texture pack state kept in the config (spec: textures design).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TexturesSettings {
+    /// Pack id → enabled. Absent = not installed.
+    #[serde(default)]
+    pub enabled: BTreeMap<String, bool>,
+    /// Pack ids first-in-list wins a shared texture hash.
+    #[serde(default)]
+    pub priority: Vec<String>,
+    /// Hash of the ISO the offline extraction ran against ("" = never).
+    #[serde(default)]
+    pub iso_marker: String,
 }
 
 /// Launcher UI preferences.

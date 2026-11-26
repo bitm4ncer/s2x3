@@ -443,6 +443,63 @@ pub fn merge(
     Ok(MergeReport { files, conflicts })
 }
 
+/// Value for `SSX3_TEX_REPLACE`: the active merge folder when it holds at
+/// least one replacement, else `"0"` (explicitly off — the engine's default
+/// `textures/replace` folder must never apply behind the launcher's back).
+pub fn launch_replace_env(config: &crate::Config) -> String {
+    let active = config.paths.textures_active();
+    let any = png_count(&active) > 0;
+    if any {
+        active.display().to_string()
+    } else {
+        "0".to_string()
+    }
+}
+
+const LEGACY_MANIFEST: &str = "\
+name = \"Xbox prompts (imported)\"
+author = \"s2x3\"
+version = \"1.0.0\"
+kind = \"upscale\"
+";
+
+/// One-time migration from the pre-pack mechanism: `ui.buttons = "xbox"`
+/// becomes the `xbox-buttons` pack toggle, and a filled legacy
+/// `paths.texreplace` folder is imported as the `texreplace-import` pack
+/// (derived content: local-only, kind `upscale`). Returns `Ok(true)` when
+/// the config changed; idempotent — a second run changes nothing.
+pub fn migrate_legacy(config: &mut crate::Config) -> Result<bool> {
+    let mut changed = false;
+    if config.ui.buttons == "xbox" && config.textures.enabled.get("xbox-buttons") != Some(&true) {
+        config.textures.enabled.insert("xbox-buttons".into(), true);
+        changed = true;
+    }
+    let src = config.paths.texreplace.clone();
+    let has_pngs = png_count(&src) > 0;
+    let dst = config.paths.textures_packs().join("texreplace-import");
+    if has_pngs && !dst.exists() {
+        std::fs::create_dir_all(dst.join("textures"))
+            .with_context(|| format!("create {}", dst.display()))?;
+        for e in std::fs::read_dir(&src).with_context(|| format!("read {}", src.display()))? {
+            let e = e.with_context(|| format!("read {}", src.display()))?;
+            let p = e.path();
+            if !p.extension().is_some_and(|x| x.eq_ignore_ascii_case("png")) {
+                continue;
+            }
+            std::fs::copy(&p, dst.join("textures").join(e.file_name()))
+                .with_context(|| format!("copy {}", p.display()))?;
+        }
+        std::fs::write(dst.join(MANIFEST), LEGACY_MANIFEST)
+            .with_context(|| format!("write {}", dst.join(MANIFEST).display()))?;
+        config
+            .textures
+            .enabled
+            .insert("texreplace-import".into(), true);
+        changed = true;
+    }
+    Ok(changed)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -771,5 +828,62 @@ kind = \"own-art\"
         let report = merge(&packs, &active, &on, &["ghost".into(), "a".into()]).unwrap();
         assert_eq!(report.files, 1);
         assert!(active.join(format!("{HASH1}.png")).is_file());
+    }
+
+    // --- launch env / legacy migration -----------------------------------
+
+    use crate::Config;
+
+    #[test]
+    fn launch_env_is_zero_without_active_packs() {
+        let tmp = TempDir::new().unwrap();
+        let mut cfg = Config::default();
+        cfg.paths.textures = tmp.path().join("textures");
+        assert_eq!(launch_replace_env(&cfg), "0");
+    }
+
+    #[test]
+    fn launch_env_names_active_when_packs_are_merged() {
+        let tmp = TempDir::new().unwrap();
+        let mut cfg = Config::default();
+        cfg.paths.textures = tmp.path().join("textures");
+        std::fs::create_dir_all(cfg.paths.textures_active()).unwrap();
+        std::fs::write(
+            cfg.paths.textures_active().join("f897162c0f661c8b.png"),
+            b"png",
+        )
+        .unwrap();
+        // a non-png file does not count as an active pack
+        std::fs::write(cfg.paths.textures_active().join("readme.txt"), b"n").unwrap();
+        let env = launch_replace_env(&cfg);
+        assert!(env.ends_with("active"), "got: {env}");
+        assert_ne!(env, "0");
+    }
+
+    #[test]
+    fn migration_is_idempotent_and_imports_texreplace() {
+        let tmp = TempDir::new().unwrap();
+        let mut cfg = Config::default();
+        cfg.paths.textures = tmp.path().join("textures");
+        cfg.paths.texreplace = tmp.path().join("texreplace");
+        std::fs::create_dir_all(&cfg.paths.texreplace).unwrap();
+        std::fs::write(cfg.paths.texreplace.join("f897162c0f661c8b.png"), b"png").unwrap();
+        cfg.ui.buttons = "xbox".into();
+
+        assert!(migrate_legacy(&mut cfg).unwrap());
+        assert_eq!(cfg.textures.enabled.get("xbox-buttons"), Some(&true));
+        // the legacy folder stays in place (it still works until the next
+        // config save swaps the mechanism) and a copy became a pack
+        assert!(cfg.paths.texreplace.join("f897162c0f661c8b.png").is_file());
+        let entries = list(&cfg.paths.textures_packs());
+        assert!(
+            entries
+                .iter()
+                .any(|e| e.id == "texreplace-import" && e.pack.is_some()),
+            "got: {entries:?}"
+        );
+        assert_eq!(cfg.textures.enabled.get("texreplace-import"), Some(&true));
+
+        assert!(!migrate_legacy(&mut cfg).unwrap());
     }
 }

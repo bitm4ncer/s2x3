@@ -474,9 +474,13 @@ impl EngineAdapter for Ps2Rust {
             .env("SSX3_ISO", &self.config.paths.iso)
             .env("SSX3_MEMCARD", self.memcard_path())
             .env("SSX3_SETTINGS", self.settings_path());
-        if self.config.ui.buttons == "xbox" && self.config.paths.texreplace.is_dir() {
-            cmd.env("SSX3_TEX_REPLACE", &self.config.paths.texreplace);
-        }
+        // Always explicit: the engine's default `textures/replace` folder
+        // must never apply behind the launcher's back (toggle off = original
+        // look).
+        cmd.env(
+            "SSX3_TEX_REPLACE",
+            s2x3_core::textures::launch_replace_env(&self.config),
+        );
 
         for (k, v) in &self.config.settings {
             cmd.env(k, v);
