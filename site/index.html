@@ -3,13 +3,60 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>s2X3 · SSX 3 launcher</title>
+    <title>s2X3 – Play SSX 3 on PC · native SSX 3 port launcher</title>
     <meta
       name="description"
+      content="A clean launcher and installer for the native SSX 3 port on PlayStation 2. Your disc, your settings, one place. No emulator, no game data."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#03162b" />
+    <link rel="canonical" href="https://bitm4ncer.github.io/s2x3/" />
+    <link rel="icon" href="assets/icon.png" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="s2X3" />
+    <meta property="og:title" content="s2X3 – Play SSX 3 on PC" />
+    <meta
+      property="og:description"
       content="A clean launcher and installer for the native SSX 3 port on PlayStation 2. Your disc, your settings, one place."
     />
-    <meta name="theme-color" content="#03162b" />
-    <link rel="icon" href="assets/icon.png" />
+    <meta property="og:url" content="https://bitm4ncer.github.io/s2x3/" />
+    <meta property="og:image" content="https://bitm4ncer.github.io/s2x3/assets/icon.png" />
+    <meta property="og:image:width" content="800" />
+    <meta property="og:image:height" content="800" />
+    <meta property="og:image:alt" content="s2X3 app icon: white s2X3 wordmark on an orange tile" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="s2X3 – Play SSX 3 on PC" />
+    <meta
+      name="twitter:description"
+      content="A clean launcher and installer for the native SSX 3 port on PlayStation 2. Your disc, your settings, one place."
+    />
+    <meta name="twitter:image" content="https://bitm4ncer.github.io/s2x3/assets/icon.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "s2X3",
+        "operatingSystem": "Windows, Linux, macOS",
+        "applicationCategory": "GameApplication",
+        "description": "A clean launcher and installer for the native SSX 3 port on PlayStation 2. Your disc, your settings, one place.",
+        "url": "https://bitm4ncer.github.io/s2x3/",
+        "image": "https://bitm4ncer.github.io/s2x3/assets/icon.png",
+        "license": "https://www.gnu.org/licenses/gpl-3.0",
+        "downloadUrl": "https://github.com/bitm4ncer/s2x3/releases/latest",
+        "author": {
+          "@type": "Organization",
+          "name": "s2X3 contributors",
+          "url": "https://github.com/bitm4ncer"
+        },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -420,5 +467,26 @@
         </div>
       </footer>
     </div>
+
+    <script>
+      // light parallax on the backdrop flakes
+      (() => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        const fill = document.querySelector(".scene-flake-fill");
+        const contour = document.querySelector(".scene-flake-contour");
+        if (!fill || !contour) return;
+        let raf = 0;
+        const update = () => {
+          raf = 0;
+          const y = window.scrollY;
+          fill.style.transform = "translateY(" + y * 0.12 + "px)";
+          contour.style.transform = "translateY(" + y * -0.05 + "px)";
+        };
+        window.addEventListener("scroll", () => {
+          if (!raf) raf = requestAnimationFrame(update);
+        }, { passive: true });
+        update();
+      })();
+    </script>
   </body>
 </html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bitm4ncer.github.io/s2x3/sitemap.xml
