@@ -260,7 +260,7 @@ function promptSet() {
       <small>${
         state.texreplace_present
           ? "Xbox uses the texture patch in the texreplace folder."
-          : "The Xbox prompt patch is generated automatically — play once and it is ready for the next start."
+          : "The Xbox prompt patch is generated from the texture dump. \"Texturen neu lesen\" reads the disc up front; one session adds the last menus — after that, every start shows Xbox prompts."
       }</small>
     </div>
     <div class="prompt-cards">
