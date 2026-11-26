@@ -676,18 +676,19 @@ main::-webkit-scrollbar-thumb:hover {
 .saves-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 6px;
   margin-bottom: 10px;
 }
 
 .saves-title h4 {
-  margin: 0;
+  margin: 0 12px 0 0;
+  margin-right: auto;
   flex: none;
 }
 
 .saves-title .menu-wrap {
-  flex: 1;
+  flex: none;
   min-width: 0;
 }
 
