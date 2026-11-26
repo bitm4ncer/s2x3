@@ -1426,7 +1426,7 @@ code {
 
 .credits-panel p {
   margin: 0 0 8px;
-  max-width: 68ch;
+  max-width: none;
   color: #dcebf5;
 }
 
