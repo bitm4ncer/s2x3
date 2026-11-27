@@ -45,10 +45,10 @@ static SCHEMA: &[SettingsField] = &[
     },
     SettingsField {
         key: "SSX3_HUD_EDGE",
-        label: "HUD edge slide",
-        help: "How far the race HUD's anchored elements slide toward the frame edges (0-160, HUD pixels; the game's own transform squeezes the HUD, so ~96 moves an element by ~11% of the window). 0: as authored.",
-        kind: FieldKind::Integer { min: 0, max: 160 },
-        default: "0",
+        label: "Race HUD at screen edges",
+        help: "On: the race HUD's corner elements sit at the window's edges, sliding with the window's size. Off: the HUD stays as authored (inset, 4:3).",
+        kind: FieldKind::Choice(&["", "0"]),
+        default: "",
     },
     SettingsField {
         key: "SSX3_RENDER_SIZE",
