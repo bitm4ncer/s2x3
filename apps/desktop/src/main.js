@@ -39,7 +39,7 @@ const mockState = {
     needs_disc: true,
     plugins: true,
     netplay: false,
-    splitscreen: true,
+    splitscreen: false,
     max_tick_hz: 240,
     notes: [],
   },
@@ -403,6 +403,8 @@ function render(next) {
     state.capabilities.max_tick_hz > 60 ? `${state.capabilities.max_tick_hz} Hz` : null,
   ]
     .filter(Boolean)
+    // plugins/hz stay hidden until the launcher actually surfaces them
+    .filter((c) => c !== "Plugins" && !c.endsWith(" Hz"))
     .map((c) => `<span>${c}</span>`)
     .join("");
 
