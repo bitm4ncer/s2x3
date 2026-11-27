@@ -173,6 +173,7 @@ function mockInvoke(cmd, args) {  if (cmd === "state") {
     return Promise.resolve(structuredClone(mockPacks));
   if (cmd === "textures_extract" || cmd === "textures_upscale")
     return Promise.resolve("started");
+  if (cmd === "textures_dump_stale") return Promise.resolve(true);
   if (cmd === "textures_open_folder") return Promise.resolve(null);
   if (cmd === "card_new" || cmd === "card_import_file" || cmd === "card_import")
     return Promise.resolve(structuredClone(mockCards));
@@ -484,32 +485,82 @@ async function renderPacks(el) {
 
   const actions = document.createElement("div");
   actions.className = "pack-actions";
-  const mk = (label, cmd, args) => {
+  // Landing-page icon style: an orange rounded-square badge with a white
+  // glyph, like the site's feature cards.
+  const badge = (paths, tip) => {
     const b = document.createElement("button");
-    b.className = "ghost small";
-    b.textContent = label;
-    b.addEventListener("click", async () => {
+    b.className = "icon-btn";
+    b.title = tip;
+    b.setAttribute("aria-label", tip);
+    b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+    return b;
+  };
+  const pop = document.createElement("div");
+  pop.className = "ctx-menu";
+  pop.hidden = true;
+  const menu_item = (label, cmd, args) => {
+    const it = document.createElement("button");
+    it.textContent = label;
+    it.addEventListener("click", async () => {
+      pop.hidden = true;
       try {
         const res = await call(cmd, args ?? {});
-        if (cmd === "textures_extract") {
-          toast("Textures: reading the disc in the background");
-        } else if (cmd === "textures_upscale") {
-          toast("HD upscale started - this takes minutes");
-        } else if (Array.isArray(res)) {
-          renderPacks(el);
-        }
+        if (Array.isArray(res)) renderPacks(el);
       } catch (e) {
         toast(String(e), true);
       }
     });
-    return b;
+    return it;
   };
+  pop.append(
+    menu_item("File…", "textures_pick_import"),
+    menu_item("Folder…", "textures_pick_import_folder"),
+  );
+  let stale = false;
+  try {
+    stale = await call("textures_dump_stale", {});
+  } catch {
+    stale = false;
+  }
+  const re_read = badge(
+    '<path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6" />',
+    "Re-read textures",
+  );
+  re_read.classList.toggle("attention", stale);
+  re_read.addEventListener("click", async () => {
+    try {
+      await call("textures_extract", {});
+      toast("Textures: reading the disc in the background");
+    } catch (e) {
+      toast(String(e), true);
+    }
+  });
+  const import_btn = badge(
+    '<path d="M12 3v10m0 0 4-4m-4 4-4-4" /><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />',
+    "Import",
+  );
+  import_btn.addEventListener("click", () => {
+    const r = import_btn.getBoundingClientRect();
+    pop.style.left = `${r.left}px`;
+    pop.style.top = `${r.bottom + 6}px`;
+    pop.hidden = !pop.hidden;
+  });
+  document.addEventListener("click", (e) => {
+    if (!pop.hidden && !pop.contains(e.target) && e.target !== import_btn) pop.hidden = true;
+  }, { once: false });
   actions.append(
-    mk("Import…", "textures_pick_import"),
-    mk("Import folder…", "textures_pick_import_folder"),
-    mk("Re-read textures", "textures_extract"),
+    import_btn,
+    pop,
+    re_read,
     mk("HD upscale", "textures_upscale"),
-    mk("Open dump folder", "textures_open_folder", { id: "" }),
+    badge(
+      '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />',
+      "Open dump folder",
+    ),
+  );
+  const open_dump = actions.lastElementChild;
+  open_dump.addEventListener("click", () =>
+    call("textures_open_folder", { id: "" }).catch((e) => toast(String(e), true))
   );
   el.append(actions);
 
@@ -557,8 +608,11 @@ async function renderPacks(el) {
     const row = document.createElement("div");
     row.className = "pack-row";
     const toggle = document.createElement("button");
-    toggle.className = "ghost small";
-    toggle.textContent = pack.enabled ? "Off" : "On";
+    toggle.className = "pill-switch";
+    toggle.setAttribute("role", "switch");
+    toggle.setAttribute("aria-checked", String(pack.enabled));
+    toggle.title = pack.enabled ? "On" : "Off";
+    toggle.innerHTML = `<span class="knob"></span>`;
     toggle.addEventListener("click", async () => {
       await call("textures_toggle", { id: pack.id, enabled: !pack.enabled }).catch((e) =>
         toast(String(e), true)
@@ -566,14 +620,18 @@ async function renderPacks(el) {
       renderPacks(el);
     });
     const folder = document.createElement("button");
-    folder.className = "ghost small";
-    folder.textContent = "Open folder";
+    folder.className = "icon-btn";
+    folder.title = "Open folder";
+    folder.setAttribute("aria-label", "Open folder");
+    folder.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /></svg>`;
     folder.addEventListener("click", () =>
       call("textures_open_folder", { id: pack.id }).catch((e) => toast(String(e), true))
     );
     const del = document.createElement("button");
-    del.className = "ghost small";
-    del.textContent = "Remove";
+    del.className = "icon-btn danger";
+    del.title = "Remove";
+    del.setAttribute("aria-label", "Remove");
+    del.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-9 0 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" /></svg>`;
     del.addEventListener("click", async () => {
       await call("textures_remove", { id: pack.id }).catch((e) => toast(String(e), true));
       renderPacks(el);

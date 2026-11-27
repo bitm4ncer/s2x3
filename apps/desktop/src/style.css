@@ -1583,3 +1583,105 @@ details[open] > summary::before {
   gap: 8px;
   margin-top: 10px;
 }
+
+
+/* ---- Texture tab: icon buttons, pill switch, context menu ------------- */
+
+/* Landing-page style: the orange rounded-square badge with a white glyph. */
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #ffa741 0%, #f27a1a 100%);
+  box-shadow: 0 3px 8px rgb(242 122 26 / 35%), inset 0 1px 0 rgb(255 255 255 / 45%);
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+}
+.icon-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.icon-btn:active {
+  transform: translateY(0);
+}
+/* The re-read button lights up when re-reading makes sense. */
+.icon-btn.attention {
+  background: linear-gradient(180deg, #ff8f3d 0%, #e8481a 100%);
+  box-shadow:
+    0 3px 10px rgb(232 72 26 / 50%),
+    inset 0 1px 0 rgb(255 255 255 / 45%);
+  animation: pulse-attention 2.2s ease-in-out infinite;
+}
+@keyframes pulse-attention {
+  0%, 100% { box-shadow: 0 3px 10px rgb(232 72 26 / 50%), inset 0 1px 0 rgb(255 255 255 / 45%); }
+  50% { box-shadow: 0 3px 14px rgb(232 72 26 / 75%), inset 0 1px 0 rgb(255 255 255 / 45%); }
+}
+.icon-btn.danger {
+  background: linear-gradient(180deg, #9aa4b2 0%, #6b7280 100%);
+  box-shadow: 0 3px 8px rgb(107 114 128 / 35%), inset 0 1px 0 rgb(255 255 255 / 40%);
+}
+
+/* The import context menu. */
+.ctx-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 150px;
+  padding: 6px;
+  border: 1px solid rgb(255 255 255 / 60%);
+  border-radius: 12px;
+  background: rgb(245 250 255 / 92%);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px rgb(20 45 90 / 18%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ctx-menu button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  color: #16324f;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ctx-menu button:hover {
+  background: rgb(242 122 26 / 16%);
+}
+
+/* The on/off pill switch. */
+.pill-switch {
+  width: 46px;
+  height: 24px;
+  padding: 2px;
+  border: none;
+  border-radius: 12px;
+  background: rgb(120 135 155 / 45%);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.2s ease;
+}
+.pill-switch .knob {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+  transition: transform 0.2s ease;
+}
+.pill-switch[aria-checked='true'] {
+  background: linear-gradient(180deg, #ffa741, #f27a1a);
+}
+.pill-switch[aria-checked='true'] .knob {
+  transform: translateX(22px);
+}
