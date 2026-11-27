@@ -6,6 +6,10 @@ const forcedSetup = () =>
   location.search.includes("setup") || localStorage.getItem("setupPreview") === "1";
 let state = null;
 let saveTimer = null;
+// The background jobs' persistent status (the card in the textures tab —
+// toasts fade, this stays until the job is done or retried). Declared up
+// here: the boot render reads it.
+const jobStatus = { kind: "", state: "", message: "" };
 
 function toast(text, bad = false) {
   const el = $("toast");
@@ -722,6 +726,21 @@ async function play() {
   }
 }
 
+window.addEventListener("error", (e) => {
+  const el = document.getElementById("toast");
+  if (el) {
+    el.textContent = `UI error: ${e.message}`;
+    el.classList.add("show", "bad");
+  }
+});
+window.addEventListener("unhandledrejection", (e) => {
+  const el = document.getElementById("toast");
+  if (el) {
+    el.textContent = `UI error: ${e.reason?.message ?? e.reason}`;
+    el.classList.add("show", "bad");
+  }
+});
+
 async function refreshState() {
   render(await call("state"));
 }
@@ -1095,10 +1114,6 @@ document.addEventListener("visibilitychange", () => {
   if (active()) refreshState();
 });
 window.addEventListener("focus", refreshState);
-
-// The background jobs' persistent status (the card in the textures tab —
-// toasts fade, this stays until the job is done or retried).
-const jobStatus = { kind: "", state: "", message: "" };
 
 if (hasTauri && window.__TAURI__.event) {
   for (const ev of ["textures-extract", "textures-upscale"]) {
