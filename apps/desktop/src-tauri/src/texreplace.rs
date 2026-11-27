@@ -87,7 +87,8 @@ fn glyph_image(letter: char) -> anyhow::Result<image::RgbaImage> {
 /// True when nothing is left to do: every dump texture has been seen by a
 /// patch run (the marker holds the dump's file count at patch time).
 pub fn complete(dump_dir: &Path, out_dir: &Path) -> bool {
-    let stored = std::fs::read_to_string(out_dir.join(".patched")).unwrap_or_default();
+    let marker = out_dir.parent().unwrap_or(out_dir).join(".patched");
+    let stored = std::fs::read_to_string(marker).unwrap_or_default();
     let now = std::fs::read_dir(dump_dir)
         .map(|d| d.count())
         .unwrap_or(usize::MAX);
@@ -182,9 +183,11 @@ pub fn patch(dump_dir: &Path, out_dir: &Path) -> anyhow::Result<usize> {
         written += 1;
     }
     // Mark the dump's size at patch time: the pack regenerates when the
-    // dump has grown since.
+    // dump has grown since. The marker lives in the pack folder, not among
+    // the texture files: the pack listing expects only engine-hash names.
     let count = std::fs::read_dir(dump_dir)?.count();
-    let _ = std::fs::write(out_dir.join(".patched"), count.to_string());
+    let marker = out_dir.parent().unwrap_or(out_dir).join(".patched");
+    let _ = std::fs::write(marker, count.to_string());
     Ok(written)
 }
 
