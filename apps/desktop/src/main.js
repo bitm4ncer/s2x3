@@ -423,6 +423,7 @@ function render(next) {
   fields.innerHTML = "";
   if (activeTab === "textures") {
     renderPacks(fields);
+    window.packsEl = fields;
   } else {
     state.schema
       .filter((f) => keys.has(f.key) || !known.has(f.key))
@@ -473,6 +474,43 @@ function render(next) {
 }
 
 async function renderPacks(el) {
+  // The persistent job status: running (with the tool's latest line) or an
+  // error with a retry button. Toasts fade; this card stays.
+  if (jobStatus.state === "running" || jobStatus.state === "progress" || jobStatus.state === "error") {
+    const card = document.createElement("div");
+    card.className = "job-status" + (jobStatus.state === "error" ? " bad" : "");
+    const title = document.createElement("b");
+    title.textContent =
+      jobStatus.state === "error"
+        ? `${jobStatus.kind} failed`
+        : `${jobStatus.kind}…`;
+    card.append(title);
+    const p = document.createElement("p");
+    p.textContent = jobStatus.message || "working…";
+    card.append(p);
+    if (jobStatus.state === "error") {
+      const retry = document.createElement("button");
+      retry.className = "ghost small";
+      retry.textContent = "Retry";
+      retry.addEventListener("click", () => {
+        jobStatus.state = "running";
+        jobStatus.message = "working…";
+        call(jobStatus.kind === "HD upscale" ? "textures_upscale" : "textures_extract", {})
+          .catch((e) => toast(String(e), true));
+        renderPacks(el);
+      });
+      card.append(retry);
+      const dismiss = document.createElement("button");
+      dismiss.className = "ghost small";
+      dismiss.textContent = "Dismiss";
+      dismiss.addEventListener("click", () => {
+        jobStatus.state = "";
+        renderPacks(el);
+      });
+      card.append(dismiss);
+    }
+    el.prepend(card);
+  }
   el.innerHTML = '<p class="muted">loading…</p>';
   let packs;
   try {
@@ -1040,11 +1078,20 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("focus", refreshState);
 
+// The background jobs' persistent status (the card in the textures tab —
+// toasts fade, this stays until the job is done or retried).
+const jobStatus = { kind: "", state: "", message: "" };
+
 if (hasTauri && window.__TAURI__.event) {
   for (const ev of ["textures-extract", "textures-upscale"]) {
+    const kind = ev === "textures-upscale" ? "HD upscale" : "Textures";
     window.__TAURI__.event.listen(ev, (e) => {
       const st = e.payload?.state ?? "";
       const msg = e.payload?.message ?? "";
+      jobStatus.kind = kind;
+      jobStatus.state = st;
+      jobStatus.message = msg;
+      if (window.packsEl) renderPacks(window.packsEl);
       if (st === "done") toast(`Textures: ${msg}`);
       if (st === "error") toast(`Textures: ${msg}`, true);
       if (st !== "running") refreshState();

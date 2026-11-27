@@ -437,6 +437,15 @@ fn python() -> &'static str {
 /// pack folder, then manifest it as a pack. Needs Python and a
 /// Vulkan-capable GPU; errors name what is missing.
 pub fn run_upscale(config: &crate::Config) -> Result<PathBuf> {
+    run_upscale_streaming(config, &mut |_| {})
+}
+
+/// The same job, with every tool output line streamed to `on_line` (the
+/// launcher's status display).
+pub fn run_upscale_streaming(
+    config: &crate::Config,
+    on_line: &mut dyn FnMut(&str),
+) -> Result<PathBuf> {
     let tool = config.engine.root.join("tools").join("upscale-textures.py");
     if !tool.is_file() {
         anyhow::bail!(
@@ -455,32 +464,30 @@ pub fn run_upscale(config: &crate::Config) -> Result<PathBuf> {
         .textures
         .join(".tools/realesrgan/realesrgan-ncnn-vulkan")
         .with_extension(std::env::consts::EXE_SUFFIX);
-    let mut cmd = |args: &[&str]| {
-        std::process::Command::new(python())
-            .arg(&tool)
-            .args(args)
-            .status()
+    let tool_cmd = |args: &[&str]| {
+        let mut c = std::process::Command::new(python());
+        c.arg(&tool).args(args);
+        c
     };
     if !exe.is_file() {
         run_tool(
-            || cmd(&["--setup", "--esrgan", exe.to_string_lossy().as_ref()]),
+            tool_cmd(&["--setup", "--esrgan", exe.to_string_lossy().as_ref()]),
             "setting up the upscale toolchain",
+            &mut |_| {},
         )?;
     }
     run_tool(
-        || {
-            cmd(&[
-                "--dump",
-                config.paths.textures_dump().to_string_lossy().as_ref(),
-                "--out",
-                pack.join("textures").to_string_lossy().as_ref(),
-                "--esrgan",
-                exe.to_string_lossy().as_ref(),
-            ])
-        },
+        tool_cmd(&[
+            "--dump",
+            config.paths.textures_dump().to_string_lossy().as_ref(),
+            "--out",
+            pack.join("textures").to_string_lossy().as_ref(),
+            "--esrgan",
+            exe.to_string_lossy().as_ref(),
+        ]),
         "upscale-textures",
-    )?;
-    std::fs::write(
+        on_line,
+    )?;    std::fs::write(
         pack.join(MANIFEST),
         format!(
             "name = \"HD Upscale\"\nauthor = \"s2x3\"\nversion = \"1.0.0\"\nkind = \"upscale\"\n"
@@ -490,24 +497,41 @@ pub fn run_upscale(config: &crate::Config) -> Result<PathBuf> {
     Ok(pack)
 }
 
-/// Run the tool (a closure that starts python) and map failures to readable
-/// errors.
+/// Run the tool (a prepared command) and stream its stdout lines to
+/// `on_line`; failures become readable errors with the stderr tail.
 fn run_tool(
-    run: impl FnOnce() -> std::io::Result<std::process::ExitStatus>,
+    mut cmd: std::process::Command,
     what: &str,
+    on_line: &mut dyn FnMut(&str),
 ) -> Result<()> {
-    match run() {
+    use std::io::Read;
+    let mut child = match cmd
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+    {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             anyhow::bail!("python not found - install Python 3 (the engine setup needs it too)")
         }
         Err(e) => return Err(anyhow::Error::new(e).context("start python")),
-        Ok(s) if !s.success() => {
-            anyhow::bail!(
-                "{what} failed (exit code {:?}) - its log lines above say what went wrong",
-                s.code()
-            );
+        Ok(c) => c,
+    };
+    if let Some(out) = child.stdout.take() {
+        use std::io::BufRead;
+        for line in std::io::BufReader::new(out).lines().map_while(Result::ok) {
+            on_line(&line);
         }
-        Ok(_) => {}
+    }
+    let status = child.wait().context("wait for python")?;
+    if !status.success() {
+        let mut tail = String::new();
+        if let Some(mut err) = child.stderr.take() {
+            let _ = err.read_to_string(&mut tail);
+        }
+        let recent: Vec<&str> = tail.lines().rev().take(3).collect();
+        let recent: Vec<String> = recent.into_iter().rev().map(|s| s.to_string()).collect();
+        anyhow::bail!("{what} failed ({status:?}): {}", recent.join("
+"));
     }
     Ok(())
 }

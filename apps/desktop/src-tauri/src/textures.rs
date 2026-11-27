@@ -297,7 +297,8 @@ pub fn textures_upscale(app: tauri::AppHandle) -> Result<String, String> {
         emit("running", "Upscaling textures (this takes minutes) …");
         let r = (|| -> anyhow::Result<String> {
             let (mut config, _) = crate::load()?;
-            let pack = tx::run_upscale(&config)?;
+            let mut on_line = |line: &str| emit("progress", line);
+            let pack = tx::run_upscale_streaming(&config, &mut on_line)?;
             // Enable BEFORE merging: the merge only copies enabled packs, so
             // merging first would ship an active set without the HD files.
             tx::enable_and_merge(&mut config, "hd-upscale")?;
@@ -315,6 +316,22 @@ pub fn textures_upscale(app: tauri::AppHandle) -> Result<String, String> {
 
 /// Open a pack's folder (or the dump when the id is empty) in the system
 /// file manager.
+/// Whether re-reading the disc makes sense: the ISO changed, or the dump
+/// grew since the last pack patch.
+#[tauri::command]
+pub fn textures_dump_stale() -> Result<bool, String> {
+    let (config, _) = crate::load().map_err(|e| format!("{e:#}"))?;
+    let iso_moved = tx::iso_marker(&config)
+        .map(|m| m != config.textures.iso_marker)
+        .unwrap_or(true);
+    let out = config
+        .paths
+        .textures_packs()
+        .join("xbox-buttons")
+        .join("textures");
+    Ok(iso_moved || !crate::texreplace::complete(&config.paths.textures_dump(), &out))
+}
+
 #[tauri::command]
 pub fn textures_open_folder(id: String) -> Result<(), String> {
     let (config, _) = crate::load().map_err(|e| format!("{e:#}"))?;
