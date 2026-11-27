@@ -554,12 +554,9 @@ async function renderPacks(el) {
     menu_item("File…", "textures_pick_import"),
     menu_item("Folder…", "textures_pick_import_folder"),
   );
-  let stale = false;
-  try {
-    stale = await call("textures_dump_stale", {});
-  } catch {
-    stale = false;
-  }
+  // One shared probe per render pass (the marker file, not the ISO hash —
+  // hashing the disc here would spin the render loop).
+  let stale = localStorage.getItem("dumpStale") === "1";
   const re_read = badge(
     '<path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6" />',
     "Re-read textures",
@@ -1094,6 +1091,10 @@ if (hasTauri && window.__TAURI__.event) {
       if (window.packsEl) renderPacks(window.packsEl);
       if (st === "done") toast(`Textures: ${msg}`);
       if (st === "error") toast(`Textures: ${msg}`, true);
+      localStorage.setItem(
+        "dumpStale",
+        ev === "textures-upscale" && st === "done" ? "0" : localStorage.getItem("dumpStale") ?? "1",
+      );
       if (st !== "running") refreshState();
     });
   }
