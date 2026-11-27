@@ -523,6 +523,27 @@ async function renderPacks(el) {
 
   const actions = document.createElement("div");
   actions.className = "pack-actions";
+  // The plain text button (HD upscale stays one).
+  const mk = (label, cmd, args) => {
+    const b = document.createElement("button");
+    b.className = "ghost small";
+    b.textContent = label;
+    b.addEventListener("click", async () => {
+      try {
+        const res = await call(cmd, args ?? {});
+        if (cmd === "textures_extract") {
+          toast("Textures: reading the disc in the background");
+        } else if (cmd === "textures_upscale") {
+          toast("HD upscale started - this takes minutes");
+        } else if (Array.isArray(res)) {
+          renderPacks(el);
+        }
+      } catch (e) {
+        toast(String(e), true);
+      }
+    });
+    return b;
+  };
   // Landing-page icon style: an orange rounded-square badge with a white
   // glyph, like the site's feature cards.
   const badge = (paths, tip) => {
