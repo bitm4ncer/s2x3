@@ -1685,3 +1685,18 @@ details[open] > summary::before {
 .pill-switch[aria-checked='true'] .knob {
   transform: translateX(22px);
 }
+
+/* Polish: no accent border on cards, flatter badge icons. */
+.pack {
+  border-left: none !important;
+}
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  box-shadow: 0 2px 6px rgb(242 122 26 / 25%);
+}
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
