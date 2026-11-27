@@ -50,6 +50,15 @@ Workflow when a bug shows up while playing:
    scenario where possible.
 4. Open a PR against `andersfischernielsen/ssx3-decomp` with the note's
    summary. Do not bundle unrelated changes.
+
+   **Commit authorship:** every commit in the PR must be authored by this
+   project's account, `bitm4ncer <175125780+bitm4ncer@users.noreply.github.com>`
+   (the modern noreply form with the account id, so GitHub links it). Never
+   set the upstream maintainer as the author. PRs #95/#96 were authored as
+   `andersfischernielsen` (only the committer was `bitm4ncer`), so the
+   project does not appear in the repo's contributors. Set the identity
+   explicitly per commit (`git -c user.name=... -c user.email=... commit`)
+   and use `--reset-author` when amending someone else's author into ours.
 5. The launcher may only rely on merged engine behaviour. If a local build
    needs an unmerged fix, gate it: record the engine commit/PR in the note,
    keep a `[local]` marker, and make the launcher degrade gracefully when the
