@@ -246,7 +246,7 @@ impl EngineAdapter for Ps2Rust {
             needs_disc: true,
             plugins: true,
             netplay: false,
-            splitscreen: true,
+            splitscreen: false,
             max_tick_hz: 240,
             notes: vec![
                 "PS2 USA disc (SLUS_207.72)".into(),
